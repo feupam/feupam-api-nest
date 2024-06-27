@@ -1,0 +1,11 @@
+npm run start:dev
+
+nest g resource
+
+docker compose up
+docker compose down
+
+npx prisma generate
+npx prisma migrate dev
+
+docker compose exec app bash
