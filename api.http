@@ -59,6 +59,7 @@ Content-Type: application/json
     "email": "test@test.com"
 }
 
+
 ###
 # @name createUser
 POST http://localhost:3000/users
@@ -68,12 +69,17 @@ Content-Type: application/json
     "name": "John Doe",
     "email": "john.doe@example.com"
 }
+
+###
+
+@userId = {{ createUser.response.body.id }}
+
 ###
 # @name getUserById
-GET http://localhost:3000/users/{userId}
+GET http://localhost:3000/users/{{userId}}
 ###
 # @name updateUser
-PUT http://localhost:3000/users/{userId}
+PUT http://localhost:3000/users/{{userId}}
 Content-Type: application/json
 
 {
@@ -82,4 +88,4 @@ Content-Type: application/json
 }
 ###
 # @name deleteUser
-DELETE http://localhost:3000/users/{userId}
+DELETE http://localhost:3000/users/{{userId}}
