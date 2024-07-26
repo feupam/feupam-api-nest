@@ -7,6 +7,7 @@ import { FirestoreService } from '../firebase/firebase.service';
 import { CreateStaffDto } from './dto/create-staff.dto';
 import { ReserveSpotForStaffDto } from './dto/reserve-spot-for-staff.dto';
 import { SpotStatus, TicketStatus } from '../spots/dto/enum';
+import { UpdateStaffDto } from './dto/update-staff.dto';
 
 @Injectable()
 export class StaffService {
@@ -36,12 +37,25 @@ export class StaffService {
     return { id: doc.id, ...doc.data() };
   }
 
-  async update(id: string, updateStaffDto: CreateStaffDto) {
+  async update(id: string, updateStaffDto: UpdateStaffDto) {
     const staffRef = this.firestoreService.firestore
       .collection('staff')
       .doc(id);
-    await staffRef.update(updateStaffDto);
-    return { id, ...updateStaffDto };
+
+    // Verifique se o staffRef realmente existe antes de tentar atualizar
+    const staffDoc = await staffRef.get();
+    if (!staffDoc.exists) {
+      throw new Error('Staff not found');
+    }
+
+    // Converta o DTO para um objeto simples
+    const updateData = {
+      ...updateStaffDto,
+    };
+
+    await staffRef.update(updateData);
+
+    return { id, ...updateData };
   }
 
   async remove(id: string) {
@@ -152,9 +166,11 @@ export class StaffService {
       .count()
       .get();
 
-    const userSpotsCount = userSpotsSnapshot.size;
-    const staffSpotsCount = staffSpotsSnapshot.size;
+    // Contar o número de documentos em cada snapshot
+    const userSpotsCount = userSpotsSnapshot.data.length;
+    const staffSpotsCount = staffSpotsSnapshot.data.length;
 
+    // Retornar a soma total de spots reservados
     return userSpotsCount + staffSpotsCount;
   }
 }
