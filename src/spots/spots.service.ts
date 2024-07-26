@@ -1,54 +1,46 @@
-import { Injectable } from '@nestjs/common';
-import { CreateSpotDto } from './dto/create-spot.dto';
+import {
+  Injectable,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
 import { FirestoreService } from '../firebase/firebase.service';
-import { SpotStatus } from './dto/enum';
+import { CreateSpotDto } from './dto/create-spot.dto';
+import { SpotStatus, SpotType } from './dto/enum';
 
 @Injectable()
 export class SpotsService {
   constructor(private firestoreService: FirestoreService) {}
 
-  async create(createSpotDto: CreateSpotDto & { eventId: string }) {
+  async create(
+    createSpotDto: CreateSpotDto & { eventId: string; type: SpotType },
+  ) {
     const firestore = this.firestoreService.getFirestore();
 
-    try {
-      return await firestore.runTransaction(async (transaction) => {
-        const eventRef = firestore
-          .collection('events')
-          .doc(createSpotDto.eventId);
-        const eventDoc = await transaction.get(eventRef);
+    // Verify that the event exists
+    const eventRef = firestore.collection('events').doc(createSpotDto.eventId);
+    const eventDoc = await eventRef.get();
 
-        if (!eventDoc.exists) {
-          throw new Error('Event not found');
-        }
-
-        const spotsRef = firestore
-          .collection('spots')
-          .where('eventId', '==', createSpotDto.eventId);
-        const spotsSnapshot = await transaction.get(spotsRef);
-
-        if (spotsSnapshot.size >= 100) {
-          throw new Error('Spot limit reached for this event');
-        }
-
-        const spotRef = firestore.collection('spots').doc();
-        transaction.set(spotRef, {
-          ...createSpotDto,
-          eventId: createSpotDto.eventId,
-          status: SpotStatus.available,
-          createAt: new Date(),
-          updateAt: new Date(),
-        });
-
-        return {
-          id: spotRef.id,
-          ...createSpotDto,
-          status: SpotStatus.available,
-        };
-      });
-    } catch (error) {
-      console.error('Transaction failed: ', error.message);
-      throw new Error(error.message);
+    if (!eventDoc.exists) {
+      throw new NotFoundException('Event not found');
     }
+
+    // Check the total number of spots for the event
+    const totalSpots = await this.getTotalSpotsForEvent(createSpotDto.eventId);
+
+    if (totalSpots >= 100) {
+      throw new ConflictException(
+        'The maximum number of spots for this event has been reached.',
+      );
+    }
+
+    const spotRef = firestore.collection('spots').doc();
+    await spotRef.set({
+      ...createSpotDto,
+      status: SpotStatus.available,
+      type: createSpotDto.type,
+    });
+
+    return { id: spotRef.id, ...createSpotDto, status: SpotStatus.available };
   }
 
   async findAll(eventId: string) {
@@ -67,7 +59,7 @@ export class SpotsService {
     const spotDoc = await spotRef.get();
 
     if (!spotDoc.exists || spotDoc.data()?.eventId !== eventId) {
-      throw new Error('Spot not found');
+      throw new NotFoundException('Spot not found');
     }
 
     return { id: spotDoc.id, ...spotDoc.data() };
@@ -79,10 +71,19 @@ export class SpotsService {
     const spotDoc = await spotRef.get();
 
     if (!spotDoc.exists || spotDoc.data()?.eventId !== eventId) {
-      throw new Error('Spot not found');
+      throw new NotFoundException('Spot not found');
     }
 
     await spotRef.delete();
     return { id: spotId };
+  }
+
+  private async getTotalSpotsForEvent(eventId: string): Promise<number> {
+    const spotsSnapshot = await this.firestoreService
+      .getFirestore()
+      .collection('spots')
+      .where('eventId', '==', eventId)
+      .get();
+    return spotsSnapshot.size;
   }
 }

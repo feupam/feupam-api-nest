@@ -38,11 +38,13 @@ GET http://localhost:3000/events/{{eventId}}/spots
 
 ###
 # @name createSpot
-POST http://localhost:3000/events/{{eventId}}/spots
+POST http://localhost:3000/spots
 Content-Type: application/json
 
 {
-    "name": "A20"
+    "name": "Spot A",
+    "eventId": "event123",
+    "type": "user_spot" // ou "staff_spot"
 }
 
 ###
@@ -89,3 +91,61 @@ Content-Type: application/json
 ###
 # @name deleteUser
 DELETE http://localhost:3000/users/{{userId}}
+
+###
+# @name createStaff
+POST http://localhost:3000/staff
+Content-Type: application/json
+
+{
+    "name": "New Staff Member",
+    "email": "staff@example.com"
+}
+
+###
+# @name reserveSpotForUser
+POST http://localhost:3000/users/reserve
+Content-Type: application/json
+
+{
+    "userId": "user123",
+    "eventId": "event456",
+    "spots": ["spot1", "spot2"],
+    "ticket_kind": "full",
+    "email": "user@example.com"
+}
+
+###
+# @name reserveSpotForStaff
+POST http://localhost:3000/staff/reserve
+Content-Type: application/json
+
+{
+    "staffId": "staff123",
+    "eventId": "event456",
+    "spots": ["spot1", "spot2"],
+    "ticket_kind": "full",
+    "email": "staff@example.com"
+}
+
+###
+# @name findAllStaff
+GET http://localhost:3000/staff
+
+###
+# @name findOneStaff
+GET http://localhost:3000/staff/staff123
+
+###
+# @name updateStaff
+PUT http://localhost:3000/staff/staff123
+Content-Type: application/json
+
+{
+    "name": "Updated Staff Member",
+    "email": "updatedstaff@example.com"
+}
+
+###
+# @name removeStaff
+DELETE http://localhost:3000/staff/staff123

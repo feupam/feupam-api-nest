@@ -14,3 +14,8 @@ export enum TicketKind {
   FULL = 'full',
   HALF = 'half',
 }
+
+export enum SpotType {
+  USER = 'user_spot',
+  STAFF = 'staff_spot',
+}
