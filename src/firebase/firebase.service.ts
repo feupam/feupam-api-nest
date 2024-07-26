@@ -7,7 +7,7 @@ export class FirestoreService {
 
   constructor() {
     admin.initializeApp({
-      credential: admin.credential.cert('federa_api.json'),
+      credential: admin.credential.cert('firebase_key.json'),
       databaseURL: 'https://federa-api.firebaseio.com',
     });
     this.firestore = admin.firestore();

@@ -6,7 +6,7 @@ POST http://localhost:3000/events
 Content-Type: application/json
 
 {
-    "name": "New Event",
+    "name": "New Event12",
     "description": "Federa2024",
     "date": "2024-06-22T00:00:00Z",
     "price": 30000
@@ -42,7 +42,7 @@ POST http://localhost:3000/events/{{eventId}}/spots
 Content-Type: application/json
 
 {
-    "name": "A2"
+    "name": "A20"
 }
 
 ###

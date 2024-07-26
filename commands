@@ -1,3 +1,18 @@
-npm run start:dev
-
+# gerar pastas com crud
 nest g resource
+
+# run local
+npm run start:dev
+firebase login
+# make backup firebase
+npx -p node-firestore-import-export firestore-import -a federa_api.json -b backup.json
+npx firestore-export --accountCredentials federa_api.json --backupFile backup.json
+
+# deploy model on fly
+flyctl launch
+
+flyctl auth login
+flyctl deploy
+
+
+cat aqui.json | jq -c '. | to_entries | .[] | {(.key): .value}' > formatado.json
