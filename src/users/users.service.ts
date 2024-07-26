@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { FirestoreService } from '../firebase/firebase.service';
-import { ReserveSpotDto } from '../events/dto/reserve-spot.dto';
+import { ReserveSpotDto } from './dto/reserve-spot.dto';
 import { SpotStatus, TicketStatus } from '../spots/dto/enum';
 
 @Injectable()
@@ -108,8 +108,9 @@ export class UsersService {
         return tickets;
       });
     } catch (error) {
-      console.error('Transaction failed: ', error.message);
-      throw new Error(error.message);
+      const err = error as Error;
+      console.error('Transaction failed: ', err.message);
+      throw new Error(err.message);
     }
   }
 }

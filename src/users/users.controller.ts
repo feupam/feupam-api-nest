@@ -8,7 +8,7 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
-import { ReserveSpotDto } from '../events/dto/reserve-spot.dto'; // Ajuste o caminho conforme sua estrutura de pastas
+import { ReserveSpotDto } from './dto/reserve-spot.dto'; // Ajuste o caminho conforme sua estrutura de pastas
 
 @Controller('users')
 export class UsersController {
@@ -26,23 +26,24 @@ export class UsersController {
       );
       return { success: true, tickets };
     } catch (error) {
-      if (error.message.includes('User already has a reservation')) {
+      const err = error as Error;
+      if (err.message.includes('User already has a reservation')) {
         throw new ForbiddenException(
           'You already have a reservation for one of the requested spots.',
         );
       }
-      if (error.message.includes('Event not found')) {
+      if (err.message.includes('Event not found')) {
         throw new NotFoundException('Event not found.');
       }
-      if (error.message.includes('Spots not found')) {
+      if (err.message.includes('Spots not found')) {
         throw new NotFoundException('One or more spots not found.');
       }
-      if (error.message.includes('The maximum number of spots')) {
+      if (err.message.includes('The maximum number of spots')) {
         throw new ConflictException(
           'The maximum number of spots for this event has been reached.',
         );
       }
-      throw new Error(error.message);
+      throw new Error(err.message);
     }
   }
 }
