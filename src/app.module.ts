@@ -1,12 +1,12 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { PrismaModule } from './prisma/prisma.module';
 import { SpotsModule } from './spots/spots.module';
 import { EventsModule } from './events/events.module';
+import { FirebaseModule } from './firebase/firebase.module';
 
 @Module({
-  imports: [PrismaModule, SpotsModule, EventsModule],
+  imports: [FirebaseModule, SpotsModule, EventsModule],
   controllers: [AppController],
   providers: [AppService],
 })
