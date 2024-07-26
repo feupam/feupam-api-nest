@@ -1,5 +1,5 @@
 import { IsArray, IsEnum, IsString, IsNotEmpty } from 'class-validator';
-import { TicketKind } from '../../spots/dto/enum;
+import { TicketKind } from '../../spots/dto/enum';
 
 export class ReserveSpotForStaffDto {
   @IsString()

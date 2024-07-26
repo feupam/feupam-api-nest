@@ -152,6 +152,9 @@ export class StaffService {
       .count()
       .get();
 
-    return userSpotsSnapshot.count + staffSpotsSnapshot.count;
+    const userSpotsCount = userSpotsSnapshot.size;
+    const staffSpotsCount = staffSpotsSnapshot.size;
+
+    return userSpotsCount + staffSpotsCount;
   }
 }
