@@ -1,13 +1,17 @@
 import { Injectable } from '@nestjs/common';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
-import { FirestoreService } from '../firebase/firebase.service';
+import { FirestoreService } from '../firebase/firebase.service'; // Assumindo que você tem um serviço FirestoreService configurado
 import { ReserveSpotDto } from './dto/reserve-spot.dto';
-import { SpotStatus, TicketStatus } from '../spots/dto/enum';
+import { SpotStatus, TicketStatus } from '../spots/dto/enum'; // Defina seus enums SpotStatus e TicketStatus
+import { UsersService } from '../users/users.service'; // Serviço de usuários
 
 @Injectable()
 export class EventsService {
-  constructor(private firestoreService: FirestoreService) {}
+  constructor(
+    private firestoreService: FirestoreService,
+    private usersService: UsersService,
+  ) {}
 
   async create(createEventDto: CreateEventDto) {
     const eventRef = this.firestoreService.firestore.collection('events').doc();
@@ -55,72 +59,92 @@ export class EventsService {
     return { id };
   }
 
-  async reserveSpot(dto: ReserveSpotDto & { eventId: string }) {
-    const spotsSnapshot = await this.firestoreService.firestore
-      .collection('spots')
-      .where('eventId', '==', dto.eventId)
-      .where('name', 'in', dto.spots)
-      .get();
-
-    const spots = spotsSnapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
-
-    if (spots.length !== dto.spots.length) {
-      const foundSpotsName = spots.map((spot) => spot.id);
-      const notFoundSpotsName = dto.spots.filter(
-        (spotName) => !foundSpotsName.includes(spotName),
-      );
-      throw new Error(`Spots ${notFoundSpotsName.join(', ')} not found`);
-    }
-
-    const batch = this.firestoreService.firestore.batch();
-
-    spots.forEach((spot) => {
-      const reservationHistoryRef = this.firestoreService.firestore
-        .collection('reservationHistory')
-        .doc();
-      batch.set(reservationHistoryRef, {
-        spotId: spot.id,
-        ticketKind: dto.ticket_kind,
-        email: dto.email,
-        status: TicketStatus.reserved,
-        createAt: new Date(),
-        updateAt: new Date(),
-      });
-
-      const spotRef = this.firestoreService.firestore
-        .collection('spots')
-        .doc(spot.id);
-      batch.update(spotRef, { status: SpotStatus.reserved });
-    });
-
-    const ticketRefs = spots.map((spot) => {
-      const ticketRef = this.firestoreService.firestore
-        .collection('tickets')
-        .doc();
-      batch.set(ticketRef, {
-        spotId: spot.id,
-        ticketKind: dto.ticket_kind,
-        email: dto.email,
-        createAt: new Date(),
-        updateAt: new Date(),
-      });
-      return ticketRef;
-    });
+  async reserveSpot(dto: ReserveSpotDto & { eventId: string; userId: string }) {
+    const firestore = this.firestoreService.getFirestore();
 
     try {
-      await batch.commit();
-      const tickets = await Promise.all(
-        ticketRefs.map((ref) =>
-          ref.get().then((doc) => ({ id: doc.id, ...doc.data() })),
-        ),
-      );
-      return tickets;
-    } catch (e) {
-      console.error('Error reserving spots:', e);
-      throw e;
+      return await firestore.runTransaction(async (transaction) => {
+        // Obter os spots disponíveis para o evento e verificar se todos existem
+        const spotsSnapshot = await transaction.get(
+          firestore
+            .collection('spots')
+            .where('eventId', '==', dto.eventId)
+            .where('name', 'in', dto.spots),
+        );
+
+        const spots = spotsSnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        if (spots.length !== dto.spots.length) {
+          const foundSpotsName = spots.map((spot) => spot.id);
+          const notFoundSpotsName = dto.spots.filter(
+            (spotName) => !foundSpotsName.includes(spotName),
+          );
+          throw new Error(`Spots ${notFoundSpotsName.join(', ')} not found`);
+        }
+
+        // Verificar se o usuário já tem uma reserva para o evento
+        const userReservations = await transaction.get(
+          firestore
+            .collection('reservationHistory')
+            .where(
+              'spotId',
+              'in',
+              spots.map((spot) => spot.id),
+            )
+            .where('userId', '==', dto.userId),
+        );
+
+        if (!userReservations.empty) {
+          throw new Error(
+            'User already has a reservation for one of the requested spots',
+          );
+        }
+
+        // Atualizar a reserva e o status dos spots
+        const batch = firestore.batch();
+        const ticketRefs = [];
+
+        spots.forEach((spot) => {
+          const reservationHistoryRef = firestore
+            .collection('reservationHistory')
+            .doc();
+          batch.set(reservationHistoryRef, {
+            spotId: spot.id,
+            ticketKind: dto.ticket_kind,
+            email: dto.email,
+            status: TicketStatus.reserved,
+            userId: dto.userId,
+          });
+
+          const spotRef = firestore.collection('spots').doc(spot.id);
+          batch.update(spotRef, { status: SpotStatus.reserved });
+
+          const ticketRef = firestore.collection('tickets').doc();
+          ticketRefs.push(ticketRef);
+          batch.set(ticketRef, {
+            spotId: spot.id,
+            ticketKind: dto.ticket_kind,
+            email: dto.email,
+            userId: dto.userId,
+          });
+        });
+
+        await batch.commit();
+
+        // Retornar os tickets criados
+        const tickets = await Promise.all(
+          ticketRefs.map((ref) =>
+            ref.get().then((doc) => ({ id: doc.id, ...doc.data() })),
+          ),
+        );
+
+        return tickets;
+      });
+    } catch (error) {
+      console.error('Transaction failed: ', error.message);
+      throw new Error(error.message);
     }
   }
 }

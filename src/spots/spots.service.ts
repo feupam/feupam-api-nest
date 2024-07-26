@@ -10,8 +10,8 @@ export class SpotsService {
   async create(createSpotDto: CreateSpotDto & { eventId: string }) {
     const firestore = this.firestoreService.getFirestore();
 
-    return firestore
-      .runTransaction(async (transaction) => {
+    try {
+      return await firestore.runTransaction(async (transaction) => {
         const eventRef = firestore
           .collection('events')
           .doc(createSpotDto.eventId);
@@ -26,7 +26,7 @@ export class SpotsService {
           .where('eventId', '==', createSpotDto.eventId);
         const spotsSnapshot = await transaction.get(spotsRef);
 
-        if (spotsSnapshot.size >= 4) {
+        if (spotsSnapshot.size >= 100) {
           throw new Error('Spot limit reached for this event');
         }
 
@@ -44,11 +44,11 @@ export class SpotsService {
           ...createSpotDto,
           status: SpotStatus.available,
         };
-      })
-      .catch((error) => {
-        console.error('Transaction failed: ', error.message);
-        throw new Error(error.message);
       });
+    } catch (error) {
+      console.error('Transaction failed: ', error.message);
+      throw new Error(error.message);
+    }
   }
 
   async findAll(eventId: string) {

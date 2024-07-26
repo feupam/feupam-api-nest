@@ -1,12 +1,11 @@
 import {
   Controller,
-  Get,
   Post,
-  Body,
-  Param,
+  Get,
+  Put,
   Delete,
-  Patch,
-  HttpCode,
+  Param,
+  Body,
 } from '@nestjs/common';
 import { EventsService } from './events.service';
 import { CreateEventDto } from './dto/create-event.dto';
@@ -15,36 +14,47 @@ import { ReserveSpotDto } from './dto/reserve-spot.dto';
 
 @Controller('events')
 export class EventsController {
-  constructor(private eventsService: EventsService) {}
+  constructor(private readonly eventsService: EventsService) {}
 
   @Post()
-  create(@Body() createEventDto: CreateEventDto) {
+  async create(@Body() createEventDto: CreateEventDto) {
     return this.eventsService.create(createEventDto);
   }
 
   @Get()
-  findAll() {
+  async findAll() {
     return this.eventsService.findAll();
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
+  async findOne(@Param('id') id: string) {
     return this.eventsService.findOne(id);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateEventDto: UpdateEventDto) {
+  @Put(':id')
+  async update(
+    @Param('id') id: string,
+    @Body() updateEventDto: UpdateEventDto,
+  ) {
     return this.eventsService.update(id, updateEventDto);
   }
 
-  @HttpCode(204)
   @Delete(':id')
-  remove(@Param('id') id: string) {
+  async remove(@Param('id') id: string) {
     return this.eventsService.remove(id);
   }
 
-  @Post(':id/reserve')
-  reserveSpots(@Body() dto: ReserveSpotDto, @Param('id') eventId: string) {
-    return this.eventsService.reserveSpot({ ...dto, eventId });
+  @Post(':eventId/reserve-spot')
+  async reserveSpot(
+    @Param('eventId') eventId: string,
+    @Body() reserveSpotDto: ReserveSpotDto,
+  ) {
+    // Assumindo que o userId vem do JWT ou algum outro método de autenticação
+    const userId = 'user-id-placeholder'; // Substitua com a forma correta de obter o ID do usuário
+    return this.eventsService.reserveSpot({
+      ...reserveSpotDto,
+      eventId,
+      userId,
+    });
   }
 }

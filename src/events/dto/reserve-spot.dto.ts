@@ -4,4 +4,5 @@ export class ReserveSpotDto {
   spots: string[];
   ticket_kind: TicketKind;
   email: string;
+  eventId: string;
 }

@@ -9,3 +9,8 @@ export enum TicketStatus {
   used = 'used',
   cancelled = 'cancelled',
 }
+
+export enum TicketKind {
+  FULL = 'full',
+  HALF = 'half',
+}

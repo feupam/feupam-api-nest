@@ -58,3 +58,28 @@ Content-Type: application/json
     "ticket_kind": "full",
     "email": "test@test.com"
 }
+
+###
+# @name createUser
+POST http://localhost:3000/users
+Content-Type: application/json
+
+{
+    "name": "John Doe",
+    "email": "john.doe@example.com"
+}
+###
+# @name getUserById
+GET http://localhost:3000/users/{userId}
+###
+# @name updateUser
+PUT http://localhost:3000/users/{userId}
+Content-Type: application/json
+
+{
+    "name": "Updated Name",
+    "email": "updated.email@example.com"
+}
+###
+# @name deleteUser
+DELETE http://localhost:3000/users/{userId}
