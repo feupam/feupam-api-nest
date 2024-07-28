@@ -8,7 +8,7 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
-import { ReserveSpotDto } from './dto/reserve-spot.dto'; // Ajuste o caminho conforme sua estrutura de pastas
+import { ReserveSpotDto } from './dto/reserve-spot-by-events.dto';
 
 @Controller('users')
 export class UsersController {

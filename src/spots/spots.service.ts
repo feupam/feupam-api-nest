@@ -5,15 +5,13 @@ import {
 } from '@nestjs/common';
 import { FirestoreService } from '../firebase/firebase.service';
 import { CreateSpotDto } from './dto/create-spot.dto';
-import { SpotStatus, SpotType } from './dto/enum';
+import { SpotStatus } from './dto/enum';
 
 @Injectable()
 export class SpotsService {
   constructor(private firestoreService: FirestoreService) {}
 
-  async create(
-    createSpotDto: CreateSpotDto & { eventId: string; type: SpotType },
-  ) {
+  async create(createSpotDto: CreateSpotDto & { eventId: string }) {
     const firestore = this.firestoreService.getFirestore();
 
     // Verify that the event exists
@@ -32,7 +30,7 @@ export class SpotsService {
         'The maximum number of spots for this event has been reached.',
       );
     }
-
+    console.log(createSpotDto);
     const spotRef = firestore.collection('spots').doc();
     await spotRef.set({
       ...createSpotDto,

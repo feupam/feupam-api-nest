@@ -3,6 +3,12 @@ import * as admin from 'firebase-admin';
 
 @Injectable()
 export class FirestoreService {
+  batch() {
+    throw new Error('Method not implemented.');
+  }
+  collection(arg0: string) {
+    throw new Error('Method not implemented.');
+  }
   public firestore: admin.firestore.Firestore;
 
   constructor() {

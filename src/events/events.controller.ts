@@ -6,10 +6,14 @@ import {
   Delete,
   Param,
   Body,
+  HttpException,
+  HttpStatus,
+  HttpCode,
 } from '@nestjs/common';
 import { EventsService } from './events.service';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
+import { ReserveSpotDto } from '../users/dto/reserve-spot-by-events.dto';
 
 @Controller('events')
 export class EventsController {
@@ -38,8 +42,25 @@ export class EventsController {
     return this.eventsService.update(id, updateEventDto);
   }
 
+  @HttpCode(204)
   @Delete(':id')
-  async remove(@Param('id') id: string) {
+  remove(@Param('id') id: string) {
     return this.eventsService.remove(id);
+  }
+
+  @Post(':id/reserve-spot')
+  reserveSpots(@Body() dto: ReserveSpotDto, @Param('id') eventId: string) {
+    try {
+      return this.eventsService.reserveSpot({ ...dto, eventId });
+    } catch (error) {
+      const err = error as Error;
+      if (err.message.includes('Spots') || err.message.includes('not found')) {
+        throw new HttpException(err.message, HttpStatus.NOT_FOUND);
+      } else if (err.message.includes('Spot already reserved')) {
+        throw new HttpException(err.message, HttpStatus.CONFLICT);
+      } else {
+        throw new HttpException(err.message, HttpStatus.INTERNAL_SERVER_ERROR);
+      }
+    }
   }
 }

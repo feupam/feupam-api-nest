@@ -20,7 +20,7 @@ Content-Type: application/json
 GET http://localhost:3000/events/{{eventId}}
 
 ###
-PATCH http://localhost:3000/events/{{eventId}}
+PUT http://localhost:3000/events/{{eventId}}
 Content-Type: application/json
 
 {
@@ -36,15 +36,14 @@ DELETE http://localhost:3000/events/{{eventId}}
 ###
 GET http://localhost:3000/events/{{eventId}}/spots
 
-###
+###  
 # @name createSpot
-POST http://localhost:3000/spots
+POST http://localhost:3000/events/{{eventId}}/spots
 Content-Type: application/json
 
 {
     "name": "Spot A",
-    "eventId": "event123",
-    "type": "user_spot" // ou "staff_spot"
+    "type": "user_spot"
 }
 
 ###
@@ -52,7 +51,7 @@ Content-Type: application/json
 @spotName = {{ createSpot.response.body.name }}
 
 ###
-POST http://localhost:3000/events/{{eventId}}/reserve
+POST http://localhost:3000/events/{{eventId}}/reserve-spot
 Content-Type: application/json
 
 {

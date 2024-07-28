@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { FirestoreService } from '../firebase/firebase.service';
-import { ReserveSpotDto } from './dto/reserve-spot.dto';
+import { ReserveSpotDto } from './dto/reserve-spot-by-events.dto';
 import { SpotStatus, TicketStatus } from '../spots/dto/enum';
 
 @Injectable()
