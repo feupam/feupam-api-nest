@@ -4,6 +4,7 @@ import { ReserveSpotDto } from './dto/reserve-spot-by-events.dto';
 import { SpotStatus, TicketStatus } from '../spots/dto/enum';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { EventType, UserType, Gender } from './dto/enum';
 
 @Injectable()
 export class UsersService {
@@ -63,6 +64,9 @@ export class UsersService {
           throw new Error('Event not found');
         }
 
+        const eventData = eventDoc.data();
+        const eventType = eventData.type as EventType;
+
         // Verifique se os spots existem e estão disponíveis
         const spotsQuery = firestore
           .collection('spots')
@@ -101,15 +105,38 @@ export class UsersService {
           );
         }
 
-        // Verifique se o número total de spots não ultrapassa o limite
-        const totalSpotsQuery = firestore
-          .collection('spots')
-          .where('eventId', '==', dto.eventId);
-        const totalSpotsSnapshot = await transaction.get(totalSpotsQuery);
+        const maxSpotsExceeded = (type: UserType, gender?: Gender) => {
+          if (eventType === EventType.GENDER_SPECIFIC) {
+            if (gender) {
+              const genderSpotsQuery = firestore
+                .collection('spots')
+                .where('eventId', '==', dto.eventId)
+                .where('userType', '==', type)
+                .where('gender', '==', gender);
+              return transaction.get(genderSpotsQuery).then((snapshot) => {
+                return (
+                  snapshot.size >=
+                  eventData[`max${type.toUpperCase()}${gender.toUpperCase()}`]
+                );
+              });
+            }
+            throw new Error(
+              'Gender must be specified for gender-specific events',
+            );
+          } else {
+            const totalSpotsQuery = firestore
+              .collection('spots')
+              .where('eventId', '==', dto.eventId)
+              .where('userType', '==', type);
+            return transaction.get(totalSpotsQuery).then((snapshot) => {
+              return snapshot.size >= eventData[`max${type.toUpperCase()}`];
+            });
+          }
+        };
 
-        if (totalSpotsSnapshot.size >= 100) {
+        if (await maxSpotsExceeded(dto.userType, dto.gender)) {
           throw new Error(
-            'The maximum number of spots for this event has been reached',
+            'The maximum number of spots for this type of user has been reached',
           );
         }
 
@@ -126,6 +153,8 @@ export class UsersService {
             email: dto.email,
             status: TicketStatus.reserved,
             userId,
+            userType: dto.userType,
+            gender: dto.gender,
           });
 
           const spotRef = firestore.collection('spots').doc(spot.id);

@@ -1,17 +1,25 @@
-import { IsArray, IsEnum, IsString, IsEmail } from 'class-validator';
+import { IsArray, IsEnum, IsOptional, IsString } from 'class-validator';
 import { TicketKind } from '../../spots/dto/enum';
+import { UserType, Gender } from './enum';
 
 export class ReserveSpotDto {
+  @IsString()
+  eventId: string;
+
   @IsArray()
   @IsString({ each: true })
-  spots: string[]; // Nomes dos spots a serem reservados
+  spots: string[]; // IDs dos spots a serem reservados
 
   @IsEnum(TicketKind)
-  ticket_kind: TicketKind;
-
-  @IsEmail()
-  email: string;
+  ticket_kind: TicketKind; // Tipo de ticket
 
   @IsString()
-  eventId: string; // Adicionado para identificar o evento
+  email: string; // Email do usuário
+
+  @IsEnum(UserType)
+  userType: UserType; // Tipo de usuário (client ou staff)
+
+  @IsOptional()
+  @IsEnum(Gender)
+  gender?: Gender; // Gênero do usuário (opcional, necessário para eventos gender_specific)
 }

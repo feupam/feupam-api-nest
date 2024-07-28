@@ -55,9 +55,11 @@ POST http://localhost:3000/events/{{eventId}}/reserve-spot
 Content-Type: application/json
 
 {
-    "spots": ["{{ spotName }}"],
-    "ticket_kind": "full",
-    "email": "test@test.com"
+  "spots": ["Spot A"],
+  "ticket_kind": "full",
+  "email": "user@example.com",
+  "userType": "CLIENT",
+  "gender": "MALE"
 }
 
 
@@ -67,10 +69,11 @@ POST http://localhost:3000/users
 Content-Type: application/json
 
 {
-    "name": "John Doe",
-    "email": "john.doe@example.com"
+  "userId": "user123",
+  "email": "user@example.com",
+  "userType": "CLIENT",
+  "gender": "MALE"
 }
-
 ###
 
 @userId = {{ createUser.response.body.id }}
@@ -91,21 +94,7 @@ Content-Type: application/json
 # @name deleteUser
 DELETE http://localhost:3000/users/{{userId}}
 
-###
-# @name createStaff
-POST http://localhost:3000/staff
-Content-Type: application/json
-
-{
-    "name": "New Staff Member",
-    "email": "staff@example.com"
-}
-###
-
-@staffId = {{ createStaff.response.body.id }}
-
-###
-# @name reserveSpotForUser
+### Criação de Reserva
 POST http://localhost:3000/users/reserve
 Content-Type: application/json
 
@@ -117,37 +106,63 @@ Content-Type: application/json
     "email": "user@example.com"
 }
 
-###
-# @name reserveSpotForStaff
-POST http://localhost:3000/staff/reserve
-Content-Type: application/json
+# ###
+# # @name createStaff
+# POST http://localhost:3000/staff
+# Content-Type: application/json
 
-{
-    "staffId": "staff123",
-    "eventId": "event456",
-    "spots": ["spot1", "spot2"],
-    "ticket_kind": "full",
-    "email": "staff@example.com"
-}
+# {
+#     "name": "New Staff Member",
+#     "email": "staff@example.com"
+# }
+# ###
 
-###
-# @name findAllStaff
-GET http://localhost:3000/staff
+# @staffId = {{ createStaff.response.body.id }}
 
-###
-# @name findOneStaff
-GET http://localhost:3000/staff/{{staffId}}
+# ###
+# # @name reserveSpotForUser
+# POST http://localhost:3000/users/reserve
+# Content-Type: application/json
 
-###
-# @name updateStaff
-PUT http://localhost:3000/staff/{{staffId}}
-Content-Type: application/json
+# {
+#     "userId": "user123",
+#     "eventId": "event456",
+#     "spots": ["spot1", "spot2"],
+#     "ticket_kind": "full",
+#     "email": "user@example.com"
+# }
 
-{
-    "name": "Updated Staff Member",
-    "email": "updatedstaff@example.com"
-}
+# ###
+# # @name reserveSpotForStaff
+# POST http://localhost:3000/staff/reserve
+# Content-Type: application/json
 
-###
-# @name removeStaff
-DELETE http://localhost:3000/staff/{{staffId}}
+# {
+#     "staffId": "staff123",
+#     "eventId": "event456",
+#     "spots": ["spot1", "spot2"],
+#     "ticket_kind": "full",
+#     "email": "staff@example.com"
+# }
+
+# ###
+# # @name findAllStaff
+# GET http://localhost:3000/staff
+
+# ###
+# # @name findOneStaff
+# GET http://localhost:3000/staff/{{staffId}}
+
+# ###
+# # @name updateStaff
+# PUT http://localhost:3000/staff/{{staffId}}
+# Content-Type: application/json
+
+# {
+#     "name": "Updated Staff Member",
+#     "email": "updatedstaff@example.com"
+# }
+
+# ###
+# # @name removeStaff
+# DELETE http://localhost:3000/staff/{{staffId}}

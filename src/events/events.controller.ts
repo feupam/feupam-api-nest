@@ -49,16 +49,35 @@ export class EventsController {
   }
 
   @Post(':id/reserve-spot')
-  reserveSpots(@Body() dto: ReserveSpotDto, @Param('id') eventId: string) {
+  async reserveSpots(
+    @Body() dto: ReserveSpotDto,
+    @Param('id') eventId: string,
+  ) {
+    // Adicione o eventId e ajuste o DTO com informações adicionais
+    const updatedDto = {
+      ...dto,
+      eventId,
+      userType: dto.userType, // Garanta que userType esteja presente
+      gender: dto.gender,
+    };
+    console.log('TEST');
+    console.log(updatedDto);
     try {
-      return this.eventsService.reserveSpot({ ...dto, eventId });
+      // Passa o DTO atualizado para o serviço
+      const reservation = await this.eventsService.reserveSpot(updatedDto);
+      return reservation;
     } catch (error) {
       const err = error as Error;
+
+      // Trate erros específicos
       if (err.message.includes('Spots') || err.message.includes('not found')) {
         throw new HttpException(err.message, HttpStatus.NOT_FOUND);
-      } else if (err.message.includes('Spot already reserved')) {
+      } else if (err.message.includes('User already has a reservation')) {
         throw new HttpException(err.message, HttpStatus.CONFLICT);
+      } else if (err.message.includes('exceeds the limit')) {
+        throw new HttpException(err.message, HttpStatus.BAD_REQUEST);
       } else {
+        // Erro genérico
         throw new HttpException(err.message, HttpStatus.INTERNAL_SERVER_ERROR);
       }
     }
