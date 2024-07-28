@@ -56,15 +56,12 @@ export class EventsService {
   }
 
   async reserveSpot(dto: ReserveSpotDto & { eventId: string }) {
-    console.log(dto);
-    console.log(dto.eventId);
     const spotsSnapshot = await this.firestoreService.firestore
       .collection('spots')
       .where('eventId', '==', dto.eventId)
       .where('name', 'in', dto.spots)
       .get();
-    console.log(spotsSnapshot);
-    console.log('test');
+
     const spots = spotsSnapshot.docs.map((doc) => ({
       id: doc.id,
       ...doc.data(),

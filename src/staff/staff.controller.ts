@@ -27,6 +27,8 @@ export class StaffController {
 
   @Get(':id')
   findOne(@Param('id') id: string) {
+    console.log('TESTSSSSSS');
+    console.log(id);
     return this.staffService.findOne(id);
   }
 

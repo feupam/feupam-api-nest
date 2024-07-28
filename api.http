@@ -80,7 +80,7 @@ Content-Type: application/json
 GET http://localhost:3000/users/{{userId}}
 ###
 # @name updateUser
-PUT http://localhost:3000/users/{{userId}}
+PATCH  http://localhost:3000/users/{{userId}}
 Content-Type: application/json
 
 {
@@ -100,6 +100,9 @@ Content-Type: application/json
     "name": "New Staff Member",
     "email": "staff@example.com"
 }
+###
+
+@staffId = {{ createStaff.response.body.id }}
 
 ###
 # @name reserveSpotForUser
@@ -133,11 +136,11 @@ GET http://localhost:3000/staff
 
 ###
 # @name findOneStaff
-GET http://localhost:3000/staff/staff123
+GET http://localhost:3000/staff/{{staffId}}
 
 ###
 # @name updateStaff
-PUT http://localhost:3000/staff/staff123
+PUT http://localhost:3000/staff/{{staffId}}
 Content-Type: application/json
 
 {
@@ -147,4 +150,4 @@ Content-Type: application/json
 
 ###
 # @name removeStaff
-DELETE http://localhost:3000/staff/staff123
+DELETE http://localhost:3000/staff/{{staffId}}

@@ -1,11 +1,55 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { FirestoreService } from '../firebase/firebase.service';
 import { ReserveSpotDto } from './dto/reserve-spot-by-events.dto';
 import { SpotStatus, TicketStatus } from '../spots/dto/enum';
+import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 @Injectable()
 export class UsersService {
   constructor(private firestoreService: FirestoreService) {}
+
+  private userCollection = this.firestoreService.firestore.collection('users');
+
+  async create(createUserDto: CreateUserDto) {
+    const userRef = this.firestoreService.firestore.collection('users').doc();
+    await userRef.set({
+      ...createUserDto,
+      createdAt: new Date(),
+    });
+    return { id: userRef.id, ...createUserDto };
+  }
+
+  async findAll() {
+    const snapshot = await this.firestoreService.firestore
+      .collection('users')
+      .get();
+    return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+  }
+
+  async findOne(id: string) {
+    const userRef = this.firestoreService.firestore.collection('users').doc(id);
+    const doc = await userRef.get();
+    if (!doc.exists) {
+      throw new NotFoundException('User not found');
+    }
+    return { id: doc.id, ...doc.data() };
+  }
+
+  async update(id: string, updateUserDto: UpdateUserDto) {
+    const userRef = this.firestoreService.firestore.collection('users').doc(id);
+    await userRef.update({
+      ...updateUserDto,
+      updatedAt: new Date(),
+    });
+    return { id, ...updateUserDto };
+  }
+
+  async remove(id: string) {
+    const userRef = this.firestoreService.firestore.collection('users').doc(id);
+    await userRef.delete();
+    return { id };
+  }
 
   async reserveSpot(userId: string, dto: ReserveSpotDto) {
     const firestore = this.firestoreService.getFirestore();
