@@ -30,7 +30,6 @@ export class SpotsService {
         'The maximum number of spots for this event has been reached.',
       );
     }
-    console.log(createSpotDto);
     const spotRef = firestore.collection('spots').doc();
     await spotRef.set({
       ...createSpotDto,

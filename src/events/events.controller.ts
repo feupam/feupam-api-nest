@@ -60,8 +60,6 @@ export class EventsController {
       userType: dto.userType, // Garanta que userType esteja presente
       gender: dto.gender,
     };
-    console.log('TEST');
-    console.log(updatedDto);
     try {
       // Passa o DTO atualizado para o serviço
       const reservation = await this.eventsService.reserveSpot(updatedDto);

@@ -14,13 +14,31 @@ import { ReserveSpotDto } from './dto/reserve-spot.dto';
 export class EventsService {
   constructor(private firestoreService: FirestoreService) {}
 
-  async create(createEventDto: CreateEventDto) {
-    const eventRef = this.firestoreService.firestore.collection('events').doc();
-    await eventRef.set({
-      ...createEventDto,
-      date: new Date(createEventDto.date),
-    });
-    return { id: eventRef.id, ...createEventDto };
+  async create(dto: CreateEventDto) {
+    const firestore = this.firestoreService.firestore;
+    const eventRef = firestore.collection('events').doc();
+
+    // Dados do evento incluindo tipo e vagas
+    const eventData = {
+      name: dto.name,
+      date: dto.date,
+      location: dto.location,
+      eventType: dto.eventType,
+      maxClientMale: dto.maxClientMale || 0,
+      maxClientFemale: dto.maxClientFemale || 0,
+      maxStaffMale: dto.maxStaffMale || 0,
+      maxStaffFemale: dto.maxStaffFemale || 0,
+      maxGeneralSpots: dto.maxGeneralSpots || 0, // Para eventos de vagas gerais
+    };
+
+    try {
+      await eventRef.set(eventData);
+      return { id: eventRef.id, ...eventData };
+    } catch (e) {
+      throw new BadRequestException(
+        'An error occurred while creating the event',
+      );
+    }
   }
 
   async findAll() {
@@ -90,22 +108,58 @@ export class EventsService {
         .where('name', 'in', dto.spots);
       const spotsSnapshot = await spotsQuery.get();
 
-      const spots = spotsSnapshot.docs.map((doc) => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          gender: data.gender || Gender.MALE,
-        };
-      });
+      const existingSpots = spotsSnapshot.docs.map((doc) => ({
+        id: doc.id,
+        name: doc.data().name,
+        gender: doc.data().gender || Gender.MALE,
+      }));
 
-      if (spots.length !== dto.spots.length) {
-        const foundSpotsName = spots.map((spot) => spot.id);
-        const notFoundSpotsName = dto.spots.filter(
-          (spotName) => !foundSpotsName.includes(spotName),
-        );
-        throw new BadRequestException(
-          `Spots ${notFoundSpotsName.join(', ')} not found`,
-        );
+      const foundSpotsName = existingSpots.map((spot) => spot.name);
+      const notFoundSpotsName = dto.spots.filter(
+        (spotName) => !foundSpotsName.includes(spotName),
+      );
+
+      // Crie novos spots se eles não existirem
+      for (const spotName of notFoundSpotsName) {
+        const spotNumber = parseInt(spotName.match(/\d+/)?.[0] || '0', 10);
+        let maxSpots = 0;
+
+        if (eventData.eventType === EventType.GENERAL) {
+          maxSpots = eventData.maxGeneralSpots;
+        } else if (eventData.eventType === EventType.GENDER_SPECIFIC) {
+          if (dto.userType === UserType.CLIENT) {
+            maxSpots =
+              dto.gender === Gender.MALE
+                ? eventData.maxClientMale
+                : eventData.maxClientFemale;
+          } else if (dto.userType === UserType.STAFF) {
+            maxSpots =
+              dto.gender === Gender.MALE
+                ? eventData.maxStaffMale
+                : eventData.maxStaffFemale;
+          }
+        }
+
+        if (spotNumber > maxSpots) {
+          throw new BadRequestException(
+            `Spot number ${spotNumber} exceeds the total limit of ${maxSpots}`,
+          );
+        }
+
+        const newSpotRef = firestore.collection('spots').doc();
+        const newSpot = {
+          name: spotName,
+          eventId: dto.eventId,
+          status: SpotStatus.available,
+          gender: dto.gender || Gender.MALE,
+        };
+        batch.set(newSpotRef, newSpot);
+
+        existingSpots.push({
+          id: newSpotRef.id,
+          name: spotName,
+          gender: newSpot.gender,
+        });
       }
 
       // Verifique se o usuário já tem uma reserva
@@ -137,7 +191,7 @@ export class EventsService {
           staffFemale: 0,
         };
 
-        spots.forEach((spot) => {
+        existingSpots.forEach((spot) => {
           if (spot.gender === Gender.MALE) {
             if (dto.userType === UserType.CLIENT) {
               spotsCount.clientMale += 1;
@@ -167,7 +221,7 @@ export class EventsService {
       }
 
       // Criação de reservas e atualização de status dos spots
-      spots.forEach((spot) => {
+      existingSpots.forEach((spot) => {
         const reservationRef = firestore.collection('reservationHistory').doc();
         batch.set(reservationRef, {
           spotId: spot.id,
@@ -194,14 +248,13 @@ export class EventsService {
       });
 
       await batch.commit();
-      return spots.map((spot) => ({
+      return existingSpots.map((spot) => ({
         spotId: spot.id,
         ticketKind: dto.ticket_kind,
         email: dto.email,
         eventId: dto.eventId,
       }));
     } catch (e) {
-      console.log('Error reserving spots:', e);
       throw new BadRequestException('An error occurred while reserving spots');
     }
   }

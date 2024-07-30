@@ -94,17 +94,17 @@ Content-Type: application/json
 # @name deleteUser
 DELETE http://localhost:3000/users/{{userId}}
 
-### Criação de Reserva
-POST http://localhost:3000/users/reserve
-Content-Type: application/json
+# ### Criação de Reserva
+# POST http://localhost:3000/users/reserve
+# Content-Type: application/json
 
-{
-    "userId": "user123",
-    "eventId": "event456",
-    "spots": ["spot1", "spot2"],
-    "ticket_kind": "full",
-    "email": "user@example.com"
-}
+# {
+#     "userId": "user123",
+#     "eventId": "event456",
+#     "spots": ["spot1", "spot2"],
+#     "ticket_kind": "full",
+#     "email": "user@example.com"
+# }
 
 # ###
 # # @name createStaff
