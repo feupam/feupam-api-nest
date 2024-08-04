@@ -9,14 +9,20 @@ import { FirestoreService } from '../firebase/firebase.service';
 import { EventType, UserType, Gender } from './dto/enum';
 import { TicketStatus, SpotStatus } from '../spots/dto/enum';
 import { ReserveSpotDto } from './dto/reserve-spot.dto';
+import { Timestamp } from 'firebase-admin/firestore';
 
 @Injectable()
 export class EventsService {
-  constructor(private firestoreService: FirestoreService) {}
+  constructor(private readonly firestoreService: FirestoreService) {}
 
   async create(dto: CreateEventDto) {
     const firestore = this.firestoreService.firestore;
-    const eventRef = firestore.collection('events').doc();
+
+    // Usar o nome do evento como ID
+    const eventId = dto.name;
+
+    // Referência do documento usando o nome como ID
+    const eventRef = firestore.collection('events').doc(eventId);
 
     // Dados do evento incluindo tipo e vagas
     const eventData = {
@@ -29,6 +35,8 @@ export class EventsService {
       maxStaffMale: dto.maxStaffMale || 0,
       maxStaffFemale: dto.maxStaffFemale || 0,
       maxGeneralSpots: dto.maxGeneralSpots || 0, // Para eventos de vagas gerais
+      startDate: dto.startDate,
+      endDate: dto.endDate,
     };
 
     try {
@@ -78,9 +86,46 @@ export class EventsService {
     return { id };
   }
 
+  async checkRegistrationStatus(
+    id: string,
+  ): Promise<{ currentDate: Date; isOpen: boolean }> {
+    const eventRef = this.firestoreService.firestore
+      .collection('events')
+      .doc(id);
+    const doc = await eventRef.get();
+
+    if (!doc.exists) {
+      throw new NotFoundException('Event not found');
+    }
+
+    const eventData = doc.data();
+
+    if (!eventData) {
+      throw new NotFoundException('Event data is missing');
+    }
+
+    const currentDate = new Date();
+
+    // Verifique se startDate e endDate são do tipo Timestamp
+    const startDate =
+      eventData.startDate instanceof Timestamp
+        ? eventData.startDate.toDate()
+        : new Date(eventData.startDate);
+
+    const endDate =
+      eventData.endDate instanceof Timestamp
+        ? eventData.endDate.toDate()
+        : new Date(eventData.endDate);
+
+    const isOpen = currentDate >= startDate && currentDate <= endDate;
+
+    return { currentDate, isOpen };
+  }
+
   async reserveSpot(
     dto: ReserveSpotDto & {
       eventId: string;
+      userId: string;
       userType: UserType;
       gender?: Gender;
     },
@@ -150,6 +195,7 @@ export class EventsService {
         const newSpot = {
           name: spotName,
           eventId: dto.eventId,
+          userId: dto.userId,
           status: SpotStatus.available,
           gender: dto.gender || Gender.MALE,
         };
@@ -231,6 +277,7 @@ export class EventsService {
           userType: dto.userType,
           gender: spot.gender,
           eventId: dto.eventId,
+          userId: dto.userId,
         });
 
         const spotRef = firestore.collection('spots').doc(spot.id);
@@ -244,6 +291,7 @@ export class EventsService {
           ticketKind: dto.ticket_kind,
           email: dto.email,
           eventId: dto.eventId,
+          userId: dto.userId,
         });
       });
 
@@ -253,9 +301,97 @@ export class EventsService {
         ticketKind: dto.ticket_kind,
         email: dto.email,
         eventId: dto.eventId,
+        userId: dto.userId,
       }));
     } catch (e) {
-      throw new BadRequestException('An error occurred while reserving spots');
+      if (e instanceof BadRequestException) {
+        throw e;
+      } else {
+        throw new BadRequestException(
+          'An error occurred while reserving spots',
+        );
+      }
     }
+  }
+
+  async getAllReservationsByEvent(eventId: string) {
+    const firestore = this.firestoreService.firestore;
+    const reservationsQuery = firestore
+      .collection('reservationHistory')
+      .where('eventId', '==', eventId);
+
+    try {
+      const reservationsSnapshot = await reservationsQuery.get();
+      if (reservationsSnapshot.empty) {
+        throw new NotFoundException('No reservations found for this event');
+      }
+      return reservationsSnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+    } catch (e) {
+      throw new BadRequestException(
+        'An error occurred while fetching reservations for the event',
+      );
+    }
+  }
+
+  async getInstallments(eventId: string): Promise<any> {
+    const firestore = this.firestoreService.firestore;
+
+    // Verifique se o evento existe
+    const eventRef = firestore.collection('events').doc(eventId);
+    const eventDoc = await eventRef.get();
+    if (!eventDoc.exists) {
+      throw new NotFoundException('Event not found');
+    }
+
+    const eventData = eventDoc.data();
+    if (!eventData) {
+      throw new Error('Event data is missing');
+    }
+
+    // Verifique se há vagas disponíveis
+    const spotsQuery = firestore
+      .collection('spots')
+      .where('eventId', '==', eventId);
+    const spotsSnapshot = await spotsQuery.get();
+    const reservedSpots = spotsSnapshot.docs.filter(
+      (doc) => doc.data().status === 'reserved',
+    ).length;
+
+    let maxSpots = 0;
+
+    if (eventData.eventType === EventType.GENERAL) {
+      maxSpots = eventData.maxGeneralSpots;
+    } else if (eventData.eventType === EventType.GENDER_SPECIFIC) {
+      maxSpots =
+        eventData.maxClientMale +
+        eventData.maxClientFemale +
+        eventData.maxStaffMale +
+        eventData.maxStaffFemale;
+    }
+
+    if (reservedSpots >= maxSpots) {
+      throw new BadRequestException('No spots available for this event');
+    }
+
+    // Tabela de juros
+    const interestRates = [
+      0.0454, 0.0266, 0.0399, 0.0532, 0.0665, 0.0789, 0.0937, 0.1064, 0.1197,
+      0.133,
+    ];
+    const maxInstallments = 10;
+    const installmentOptions = [];
+
+    for (let i = 1; i <= maxInstallments; i++) {
+      const interestRate = interestRates[i - 1];
+      installmentOptions.push({
+        installmentNumber: i,
+        interestRate: interestRate,
+      });
+    }
+
+    return installmentOptions;
   }
 }

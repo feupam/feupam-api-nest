@@ -36,4 +36,10 @@ export class CreateEventDto {
   maxStaffFemale?: number; // Máximo de vagas para staff femininos, se aplicável
   maxGeneralSpots: number;
   location: any;
+
+  @IsDateString()
+  startDate: string;
+
+  @IsDateString()
+  endDate: string;
 }

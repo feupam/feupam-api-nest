@@ -25,6 +25,7 @@ export class SpotsService {
     // Check the total number of spots for the event
     const totalSpots = await this.getTotalSpotsForEvent(createSpotDto.eventId);
 
+    // TODO: colocar no local do 100 a quantidade maxima de vagas do evento
     if (totalSpots >= 100) {
       throw new ConflictException(
         'The maximum number of spots for this event has been reached.',

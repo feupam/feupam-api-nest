@@ -1,4 +1,17 @@
-GET http://localhost:3000/events
+###
+# @name createUser
+POST http://localhost:3000/users
+Content-Type: application/json
+
+{
+  "userId": "user123",
+  "email": "user11@example.com",
+  "userType": "CLIENT",
+  "gender": "MALE"
+}
+###
+
+@userId = {{ createUser.response.body.id }}
 
 ###
 # @name createEvent
@@ -6,15 +19,84 @@ POST http://localhost:3000/events
 Content-Type: application/json
 
 {
-    "name": "New Event12",
-    "description": "Federa2024",
-    "date": "2024-06-22T00:00:00Z",
-    "price": 30000
+      "name": "federa",
+      "date": "2024-01-01",
+      "location": "betel",
+      "eventType": "general",
+      "maxClientMale": "" ,
+      "maxClientFemale": "",
+      "maxStaffMale": "",
+      "maxStaffFemale": "",
+      "maxGeneralSpots": "300",
+      "startDate": "2024-08-01T00:00:00Z",
+      "endDate": "2024-08-01T23:59:59Z"
 }
 
 ###
 
 @eventId = {{ createEvent.response.body.id }}
+
+###
+# @name makeReservation
+POST http://localhost:3000/events/{{eventId}}/reserve-spot
+Content-Type: application/json
+
+{
+  "spots": ["Spot A1"],
+  "ticket_kind": "full",
+  "email": "user11@example.com",
+  "userType": "CLIENT",
+  "gender": "MALE",
+  "userId": "{{userId}}"
+}
+
+###
+
+@spotId = {{ makeReservation.response.body.id }}
+
+### Get reservations for a specific user
+# @name getReservationByUser
+GET http://localhost:3000/users/{{userId}}/reservations
+
+### Get reservations for a specific event
+# @name getReservationByEvents
+GET http://localhost:3000/events/{{eventId}}/reservations
+
+
+### Get installments
+# @name getInstallments
+GET http://localhost:3000/events/{{eventId}}/installments
+
+
+
+### Verificar Status de Inscrição para um Evento
+# @name TIME inscicao
+GET http://localhost:3000/events/{{eventId}}/registration-status
+
+
+
+
+###
+# @name getUserById
+GET http://localhost:3000/users/{{userId}}
+###
+# @name updateUser
+PATCH  http://localhost:3000/users/{{userId}}
+Content-Type: application/json
+
+{
+    "name": "Updated Name",
+    "email": "updated.email@example.com"
+}
+###
+# @name deleteUser
+DELETE http://localhost:3000/users/{{userId}}
+
+
+
+
+###
+GET http://localhost:3000/events
 
 ###
 GET http://localhost:3000/events/{{eventId}}
@@ -33,136 +115,20 @@ Content-Type: application/json
 ###
 DELETE http://localhost:3000/events/{{eventId}}
 
-###
-GET http://localhost:3000/events/{{eventId}}/spots
 
-###  
-# @name createSpot
-POST http://localhost:3000/events/{{eventId}}/spots
-Content-Type: application/json
-
-{
-    "name": "Spot A",
-    "type": "user_spot"
-}
-
-###
-
-@spotName = {{ createSpot.response.body.name }}
-
-###
-POST http://localhost:3000/events/{{eventId}}/reserve-spot
-Content-Type: application/json
-
-{
-  "spots": ["Spot A"],
-  "ticket_kind": "full",
-  "email": "user@example.com",
-  "userType": "CLIENT",
-  "gender": "MALE"
-}
-
-
-###
-# @name createUser
-POST http://localhost:3000/users
-Content-Type: application/json
-
-{
-  "userId": "user123",
-  "email": "user@example.com",
-  "userType": "CLIENT",
-  "gender": "MALE"
-}
-###
-
-@userId = {{ createUser.response.body.id }}
-
-###
-# @name getUserById
-GET http://localhost:3000/users/{{userId}}
-###
-# @name updateUser
-PATCH  http://localhost:3000/users/{{userId}}
-Content-Type: application/json
-
-{
-    "name": "Updated Name",
-    "email": "updated.email@example.com"
-}
-###
-# @name deleteUser
-DELETE http://localhost:3000/users/{{userId}}
-
-# ### Criação de Reserva
-# POST http://localhost:3000/users/reserve
+# ###  
+# # @name createSpot
+# POST http://localhost:3000/events/{{eventId}}/spots
 # Content-Type: application/json
 
 # {
-#     "userId": "user123",
-#     "eventId": "event456",
-#     "spots": ["spot1", "spot2"],
-#     "ticket_kind": "full",
-#     "email": "user@example.com"
+#     "name": "comprando um vag1a",
+#     "type": "user_spot"
 # }
 
 # ###
-# # @name createStaff
-# POST http://localhost:3000/staff
-# Content-Type: application/json
-
-# {
-#     "name": "New Staff Member",
-#     "email": "staff@example.com"
-# }
-# ###
-
-# @staffId = {{ createStaff.response.body.id }}
+# GET http://localhost:3000/events/{{eventId}}/spots
 
 # ###
-# # @name reserveSpotForUser
-# POST http://localhost:3000/users/reserve
-# Content-Type: application/json
 
-# {
-#     "userId": "user123",
-#     "eventId": "event456",
-#     "spots": ["spot1", "spot2"],
-#     "ticket_kind": "full",
-#     "email": "user@example.com"
-# }
-
-# ###
-# # @name reserveSpotForStaff
-# POST http://localhost:3000/staff/reserve
-# Content-Type: application/json
-
-# {
-#     "staffId": "staff123",
-#     "eventId": "event456",
-#     "spots": ["spot1", "spot2"],
-#     "ticket_kind": "full",
-#     "email": "staff@example.com"
-# }
-
-# ###
-# # @name findAllStaff
-# GET http://localhost:3000/staff
-
-# ###
-# # @name findOneStaff
-# GET http://localhost:3000/staff/{{staffId}}
-
-# ###
-# # @name updateStaff
-# PUT http://localhost:3000/staff/{{staffId}}
-# Content-Type: application/json
-
-# {
-#     "name": "Updated Staff Member",
-#     "email": "updatedstaff@example.com"
-# }
-
-# ###
-# # @name removeStaff
-# DELETE http://localhost:3000/staff/{{staffId}}
+# @spotName = {{ createSpot.response.body.name }}
