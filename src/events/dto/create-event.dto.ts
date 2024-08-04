@@ -1,45 +1,54 @@
-// src/events/dto/create-event.dto.ts
-
 import {
-  IsDateString,
   IsEnum,
-  IsNumber,
-  IsOptional,
+  IsNotEmpty,
   IsString,
+  IsNumberString,
+  IsISO8601,
 } from 'class-validator';
-import { EventType } from './enum';
+import { EventType } from './enum'; // Ajuste o caminho conforme necessário
 
 export class CreateEventDto {
   @IsString()
+  @IsNotEmpty()
   name: string;
 
-  @IsDateString()
+  @IsISO8601()
+  @IsNotEmpty()
   date: string;
 
+  @IsString()
+  @IsNotEmpty()
+  location: string;
+
   @IsEnum(EventType)
-  eventType: EventType; // Pode ser gender_specific ou general
+  @IsNotEmpty()
+  eventType: EventType;
 
-  @IsOptional()
-  @IsNumber()
-  maxClientMale?: number; // Máximo de vagas para clientes masculinos, se aplicável
+  @IsNotEmpty()
+  @IsNumberString()
+  maxClientMale?: string;
 
-  @IsOptional()
-  @IsNumber()
-  maxClientFemale?: number; // Máximo de vagas para clientes femininos, se aplicável
+  @IsNotEmpty()
+  @IsNumberString()
+  maxClientFemale?: string;
 
-  @IsOptional()
-  @IsNumber()
-  maxStaffMale?: number; // Máximo de vagas para staff masculinos, se aplicável
+  @IsNotEmpty()
+  @IsNumberString()
+  maxStaffMale?: string;
 
-  @IsOptional()
-  @IsNumber()
-  maxStaffFemale?: number; // Máximo de vagas para staff femininos, se aplicável
-  maxGeneralSpots: number;
-  location: any;
+  @IsNotEmpty()
+  @IsNumberString()
+  maxStaffFemale?: string;
 
-  @IsDateString()
+  @IsNotEmpty()
+  @IsNumberString()
+  maxGeneralSpots: string;
+
+  @IsISO8601()
+  @IsNotEmpty()
   startDate: string;
 
-  @IsDateString()
+  @IsISO8601()
+  @IsNotEmpty()
   endDate: string;
 }

@@ -11,6 +11,8 @@ import {
   HttpCode,
   NotFoundException,
   Headers,
+  UsePipes,
+  ValidationPipe,
 } from '@nestjs/common';
 import { EventsService } from './events.service';
 import { CreateEventDto } from './dto/create-event.dto';
@@ -26,6 +28,13 @@ export class EventsController {
   ) {}
 
   @Post()
+  @UsePipes(
+    new ValidationPipe({
+      transform: true,
+      whitelist: true,
+      forbidNonWhitelisted: true,
+    }),
+  )
   async create(
     @Body() createEventDto: CreateEventDto,
     @Headers('authorization') authHeader: string,
@@ -53,6 +62,13 @@ export class EventsController {
   }
 
   @Put(':id')
+  @UsePipes(
+    new ValidationPipe({
+      transform: true,
+      whitelist: true,
+      forbidNonWhitelisted: true,
+    }),
+  )
   async update(
     @Param('id') id: string,
     @Body() updateEventDto: UpdateEventDto,
@@ -75,6 +91,13 @@ export class EventsController {
   }
 
   @Post(':id/reserve-spot')
+  @UsePipes(
+    new ValidationPipe({
+      transform: true,
+      whitelist: true,
+      forbidNonWhitelisted: true,
+    }),
+  )
   async reserveSpots(
     @Body() dto: ReserveSpotDto,
     @Param('id') eventId: string,

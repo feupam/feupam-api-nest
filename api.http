@@ -1,12 +1,6 @@
-### Global Headers
-@headers
-Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6IjFkYmUwNmI1ZDdjMmE3YzA0NDU2MzA2MWZmMGZlYTM3NzQwYjg2YmMiLCJ0eXAiOiJKV1QifQ.eyJuYW1lIjoiQXJpZWxhIE1hcsOnYWwgU3RlZmFuaW5pIiwicGljdHVyZSI6Imh0dHBzOi8vbGgzLmdvb2dsZXVzZXJjb250ZW50LmNvbS9hL0FDZzhvY0wyVW1XWVdaTF9PR1ViNm5UbWdLbGVyRGE4dWdHU1BkcnczaW9fQnRrTmhRPXM5Ni1jIiwiaXNzIjoiaHR0cHM6Ly9zZWN1cmV0b2tlbi5nb29nbGUuY29tL2ZlZGVyYS1hcGkiLCJhdWQiOiJmZWRlcmEtYXBpIiwiYXV0aF90aW1lIjoxNzE1MTkwODIzLCJ1c2VyX2lkIjoiOWRLalJrTUVzSmhUWmxiazhqcVZ4ZXhGeW16MiIsInN1YiI6IjlkS2pSa01Fc0poVFpsYms4anFWeGV4RnltejIiLCJpYXQiOjE3MjI4MDUxNDEsImV4cCI6MTcyMjgwODc0MSwiZW1haWwiOiJhcmllbGEuc3RlZmFuaW5pQHNvdS51bmlmYWwtbWcuZWR1LmJyIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsImZpcmViYXNlIjp7ImlkZW50aXRpZXMiOnsiZ29vZ2xlLmNvbSI6WyIxMDE5ODIzNTg4NDU0MDkwMzU3ODEiXSwiZW1haWwiOlsiYXJpZWxhLnN0ZWZhbmluaUBzb3UudW5pZmFsLW1nLmVkdS5iciJdfSwic2lnbl9pbl9wcm92aWRlciI6Imdvb2dsZS5jb20ifX0.XI0W2Z7nxG03Ff88BtbLsBhVzlKyPNZMD3cIG9vBMoH1owyEcQTxKUybRl6hBYyAnyt1CdPjRPknslQkdIQISRuZuhhdZz1lBhHudgcr4uG4R-Y7CnlP5TSyp-jth7b4nhaDsu09xwPp9y7nbZdTJWlGb1L4FcId497o6QcnJfOgXXA5WvS8ysr4pM2L9GPKKlHbl9kSOvAZj7DJPhYZnfVNzwtzW9zPsPkZFQRKMSCZ3P4LsIbHEXSV5gcWLb2d1ZZqFaIKpSzF89dHU28R2lhErzWoTGDfNwIpM3QEcnPwKGYXK6xZitwGiBF4Ot8mKn4obXbazZKq3UEC_xvAlA
-
 ### Base URL
 @base_url=http://localhost:3000
-@token=eyJhbGciOiJSUzI1NiIsImtpZCI6IjFkYmUwNmI1ZDdjMmE3YzA0NDU2MzA2MWZmMGZlYTM3NzQwYjg2YmMiLCJ0eXAiOiJKV1QifQ.eyJuYW1lIjoiQXJpZWxhIE1hcsOnYWwgU3RlZmFuaW5pIiwicGljdHVyZSI6Imh0dHBzOi8vbGgzLmdvb2dsZXVzZXJjb250ZW50LmNvbS9hL0FDZzhvY0wyVW1XWVdaTF9PR1ViNm5UbWdLbGVyRGE4dWdHU1BkcnczaW9fQnRrTmhRPXM5Ni1jIiwiaXNzIjoiaHR0cHM6Ly9zZWN1cmV0b2tlbi5nb29nbGUuY29tL2ZlZGVyYS1hcGkiLCJhdWQiOiJmZWRlcmEtYXBpIiwiYXV0aF90aW1lIjoxNzE1MTkwODIzLCJ1c2VyX2lkIjoiOWRLalJrTUVzSmhUWmxiazhqcVZ4ZXhGeW16MiIsInN1YiI6IjlkS2pSa01Fc0poVFpsYms4anFWeGV4RnltejIiLCJpYXQiOjE3MjI4MDUxNDEsImV4cCI6MTcyMjgwODc0MSwiZW1haWwiOiJhcmllbGEuc3RlZmFuaW5pQHNvdS51bmlmYWwtbWcuZWR1LmJyIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsImZpcmViYXNlIjp7ImlkZW50aXRpZXMiOnsiZ29vZ2xlLmNvbSI6WyIxMDE5ODIzNTg4NDU0MDkwMzU3ODEiXSwiZW1haWwiOlsiYXJpZWxhLnN0ZWZhbmluaUBzb3UudW5pZmFsLW1nLmVkdS5iciJdfSwic2lnbl9pbl9wcm92aWRlciI6Imdvb2dsZS5jb20ifX0.XI0W2Z7nxG03Ff88BtbLsBhVzlKyPNZMD3cIG9vBMoH1owyEcQTxKUybRl6hBYyAnyt1CdPjRPknslQkdIQISRuZuhhdZz1lBhHudgcr4uG4R-Y7CnlP5TSyp-jth7b4nhaDsu09xwPp9y7nbZdTJWlGb1L4FcId497o6QcnJfOgXXA5WvS8ysr4pM2L9GPKKlHbl9kSOvAZj7DJPhYZnfVNzwtzW9zPsPkZFQRKMSCZ3P4LsIbHEXSV5gcWLb2d1ZZqFaIKpSzF89dHU28R2lhErzWoTGDfNwIpM3QEcnPwKGYXK6xZitwGiBF4Ot8mKn4obXbazZKq3UEC_xvAlA
-
+@token=eyJhbGciOiJSUzI1NiIsImtpZCI6IjFkYmUwNmI1ZDdjMmE3YzA0NDU2MzA2MWZmMGZlYTM3NzQwYjg2YmMiLCJ0eXAiOiJKV1QifQ.eyJuYW1lIjoiQXJpZWxhIE1hcsOnYWwgU3RlZmFuaW5pIiwicGljdHVyZSI6Imh0dHBzOi8vbGgzLmdvb2dsZXVzZXJjb250ZW50LmNvbS9hL0FDZzhvY0wyVW1XWVdaTF9PR1ViNm5UbWdLbGVyRGE4dWdHU1BkcnczaW9fQnRrTmhRPXM5Ni1jIiwiaXNzIjoiaHR0cHM6Ly9zZWN1cmV0b2tlbi5nb29nbGUuY29tL2ZlZGVyYS1hcGkiLCJhdWQiOiJmZWRlcmEtYXBpIiwiYXV0aF90aW1lIjoxNzE1MTkwODIzLCJ1c2VyX2lkIjoiOWRLalJrTUVzSmhUWmxiazhqcVZ4ZXhGeW16MiIsInN1YiI6IjlkS2pSa01Fc0poVFpsYms4anFWeGV4RnltejIiLCJpYXQiOjE3MjI4MDk0MzQsImV4cCI6MTcyMjgxMzAzNCwiZW1haWwiOiJhcmllbGEuc3RlZmFuaW5pQHNvdS51bmlmYWwtbWcuZWR1LmJyIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsImZpcmViYXNlIjp7ImlkZW50aXRpZXMiOnsiZ29vZ2xlLmNvbSI6WyIxMDE5ODIzNTg4NDU0MDkwMzU3ODEiXSwiZW1haWwiOlsiYXJpZWxhLnN0ZWZhbmluaUBzb3UudW5pZmFsLW1nLmVkdS5iciJdfSwic2lnbl9pbl9wcm92aWRlciI6Imdvb2dsZS5jb20ifX0.C_0dxgbfGvm8wF4RLdgj6GpSRtU80_mtT1tfEhm_jSjeLNLFyHT8lWDlVVLx0A0mZ2b6W8LlQZmfYiaJLCbvDOQip83TATqj9xdupxaUz8sIiDKy9GQbg4zaBNudwPqUnnB-TD2cWI1PA04rc50Vuo4e_b9qH3VVhKxlaOScPxp0qRggEuPtwSZ_OXnQnVpTqW8HZyjp_Njq_JKZW7GPNfCaFDEgsa1aPfWjQsFA7xJdrewZVxT-TSobrVZffk-NSJ6-WzJcj85R3dd57dbidhn07Bp4j7PhRpzE09W0Kh3RolYi0coniWOpkf1I8EQ0XZMT8qRLkXvWsMqNB9OJ_g
 
 ###
 # @name createUser
@@ -15,10 +9,11 @@ Content-Type: application/json
 Authorization: Bearer {{token}}
 
 {
-  "userId": "user123",
-  "email": "user11@example.com",
-  "userType": "CLIENT",
-  "gender": "MALE"
+  "name": "user123",
+  "email": "user115@example.com",
+  "userType": "client",
+  "gender": "male",
+  "cpf": "088123135"
 }
 ###
 
@@ -34,11 +29,11 @@ Authorization: Bearer {{token}}
       "name": "federa",
       "date": "2024-01-01",
       "location": "betel",
-      "eventType": "general",
-      "maxClientMale": "" ,
-      "maxClientFemale": "",
-      "maxStaffMale": "",
-      "maxStaffFemale": "",
+      "eventType": "gender_specific",
+      "maxClientMale": "1" ,
+      "maxClientFemale": "1",
+      "maxStaffMale": "1",
+      "maxStaffFemale": "1",
       "maxGeneralSpots": "300",
       "startDate": "2024-08-01T00:00:00Z",
       "endDate": "2024-08-01T23:59:59Z"
@@ -57,9 +52,9 @@ Authorization: Bearer {{token}}
 {
   "spots": ["Spot A1"],
   "ticket_kind": "full",
-  "email": "user11@example.com",
-  "userType": "CLIENT",
-  "gender": "MALE",
+  "email": "user115@example.com",
+  "userType": "client",
+  "gender": "male",
   "userId": "{{userId}}"
 }
 

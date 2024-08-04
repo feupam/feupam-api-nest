@@ -6,6 +6,8 @@ import {
   Param,
   Body,
   Headers,
+  UsePipes,
+  ValidationPipe,
 } from '@nestjs/common';
 import { SpotsService } from './spots.service';
 import { CreateSpotDto } from './dto/create-spot.dto';
@@ -19,6 +21,13 @@ export class SpotsController {
   ) {}
 
   @Post()
+  @UsePipes(
+    new ValidationPipe({
+      transform: true,
+      whitelist: true,
+      forbidNonWhitelisted: true,
+    }),
+  )
   async create(
     @Body() createSpotDto: CreateSpotDto,
     @Param('eventId') eventId: string,

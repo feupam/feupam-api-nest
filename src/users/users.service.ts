@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { FirestoreService } from '../firebase/firebase.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -10,11 +14,24 @@ export class UsersService {
   private userCollection = this.firestoreService.firestore.collection('users');
 
   async create(createUserDto: CreateUserDto) {
-    const userRef = this.firestoreService.firestore.collection('users').doc();
+    const firestore = this.firestoreService.getFirestore();
+    const usersCollection = firestore.collection('users');
+
+    // Verifique se já existe um usuário com o mesmo CPF
+    const existingUserSnapshot = await usersCollection
+      .where('cpf', '==', createUserDto.cpf)
+      .get();
+
+    if (!existingUserSnapshot.empty) {
+      throw new BadRequestException('User with this CPF already exists');
+    }
+
+    const userRef = usersCollection.doc();
     await userRef.set({
       ...createUserDto,
       createdAt: new Date(),
     });
+
     return { id: userRef.id, ...createUserDto };
   }
 
