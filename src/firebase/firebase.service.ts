@@ -3,13 +3,8 @@ import * as admin from 'firebase-admin';
 
 @Injectable()
 export class FirestoreService {
-  batch() {
-    throw new Error('Method not implemented.');
-  }
-  collection(arg0: string) {
-    throw new Error('Method not implemented.');
-  }
   public firestore: admin.firestore.Firestore;
+  public auth: admin.auth.Auth;
 
   constructor() {
     admin.initializeApp({
@@ -17,9 +12,14 @@ export class FirestoreService {
       databaseURL: 'https://federa-api.firebaseio.com',
     });
     this.firestore = admin.firestore();
+    this.auth = admin.auth();
   }
 
   getFirestore(): admin.firestore.Firestore {
     return this.firestore;
+  }
+
+  getAuth(): admin.auth.Auth {
+    return this.auth;
   }
 }

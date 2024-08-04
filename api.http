@@ -1,7 +1,18 @@
+### Global Headers
+@headers
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6IjFkYmUwNmI1ZDdjMmE3YzA0NDU2MzA2MWZmMGZlYTM3NzQwYjg2YmMiLCJ0eXAiOiJKV1QifQ.eyJuYW1lIjoiQXJpZWxhIE1hcsOnYWwgU3RlZmFuaW5pIiwicGljdHVyZSI6Imh0dHBzOi8vbGgzLmdvb2dsZXVzZXJjb250ZW50LmNvbS9hL0FDZzhvY0wyVW1XWVdaTF9PR1ViNm5UbWdLbGVyRGE4dWdHU1BkcnczaW9fQnRrTmhRPXM5Ni1jIiwiaXNzIjoiaHR0cHM6Ly9zZWN1cmV0b2tlbi5nb29nbGUuY29tL2ZlZGVyYS1hcGkiLCJhdWQiOiJmZWRlcmEtYXBpIiwiYXV0aF90aW1lIjoxNzE1MTkwODIzLCJ1c2VyX2lkIjoiOWRLalJrTUVzSmhUWmxiazhqcVZ4ZXhGeW16MiIsInN1YiI6IjlkS2pSa01Fc0poVFpsYms4anFWeGV4RnltejIiLCJpYXQiOjE3MjI4MDUxNDEsImV4cCI6MTcyMjgwODc0MSwiZW1haWwiOiJhcmllbGEuc3RlZmFuaW5pQHNvdS51bmlmYWwtbWcuZWR1LmJyIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsImZpcmViYXNlIjp7ImlkZW50aXRpZXMiOnsiZ29vZ2xlLmNvbSI6WyIxMDE5ODIzNTg4NDU0MDkwMzU3ODEiXSwiZW1haWwiOlsiYXJpZWxhLnN0ZWZhbmluaUBzb3UudW5pZmFsLW1nLmVkdS5iciJdfSwic2lnbl9pbl9wcm92aWRlciI6Imdvb2dsZS5jb20ifX0.XI0W2Z7nxG03Ff88BtbLsBhVzlKyPNZMD3cIG9vBMoH1owyEcQTxKUybRl6hBYyAnyt1CdPjRPknslQkdIQISRuZuhhdZz1lBhHudgcr4uG4R-Y7CnlP5TSyp-jth7b4nhaDsu09xwPp9y7nbZdTJWlGb1L4FcId497o6QcnJfOgXXA5WvS8ysr4pM2L9GPKKlHbl9kSOvAZj7DJPhYZnfVNzwtzW9zPsPkZFQRKMSCZ3P4LsIbHEXSV5gcWLb2d1ZZqFaIKpSzF89dHU28R2lhErzWoTGDfNwIpM3QEcnPwKGYXK6xZitwGiBF4Ot8mKn4obXbazZKq3UEC_xvAlA
+
+### Base URL
+@base_url=http://localhost:3000
+@token=eyJhbGciOiJSUzI1NiIsImtpZCI6IjFkYmUwNmI1ZDdjMmE3YzA0NDU2MzA2MWZmMGZlYTM3NzQwYjg2YmMiLCJ0eXAiOiJKV1QifQ.eyJuYW1lIjoiQXJpZWxhIE1hcsOnYWwgU3RlZmFuaW5pIiwicGljdHVyZSI6Imh0dHBzOi8vbGgzLmdvb2dsZXVzZXJjb250ZW50LmNvbS9hL0FDZzhvY0wyVW1XWVdaTF9PR1ViNm5UbWdLbGVyRGE4dWdHU1BkcnczaW9fQnRrTmhRPXM5Ni1jIiwiaXNzIjoiaHR0cHM6Ly9zZWN1cmV0b2tlbi5nb29nbGUuY29tL2ZlZGVyYS1hcGkiLCJhdWQiOiJmZWRlcmEtYXBpIiwiYXV0aF90aW1lIjoxNzE1MTkwODIzLCJ1c2VyX2lkIjoiOWRLalJrTUVzSmhUWmxiazhqcVZ4ZXhGeW16MiIsInN1YiI6IjlkS2pSa01Fc0poVFpsYms4anFWeGV4RnltejIiLCJpYXQiOjE3MjI4MDUxNDEsImV4cCI6MTcyMjgwODc0MSwiZW1haWwiOiJhcmllbGEuc3RlZmFuaW5pQHNvdS51bmlmYWwtbWcuZWR1LmJyIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsImZpcmViYXNlIjp7ImlkZW50aXRpZXMiOnsiZ29vZ2xlLmNvbSI6WyIxMDE5ODIzNTg4NDU0MDkwMzU3ODEiXSwiZW1haWwiOlsiYXJpZWxhLnN0ZWZhbmluaUBzb3UudW5pZmFsLW1nLmVkdS5iciJdfSwic2lnbl9pbl9wcm92aWRlciI6Imdvb2dsZS5jb20ifX0.XI0W2Z7nxG03Ff88BtbLsBhVzlKyPNZMD3cIG9vBMoH1owyEcQTxKUybRl6hBYyAnyt1CdPjRPknslQkdIQISRuZuhhdZz1lBhHudgcr4uG4R-Y7CnlP5TSyp-jth7b4nhaDsu09xwPp9y7nbZdTJWlGb1L4FcId497o6QcnJfOgXXA5WvS8ysr4pM2L9GPKKlHbl9kSOvAZj7DJPhYZnfVNzwtzW9zPsPkZFQRKMSCZ3P4LsIbHEXSV5gcWLb2d1ZZqFaIKpSzF89dHU28R2lhErzWoTGDfNwIpM3QEcnPwKGYXK6xZitwGiBF4Ot8mKn4obXbazZKq3UEC_xvAlA
+
+
 ###
 # @name createUser
-POST http://localhost:3000/users
+POST {{base_url}}/users
 Content-Type: application/json
+Authorization: Bearer {{token}}
 
 {
   "userId": "user123",
@@ -15,8 +26,9 @@ Content-Type: application/json
 
 ###
 # @name createEvent
-POST http://localhost:3000/events
+POST {{base_url}}/events
 Content-Type: application/json
+Authorization: Bearer {{token}}
 
 {
       "name": "federa",
@@ -38,8 +50,9 @@ Content-Type: application/json
 
 ###
 # @name makeReservation
-POST http://localhost:3000/events/{{eventId}}/reserve-spot
+POST {{base_url}}/events/{{eventId}}/reserve-spot
 Content-Type: application/json
+Authorization: Bearer {{token}}
 
 {
   "spots": ["Spot A1"],
@@ -56,33 +69,42 @@ Content-Type: application/json
 
 ### Get reservations for a specific user
 # @name getReservationByUser
-GET http://localhost:3000/users/{{userId}}/reservations
+GET {{base_url}}/users/{{userId}}/reservations
+Content-Type: application/json
+Authorization: Bearer {{token}}
 
 ### Get reservations for a specific event
 # @name getReservationByEvents
-GET http://localhost:3000/events/{{eventId}}/reservations
-
+GET {{base_url}}/events/{{eventId}}/reservations
+Content-Type: application/json
+Authorization: Bearer {{token}}
 
 ### Get installments
 # @name getInstallments
-GET http://localhost:3000/events/{{eventId}}/installments
-
+GET {{base_url}}/events/{{eventId}}/installments
+Content-Type: application/json
+Authorization: Bearer {{token}}
 
 
 ### Verificar Status de Inscrição para um Evento
-# @name TIME inscicao
-GET http://localhost:3000/events/{{eventId}}/registration-status
-
+# @name time
+GET {{base_url}}/events/{{eventId}}/registration-status
+Content-Type: application/json
+Authorization: Bearer {{token}}
 
 
 
 ###
 # @name getUserById
-GET http://localhost:3000/users/{{userId}}
+GET {{base_url}}/users/{{userId}}
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
 ###
 # @name updateUser
-PATCH  http://localhost:3000/users/{{userId}}
+PATCH  {{base_url}}/users/{{userId}}
 Content-Type: application/json
+Authorization: Bearer {{token}}
 
 {
     "name": "Updated Name",
@@ -90,20 +112,26 @@ Content-Type: application/json
 }
 ###
 # @name deleteUser
-DELETE http://localhost:3000/users/{{userId}}
-
-
-
-
-###
-GET http://localhost:3000/events
-
-###
-GET http://localhost:3000/events/{{eventId}}
-
-###
-PUT http://localhost:3000/events/{{eventId}}
+DELETE {{base_url}}/users/{{userId}}
 Content-Type: application/json
+Authorization: Bearer {{token}}
+
+
+
+###
+GET {{base_url}}/events
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+###
+GET {{base_url}}/events/{{eventId}}
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+###
+PUT {{base_url}}/events/{{eventId}}
+Content-Type: application/json
+Authorization: Bearer {{token}}
 
 {
     "name": "UPDATE",
@@ -113,13 +141,14 @@ Content-Type: application/json
 }
 
 ###
-DELETE http://localhost:3000/events/{{eventId}}
-
+DELETE {{base_url}}/events/{{eventId}}
+Content-Type: application/json
+Authorization: Bearer {{token}}
 
 # ###  
 # # @name createSpot
-# POST http://localhost:3000/events/{{eventId}}/spots
-# Content-Type: application/json
+# POST {{base_url}}/events/{{eventId}}/spots
+# 
 
 # {
 #     "name": "comprando um vag1a",
@@ -127,7 +156,7 @@ DELETE http://localhost:3000/events/{{eventId}}
 # }
 
 # ###
-# GET http://localhost:3000/events/{{eventId}}/spots
+# GET {{base_url}}/events/{{eventId}}/spots
 
 # ###
 

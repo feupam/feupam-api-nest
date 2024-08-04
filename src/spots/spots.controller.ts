@@ -1,16 +1,31 @@
-import { Controller, Post, Get, Delete, Param, Body } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Get,
+  Delete,
+  Param,
+  Body,
+  Headers,
+} from '@nestjs/common';
 import { SpotsService } from './spots.service';
 import { CreateSpotDto } from './dto/create-spot.dto';
+import { AuthService } from 'src/firebase/auth.service';
 
 @Controller('events/:eventId/spots')
 export class SpotsController {
-  constructor(private readonly spotsService: SpotsService) {}
+  constructor(
+    private readonly spotsService: SpotsService,
+    private readonly authService: AuthService,
+  ) {}
 
   @Post()
-  create(
+  async create(
     @Body() createSpotDto: CreateSpotDto,
     @Param('eventId') eventId: string,
+    @Headers('authorization') authHeader: string,
   ) {
+    const token = authHeader?.split(' ')[1];
+    await this.authService.verifyToken(token);
     return this.spotsService.create({
       ...createSpotDto,
       eventId,
