@@ -1,7 +1,6 @@
 ### Base URL
 @base_url=http://localhost:3000
-@token=eyJhbGciOiJSUzI1NiIsImtpZCI6IjFkYmUwNmI1ZDdjMmE3YzA0NDU2MzA2MWZmMGZlYTM3NzQwYjg2YmMiLCJ0eXAiOiJKV1QifQ.eyJuYW1lIjoiQXJpZWxhIE1hcsOnYWwgU3RlZmFuaW5pIiwicGljdHVyZSI6Imh0dHBzOi8vbGgzLmdvb2dsZXVzZXJjb250ZW50LmNvbS9hL0FDZzhvY0wyVW1XWVdaTF9PR1ViNm5UbWdLbGVyRGE4dWdHU1BkcnczaW9fQnRrTmhRPXM5Ni1jIiwiaXNzIjoiaHR0cHM6Ly9zZWN1cmV0b2tlbi5nb29nbGUuY29tL2ZlZGVyYS1hcGkiLCJhdWQiOiJmZWRlcmEtYXBpIiwiYXV0aF90aW1lIjoxNzE1MTkwODIzLCJ1c2VyX2lkIjoiOWRLalJrTUVzSmhUWmxiazhqcVZ4ZXhGeW16MiIsInN1YiI6IjlkS2pSa01Fc0poVFpsYms4anFWeGV4RnltejIiLCJpYXQiOjE3MjI4MDk0MzQsImV4cCI6MTcyMjgxMzAzNCwiZW1haWwiOiJhcmllbGEuc3RlZmFuaW5pQHNvdS51bmlmYWwtbWcuZWR1LmJyIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsImZpcmViYXNlIjp7ImlkZW50aXRpZXMiOnsiZ29vZ2xlLmNvbSI6WyIxMDE5ODIzNTg4NDU0MDkwMzU3ODEiXSwiZW1haWwiOlsiYXJpZWxhLnN0ZWZhbmluaUBzb3UudW5pZmFsLW1nLmVkdS5iciJdfSwic2lnbl9pbl9wcm92aWRlciI6Imdvb2dsZS5jb20ifX0.C_0dxgbfGvm8wF4RLdgj6GpSRtU80_mtT1tfEhm_jSjeLNLFyHT8lWDlVVLx0A0mZ2b6W8LlQZmfYiaJLCbvDOQip83TATqj9xdupxaUz8sIiDKy9GQbg4zaBNudwPqUnnB-TD2cWI1PA04rc50Vuo4e_b9qH3VVhKxlaOScPxp0qRggEuPtwSZ_OXnQnVpTqW8HZyjp_Njq_JKZW7GPNfCaFDEgsa1aPfWjQsFA7xJdrewZVxT-TSobrVZffk-NSJ6-WzJcj85R3dd57dbidhn07Bp4j7PhRpzE09W0Kh3RolYi0coniWOpkf1I8EQ0XZMT8qRLkXvWsMqNB9OJ_g
-
+@token=eyJhbGciOiJSUzI1NiIsImtpZCI6IjFkYmUwNmI1ZDdjMmE3YzA0NDU2MzA2MWZmMGZlYTM3NzQwYjg2YmMiLCJ0eXAiOiJKV1QifQ.eyJuYW1lIjoiQXJpZWxhIE1hcsOnYWwgU3RlZmFuaW5pIiwicGljdHVyZSI6Imh0dHBzOi8vbGgzLmdvb2dsZXVzZXJjb250ZW50LmNvbS9hL0FDZzhvY0wyVW1XWVdaTF9PR1ViNm5UbWdLbGVyRGE4dWdHU1BkcnczaW9fQnRrTmhRPXM5Ni1jIiwiaXNzIjoiaHR0cHM6Ly9zZWN1cmV0b2tlbi5nb29nbGUuY29tL2ZlZGVyYS1hcGkiLCJhdWQiOiJmZWRlcmEtYXBpIiwiYXV0aF90aW1lIjoxNzE1MTkwODIzLCJ1c2VyX2lkIjoiOWRLalJrTUVzSmhUWmxiazhqcVZ4ZXhGeW16MiIsInN1YiI6IjlkS2pSa01Fc0poVFpsYms4anFWeGV4RnltejIiLCJpYXQiOjE3MjI4OTU0NDksImV4cCI6MTcyMjg5OTA0OSwiZW1haWwiOiJhcmllbGEuc3RlZmFuaW5pQHNvdS51bmlmYWwtbWcuZWR1LmJyIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsImZpcmViYXNlIjp7ImlkZW50aXRpZXMiOnsiZ29vZ2xlLmNvbSI6WyIxMDE5ODIzNTg4NDU0MDkwMzU3ODEiXSwiZW1haWwiOlsiYXJpZWxhLnN0ZWZhbmluaUBzb3UudW5pZmFsLW1nLmVkdS5iciJdfSwic2lnbl9pbl9wcm92aWRlciI6Imdvb2dsZS5jb20ifX0.sTCuYhZRWn59dJt-X0kU_Mu_LC9vXKbr7YqvuoyRfUJKJOfYI-Zh8rC670fvZ31YYyfl6u0EAC9knqKCPXuuc8Hnd-5QEgfT76WdliRa-2Is0eK27xqs9iyLQ1Nyg53AtnrCqVh_AJRjean_iIKhpnXKdqDPB0sRmLsY_zdYyjEsf8sub9hsc1TtmglD-uiNVpkxebsBeFz79StlOZVFsgf-mdcdzx_syVrfdz8xHMv01K3BvYEbb2QYhLIo8EJI_HRNb4VQoYchiyMNzAjpogT7FGwIwyFN3RRCwiCKUb5SeDQOs6aF5Zp8T-jUCQMNpKaus5lZkA7oCNqR11ZXkw
 ###
 # @name createUser
 POST {{base_url}}/users
@@ -10,10 +9,10 @@ Authorization: Bearer {{token}}
 
 {
   "name": "user123",
-  "email": "user115@example.com",
+  "email": "ariela.stefanini@sou.unifal-mg.edu.br",
   "userType": "client",
   "gender": "male",
-  "cpf": "088123135"
+  "cpf": "08850515995"
 }
 ###
 
@@ -52,7 +51,7 @@ Authorization: Bearer {{token}}
 {
   "spots": ["Spot A1"],
   "ticket_kind": "full",
-  "email": "user115@example.com",
+  "email": "ariela.stefanini@sou.unifal-mg.edu.br",
   "userType": "client",
   "gender": "male",
   "userId": "{{userId}}"
@@ -103,7 +102,7 @@ Authorization: Bearer {{token}}
 
 {
     "name": "Updated Name",
-    "email": "updated.email@example.com"
+    "email": "ariela.stefanini@sou.unifal-mg.edu.br"
 }
 ###
 # @name deleteUser
@@ -156,3 +155,149 @@ Authorization: Bearer {{token}}
 # ###
 
 # @spotName = {{ createSpot.response.body.name }}
+
+### Chamada POST para a API payPaymentsPagarme
+# @name pagarme
+POST {{base_url}}/payments
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+
+{
+  "reservationId": "123456789",
+  "paymentData": {
+    "amount": 29000,
+    "payment_method": "credit_card",
+    "customer": {
+      "name": "Tony Stark",
+      "email": "tony.stark@avengers.com"
+    },
+    "items": [
+      {
+        "id": "federa",
+        "title": "Congresso2023",
+        "unit_price": 29000,
+        "quantity": 1,
+        "tangible": true
+      }
+    ],
+    "billing": {
+      "name": "Tony Stark",
+      "address": {
+        "country": "USA",
+        "state": "CA",
+        "city": "Malibu",
+        "neighborhood": "Central",
+        "street": "Malibu Point",
+        "street_number": "10880",
+        "zipcode": "90265"
+      }
+    },
+    "card_number": "4000000000000010",
+    "card_cvv": "3531",
+    "card_expiration_date": "12/30",
+    "card_holder_name": "Tony Stark"
+  }
+}
+
+
+###
+# @name webehook_test
+POST {{base_url}}/payments/webhook-pagarme
+Content-Type: application/json
+
+{
+  "id": "hook_nVNwZ28uAu3WqLEO",
+  "account": {
+    "id": "acc_8dnw5PzCoSJWmZrg",
+    "name": "PRESBITERIO VALE DO RIO GRANDE - test"
+  },
+  "type": "charge.paid",
+  "created_at": "2024-04-09T16:56:01.8782162Z",
+  "data": {
+    "id": "ch_4maq743fPFwgdvbW",
+    "code": "D3NETMAX0D",
+    "gateway_id": "807329",
+    "amount": 33000,
+    "paid_amount": 33000,
+    "status": "paid",
+    "currency": "BRL",
+    "payment_method": "pix",
+    "paid_at": "2024-04-09T16:52:18.4976896Z",
+    "created_at": "2024-04-09T16:52:18.407Z",
+    "updated_at": "2024-04-09T16:52:18.5260834Z",
+    "pending_cancellation": false,
+    "customer": {
+      "id": "cus_qgBk15ztlXSoZkeG",
+      "name": "Ariela Stefanini ",
+      "email": "ariela.stefanini@sou.unifal-mg.edu.br",
+      "document": "08850515995",
+      "type": "individual",
+      "delinquent": false,
+      "address": {
+        "id": "addr_8wRq51qs0Un5XgjN",
+        "line_1": "Rua Antonio Divino de Morais",
+        "street": "Rua Antonio Divino de Morais",
+        "zip_code": "37.940000",
+        "city": "Alpinopolis",
+        "state": "MG",
+        "country": "BR",
+        "status": "active",
+        "created_at": "2024-03-21T22:02:28.957Z",
+        "updated_at": "2024-03-21T22:02:28.957Z",
+        "metadata": {}
+      },
+      "created_at": "2024-03-21T22:02:28.943Z",
+      "updated_at": "2024-03-21T22:02:28.943Z",
+      "phones": {
+        "mobile_phone": {
+          "country_code": "55",
+          "number": "998185335",
+          "area_code": "35"
+        }
+      },
+      "metadata": {}
+    },
+    "order": {
+      "id": "or_kDQPldGS2kf7Pmo1",
+      "code": "D3NETMAX0D",
+      "amount": 33000,
+      "closed": true,
+      "created_at": "2024-04-09T16:52:18.393Z",
+      "updated_at": "2024-04-09T16:52:18.5260834Z",
+      "closed_at": "2024-04-09T16:52:18.393Z",
+      "currency": "BRL",
+      "status": "paid",
+      "customer_id": "cus_qgBk15ztlXSoZkeG",
+      "metadata": {}
+    },
+    "last_transaction": {
+      "transaction_type": "pix",
+      "pix_provider_tid": "807329",
+      "qr_code": "https://digital.mundipagg.com/pix/",
+      "qr_code_url": "https://api.pagar.me/core/v5/transactions/tran_58pLydT7OS0BJdnO/qrcode?payment_method=pix",
+      "end_to_end_id": "E12345678202009091221abcdef12345",
+      "payer": {
+        "name": "Tony Stark",
+        "document": "***951352**",
+        "document_type": "CPF",
+        "bank_account": {
+          "bank_name": "Pagarme Bank",
+          "ispb": "35245745"
+        }
+      },
+      "expires_at": "2024-04-09T18:52:18.4066667Z",
+      "id": "tran_3kxAdWZefXCNLpQB",
+      "gateway_id": "807329",
+      "amount": 33000,
+      "status": "paid",
+      "success": true,
+      "created_at": "2024-04-09T16:52:18.5260834Z",
+      "updated_at": "2024-04-09T16:52:18.5260834Z",
+      "gateway_response": {},
+      "antifraud_response": {},
+      "metadata": {}
+    },
+    "metadata": {}
+  }
+}

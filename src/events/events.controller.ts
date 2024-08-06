@@ -10,7 +10,7 @@ import {
   HttpStatus,
   HttpCode,
   NotFoundException,
-  Headers,
+  // Headers,
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
@@ -18,13 +18,13 @@ import { EventsService } from './events.service';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
 import { ReserveSpotDto } from './dto/reserve-spot.dto';
-import { AuthService } from '../firebase/auth.service';
+// import { AuthService } from '../firebase/auth.service';
 
 @Controller('events')
 export class EventsController {
   constructor(
     private readonly eventsService: EventsService,
-    private readonly authService: AuthService,
+    // private readonly authService: AuthService,
   ) {}
 
   @Post()
@@ -37,27 +37,27 @@ export class EventsController {
   )
   async create(
     @Body() createEventDto: CreateEventDto,
-    @Headers('authorization') authHeader: string,
+    // @Headers('authorization') authHeader: string,
   ) {
-    const token = authHeader?.split(' ')[1];
-    await this.authService.verifyToken(token);
+    // const token = authHeader?.split(' ')[1];
+    // await this.authService.verifyToken(token);
     return this.eventsService.create(createEventDto);
   }
 
   @Get()
-  async findAll(@Headers('authorization') authHeader: string) {
-    const token = authHeader?.split(' ')[1];
-    await this.authService.verifyToken(token);
+  async findAll() {
+    // const token = authHeader?.split(' ')[1];
+    // await this.authService.verifyToken(token);
     return this.eventsService.findAll();
   }
 
   @Get(':id')
   async findOne(
     @Param('id') id: string,
-    @Headers('authorization') authHeader: string,
+    // @Headers('authorization') authHeader: string,
   ) {
-    const token = authHeader?.split(' ')[1];
-    await this.authService.verifyToken(token);
+    // const token = authHeader?.split(' ')[1];
+    // await this.authService.verifyToken(token);
     return this.eventsService.findOne(id);
   }
 
@@ -72,10 +72,10 @@ export class EventsController {
   async update(
     @Param('id') id: string,
     @Body() updateEventDto: UpdateEventDto,
-    @Headers('authorization') authHeader: string,
+    // @Headers('authorization') authHeader: string,
   ) {
-    const token = authHeader?.split(' ')[1];
-    await this.authService.verifyToken(token);
+    // const token = authHeader?.split(' ')[1];
+    // await this.authService.verifyToken(token);
     return this.eventsService.update(id, updateEventDto);
   }
 
@@ -83,10 +83,10 @@ export class EventsController {
   @Delete(':id')
   async remove(
     @Param('id') id: string,
-    @Headers('authorization') authHeader: string,
+    // @Headers('authorization') authHeader: string,
   ) {
-    const token = authHeader?.split(' ')[1];
-    await this.authService.verifyToken(token);
+    // const token = authHeader?.split(' ')[1];
+    // await this.authService.verifyToken(token);
     return this.eventsService.remove(id);
   }
 
@@ -101,10 +101,10 @@ export class EventsController {
   async reserveSpots(
     @Body() dto: ReserveSpotDto,
     @Param('id') eventId: string,
-    @Headers('authorization') authHeader: string,
+    // @Headers('authorization') authHeader: string,
   ) {
-    const token = authHeader?.split(' ')[1];
-    await this.authService.verifyToken(token);
+    // const token = authHeader?.split(' ')[1];
+    // await this.authService.verifyToken(token);
     // Adicione o eventId e ajuste o DTO com informações adicionais
     const updatedDto = {
       ...dto,
@@ -139,10 +139,10 @@ export class EventsController {
   @Get(':id/reservations')
   async getEventReservations(
     @Param('id') id: string,
-    @Headers('authorization') authHeader: string,
+    // @Headers('authorization') authHeader: string,
   ) {
-    const token = authHeader?.split(' ')[1];
-    await this.authService.verifyToken(token);
+    // const token = authHeader?.split(' ')[1];
+    // await this.authService.verifyToken(token);
     const eventReservations =
       await this.eventsService.getAllReservationsByEvent(id);
 
@@ -155,20 +155,20 @@ export class EventsController {
   @Get(':id/installments')
   async getInstallments(
     @Param('id') eventId: string,
-    @Headers('authorization') authHeader: string,
+    // @Headers('authorization') authHeader: string,
   ) {
-    const token = authHeader?.split(' ')[1];
-    await this.authService.verifyToken(token);
+    // const token = authHeader?.split(' ')[1];
+    // await this.authService.verifyToken(token);
     return this.eventsService.getInstallments(eventId);
   }
 
   @Get(':id/registration-status')
   async getRegistrationStatus(
     @Param('id') id: string,
-    @Headers('authorization') authHeader: string,
+    // @Headers('authorization') authHeader: string,
   ): Promise<{ currentDate: Date; isOpen: boolean }> {
-    const token = authHeader?.split(' ')[1];
-    await this.authService.verifyToken(token);
+    // const token = authHeader?.split(' ')[1];
+    // await this.authService.verifyToken(token);
     return this.eventsService.checkRegistrationStatus(id);
   }
 }
