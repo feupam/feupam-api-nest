@@ -16,8 +16,7 @@ export class PaymentController {
   ) {
     //const token = authHeader?.split(' ')[1];
     //await this.authService.verifyToken(token);
-    const { paymentData } = body;
-    return this.paymentService.payment(paymentData);
+    return this.paymentService.payment(body);
   }
 
   @Post('webhook-pagarme')

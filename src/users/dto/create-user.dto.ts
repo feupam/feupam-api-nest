@@ -2,6 +2,7 @@ import {
   IsEmail,
   IsEnum,
   IsNotEmpty,
+  IsOptional,
   IsString,
   Validate,
 } from 'class-validator';
@@ -37,4 +38,32 @@ export class CreateUserDto {
 
   @IsEnum(Gender)
   gender: Gender;
+
+  @IsString()
+  @IsNotEmpty()
+  address: any;
+
+  @IsString()
+  @IsOptional()
+  complemento: any;
+
+  @IsString()
+  @IsNotEmpty()
+  cep: any;
+
+  @IsString()
+  @IsNotEmpty()
+  cidade: any;
+
+  @IsString()
+  @IsNotEmpty()
+  estado: any;
+
+  @IsString()
+  @IsNotEmpty()
+  ddd: any;
+
+  @IsString()
+  @IsNotEmpty()
+  cellphone: any;
 }

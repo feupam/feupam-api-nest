@@ -8,11 +8,29 @@ Content-Type: application/json
 Authorization: Bearer {{token}}
 
 {
-  "name": "user123",
   "email": "ariela.stefanini@sou.unifal-mg.edu.br",
   "userType": "client",
+  "name": "Ariela Stefanini ",
+  "church": "IPI Alpinópolis",
+  "pastor": "Vitor",
+  "ddd": "35",
+  "cellphone": "998185335",
   "gender": "male",
-  "cpf": "08850515995"
+  "cep": "37.940-000",
+  "cpf": "08850515995",
+  "data_nasc":"17/03/1993",
+  "idade": 18,
+  "responsavel": "Paulo",
+  "documento_responsavel": "05904651805",
+  "ddd_responsavel": "35",
+  "cellphone_responsavel": "999095569",
+  "address": "Rua Antonio Divino de Morais",
+  "complemento": "",
+  "cidade": "Alpinopolis",
+  "estado": "MG",
+  "alergia": "Não",
+  "medicamento":"Não",
+  "info_add": "Nao"
 }
 ###
 
@@ -157,46 +175,86 @@ Authorization: Bearer {{token}}
 # @spotName = {{ createSpot.response.body.name }}
 
 ### Chamada POST para a API payPaymentsPagarme
-# @name pagarme
+# @name pagarmeCredit
 POST {{base_url}}/payments
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
+{
+  "items": [
+    {
+      "amount": 2990,
+      "description": "federa"
+    }
+  ],
+  "customer": {
+    "email": "ariela.stefanini@sou.unifal-mg.edu.br"
+  },
+  "payments": {
+    "payment_method": "credit_card",
+    "credit_card": {
+      "installments": 1,
+      "statement_descriptor": "AVENGERS",
+      "card": {
+        "number": "4000000000000010",
+        "holder_name": "Tony Stark",
+        "exp_month": 1,
+        "exp_year": 30,
+        "cvv": "3531",
+        "billing_address": {
+          "line_1": "10880, Malibu Point, Malibu Central",
+          "zip_code": "90265",
+          "city": "Malibu",
+            "state": "CA",
+            "country": "US"                
+        }
+      }
+    }
+  }
+}
+
+###
+# @name pagarmeBoleto
+POST {{base_url}}/payments
+Content-Type: application/json
+Authorization: Bearer {{token}}
 
 {
-  "reservationId": "123456789",
-  "paymentData": {
-    "amount": 29000,
-    "payment_method": "credit_card",
-    "customer": {
-      "name": "Tony Stark",
-      "email": "tony.stark@avengers.com"
-    },
-    "items": [
-      {
-        "id": "federa",
-        "title": "Congresso2023",
-        "unit_price": 29000,
-        "quantity": 1,
-        "tangible": true
-      }
-    ],
-    "billing": {
-      "name": "Tony Stark",
-      "address": {
-        "country": "USA",
-        "state": "CA",
-        "city": "Malibu",
-        "neighborhood": "Central",
-        "street": "Malibu Point",
-        "street_number": "10880",
-        "zipcode": "90265"
-      }
-    },
-    "card_number": "4000000000000010",
-    "card_cvv": "3531",
-    "card_expiration_date": "12/30",
-    "card_holder_name": "Tony Stark"
+  "items": [
+    {
+      "amount": 2990,
+      "description": "federa"
+    }
+  ],
+  "customer": {
+    "email": "ariela.stefanini@sou.unifal-mg.edu.br"
+  },
+  "payments": {
+    "payment_method": "boleto",
+    "boleto": {
+      "due_at": "2024-08-07T00:00:00Z"
+    }
+  }
+}
+
+###
+# @name pagarmePix
+POST {{base_url}}/payments
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "items": [
+    {
+      "amount": 2990,
+      "description": "federa"
+    }
+  ],
+  "customer": {
+    "email": "ariela.stefanini@sou.unifal-mg.edu.br"
+  },
+  "payments": {
+    "payment_method": "pix"
   }
 }
 
@@ -215,7 +273,7 @@ Content-Type: application/json
   "type": "charge.paid",
   "created_at": "2024-04-09T16:56:01.8782162Z",
   "data": {
-    "id": "ch_4maq743fPFwgdvbW",
+    "id": "ch_Ea3bGdbUkUxOAmgd",
     "code": "D3NETMAX0D",
     "gateway_id": "807329",
     "amount": 33000,

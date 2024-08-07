@@ -1,8 +1,9 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import fetch from 'node-fetch';
-import { ChargeDto, CreatePaymentDto } from './dto/create-payment.dto';
+import { ChargeDto } from './dto/create-payment.dto';
 import { FirestoreService } from 'src/firebase/firebase.service';
 import { ConfigService } from '@nestjs/config';
+import { BuildBody } from './build-body';
 
 @Injectable()
 export class PaymentService {
@@ -16,26 +17,72 @@ export class PaymentService {
       this.configService.get<string>('TEST_PRIVATE_KEY') ?? 'n tem chave';
   }
 
-  async payment(body: CreatePaymentDto): Promise<ChargeDto> {
-    console.log('Dentro do provider pagarme');
+  async payment(req: any) {
     try {
+      const user: any = [];
+      const firestore = this.firestoreService.firestore;
+      const userQuery = firestore
+        .collection('users')
+        .where('email', '==', req.customer.email);
+
+      const queryUser = await userQuery.get();
+      queryUser.forEach((doc) => user.push(doc.data()));
+
+      const b = new BuildBody();
+      let bodyPagarme;
+      if (req.payments.payment_method === 'credit_card') {
+        bodyPagarme = b.creditBody(req, user[0]);
+      } else if (req.payments.payment_method === 'boleto') {
+        bodyPagarme = b.boletoBody(req, user[0]);
+      } else if (req.payments.payment_method === 'pix') {
+        bodyPagarme = b.pixBody(req, user[0]);
+      } else {
+        throw new Error('Tipo de pagamento não cadastrado');
+      }
+
+      const hist: any = [];
+      const reservationQuery = firestore
+        .collection('reservationHistory')
+        .where('email', '==', bodyPagarme.customer.email)
+        .where('eventId', '==', bodyPagarme.items[0].description);
+
+      const querySnapshot = await reservationQuery.get();
+      querySnapshot.forEach((doc) => hist.push(doc.data()));
+
+      if (
+        hist[0].eventId === bodyPagarme.items[0].description &&
+        hist[0].status === 'Pago'
+      ) {
+        return { message: 'usuario ja comprou' };
+      }
+
       const response = await fetch('https://api.pagar.me/core/v5/orders', {
         method: 'post',
         headers: {
-          Authorization: 'Bearer sk_test_36ad165ad80b4b819a0517d6b6d9c718',
+          Authorization:
+            'Basic ' +
+            Buffer.from('sk_test_36ad165ad80b4b819a0517d6b6d9c718:').toString(
+              'base64',
+            ),
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(body.paymentData),
+        body: JSON.stringify(bodyPagarme),
       });
-
-      console.log('fez o requesto no pagarme');
       const resp = await response.json();
-      if (!response.ok) {
-        console.log(resp);
-        throw new Error(`PAGARME: ${response.statusText}`);
+
+      if (response.status !== 200) {
+        const errorFields = Object.keys(resp.errors).map((key) => ({
+          field: key,
+        }));
+
+        const errorFieldsString = errorFields
+          .map((error) => error.field)
+          .join(', ');
+
+        throw new Error(
+          `message: ${resp.message}, fields: ${errorFieldsString}`,
+        );
       } else {
-        console.log('o resp pagarme existe nao é no pagarme');
-        console.log(resp);
         let payLink: string = '';
         if (resp.charges[0].payment_method === 'credit_card') {
           payLink = resp.charges[0].last_transaction.acquirer_message;
@@ -70,37 +117,23 @@ export class PaymentService {
           envioWhatsapp: false,
         };
 
-        const firestore = this.firestoreService.firestore;
-        const reservationQuery = firestore
-          .collection('reservationHistory')
-          .where('email', '==', body.paymentData.customer.email)
-          .where('eventId', '==', body.paymentData.items[0].title);
+        const updatePromises = querySnapshot.docs.map(async (doc) => {
+          const docData = doc.data();
 
-        try {
-          const querySnapshot = await reservationQuery.get();
+          const updatedCharges = docData.charges || [];
+          updatedCharges.push(charge);
 
-          const updatePromises = querySnapshot.docs.map(async (doc) => {
-            const docData = doc.data();
-
-            const updatedCharges = docData.charges || [];
-            updatedCharges.push(charge);
-
-            return doc.ref.update({
-              charges: updatedCharges,
-              status: status,
-            });
+          return doc.ref.update({
+            charges: updatedCharges,
+            status: status,
           });
+        });
+        await Promise.all(updatePromises);
 
-          await Promise.all(updatePromises);
-        } catch (error) {
-          console.error('Error updating charges:', error);
-        }
-
-        console.log('charge dados');
         return charge;
       }
     } catch (error) {
-      throw new BadRequestException('CHAMA a ARIELA: ' + error);
+      throw new BadRequestException(`Pagarme: ${error}`);
     }
   }
 
@@ -119,16 +152,21 @@ export class PaymentService {
         const docData = doc.data();
 
         if (Array.isArray(docData.charges)) {
-          const chargeToUpdate = docData.charges.find(
+          const chargeIndex = docData.charges.findIndex(
             (charge: any) => charge.chargeId === charge_data.id,
           );
 
-          if (chargeToUpdate) {
-            return doc.ref.update({ status: 'paid' });
+          if (chargeIndex !== -1) {
+            docData.charges[chargeIndex].status = 'Pago';
+
+            await doc.ref.update({
+              status: 'Pago',
+              charges: docData.charges,
+            });
+
+            return;
           }
         }
-
-        return Promise.resolve();
       });
 
       await Promise.all(updatePromises);
