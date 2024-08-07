@@ -273,7 +273,7 @@ Content-Type: application/json
   "type": "charge.paid",
   "created_at": "2024-04-09T16:56:01.8782162Z",
   "data": {
-    "id": "ch_Ea3bGdbUkUxOAmgd",
+    "id": "ch_9wn2KB8CxC4zxDod",
     "code": "D3NETMAX0D",
     "gateway_id": "807329",
     "amount": 33000,

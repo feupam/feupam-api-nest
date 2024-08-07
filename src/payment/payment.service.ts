@@ -1,9 +1,10 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import fetch from 'node-fetch';
 import { ChargeDto } from './dto/create-payment.dto';
+import { Queries } from './queries';
+import { Pagarme } from './pagarme';
+import { BuildBody } from './build-body';
 import { FirestoreService } from 'src/firebase/firebase.service';
 import { ConfigService } from '@nestjs/config';
-import { BuildBody } from './build-body';
 
 @Injectable()
 export class PaymentService {
@@ -17,159 +18,108 @@ export class PaymentService {
       this.configService.get<string>('TEST_PRIVATE_KEY') ?? 'n tem chave';
   }
 
-  async payment(req: any) {
+  async payment(req: any): Promise<ChargeDto> {
     try {
-      const user: any = [];
-      const firestore = this.firestoreService.firestore;
-      const userQuery = firestore
-        .collection('users')
-        .where('email', '==', req.customer.email);
-
-      const queryUser = await userQuery.get();
-      queryUser.forEach((doc) => user.push(doc.data()));
-
-      const b = new BuildBody();
-      let bodyPagarme;
-      if (req.payments.payment_method === 'credit_card') {
-        bodyPagarme = b.creditBody(req, user[0]);
-      } else if (req.payments.payment_method === 'boleto') {
-        bodyPagarme = b.boletoBody(req, user[0]);
-      } else if (req.payments.payment_method === 'pix') {
-        bodyPagarme = b.pixBody(req, user[0]);
-      } else {
-        throw new Error('Tipo de pagamento não cadastrado');
-      }
-
-      const hist: any = [];
-      const reservationQuery = firestore
-        .collection('reservationHistory')
-        .where('email', '==', bodyPagarme.customer.email)
-        .where('eventId', '==', bodyPagarme.items[0].description);
-
-      const querySnapshot = await reservationQuery.get();
-      querySnapshot.forEach((doc) => hist.push(doc.data()));
+      const queriesService = new Queries(this.firestoreService);
+      const pagarmeService = new Pagarme();
+      const user = await queriesService.getUserByEmail(req.customer.email);
+      const bodyPagarme = this.buildRequestBody(req, user[0]);
+      const existingReservation =
+        await queriesService.getReservationByEmailAndEvent(
+          bodyPagarme.customer.email,
+          bodyPagarme.items[0].description,
+        );
 
       if (
-        hist[0].eventId === bodyPagarme.items[0].description &&
-        hist[0].status === 'Pago'
+        existingReservation[0]?.eventId === bodyPagarme.items[0].description &&
+        existingReservation[0]?.status === 'Pago'
       ) {
-        return { message: 'usuario ja comprou' };
+        return { message: 'usuario ja comprou' } as any;
       }
 
-      const response = await fetch('https://api.pagar.me/core/v5/orders', {
-        method: 'post',
-        headers: {
-          Authorization:
-            'Basic ' +
-            Buffer.from('sk_test_36ad165ad80b4b819a0517d6b6d9c718:').toString(
-              'base64',
-            ),
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(bodyPagarme),
-      });
-      const resp = await response.json();
+      const response = await pagarmeService.createPayment(bodyPagarme);
+      const charge = this.buildChargeDto(response);
+      await queriesService.updateReservationStatus(
+        bodyPagarme.customer.email,
+        bodyPagarme.items[0].description,
+        charge,
+        charge.status,
+      );
 
-      if (response.status !== 200) {
-        const errorFields = Object.keys(resp.errors).map((key) => ({
-          field: key,
-        }));
-
-        const errorFieldsString = errorFields
-          .map((error) => error.field)
-          .join(', ');
-
-        throw new Error(
-          `message: ${resp.message}, fields: ${errorFieldsString}`,
-        );
-      } else {
-        let payLink: string = '';
-        if (resp.charges[0].payment_method === 'credit_card') {
-          payLink = resp.charges[0].last_transaction.acquirer_message;
-        } else if (resp.charges[0].payment_method === 'boleto') {
-          payLink = resp.charges[0].last_transaction.pdf;
-        } else if (resp.charges[0].payment_method === 'pix') {
-          payLink = resp.charges[0].last_transaction.qr_code;
-        } else {
-          throw new Error('Meio de pagamento não cadastrado');
-        }
-
-        let status: string = '';
-        if (resp.status == 'paid') {
-          status = 'Pago';
-        } else if (resp.status == 'pending') {
-          status = 'Processando';
-        } else {
-          status = resp.status;
-        }
-
-        const charge: ChargeDto = {
-          event: resp.items[0].description,
-          chargeId: resp.charges[0].id,
-          status: status,
-          amount: resp.items[0].amount,
-          payLink: payLink,
-          qrcodePix: resp.charges[0].last_transaction.qr_code_url ?? '',
-          meio: resp.charges[0].payment_method,
-          email: resp.customer.email,
-          userID: '',
-          lote: 0,
-          envioWhatsapp: false,
-        };
-
-        const updatePromises = querySnapshot.docs.map(async (doc) => {
-          const docData = doc.data();
-
-          const updatedCharges = docData.charges || [];
-          updatedCharges.push(charge);
-
-          return doc.ref.update({
-            charges: updatedCharges,
-            status: status,
-          });
-        });
-        await Promise.all(updatePromises);
-
-        return charge;
-      }
+      return charge;
     } catch (error) {
       throw new BadRequestException(`Pagarme: ${error}`);
     }
   }
 
+  private buildRequestBody(req: any, user: any): any {
+    const buildBody = new BuildBody();
+    switch (req.payments.payment_method) {
+      case 'credit_card':
+        return buildBody.creditBody(req, user);
+      case 'boleto':
+        return buildBody.boletoBody(req, user);
+      case 'pix':
+        return buildBody.pixBody(req, user);
+      default:
+        throw new Error('Tipo de pagamento não cadastrado');
+    }
+  }
+
+  private buildChargeDto(response: any): ChargeDto {
+    const payLink = this.getPayLink(response.charges[0]);
+    const status = this.getStatus(response.status);
+
+    return {
+      event: response.items[0].description,
+      chargeId: response.charges[0].id,
+      status: status,
+      amount: response.items[0].amount,
+      payLink: payLink,
+      qrcodePix: response.charges[0].last_transaction.qr_code_url ?? '',
+      meio: response.charges[0].payment_method,
+      email: response.customer.email,
+      userID: '',
+      lote: 0,
+      envioWhatsapp: false,
+    };
+  }
+
+  private getPayLink(charge: any): string {
+    switch (charge.payment_method) {
+      case 'credit_card':
+        return charge.last_transaction.acquirer_message;
+      case 'boleto':
+        return charge.last_transaction.pdf;
+      case 'pix':
+        return charge.last_transaction.qr_code;
+      default:
+        throw new Error('Meio de pagamento não cadastrado');
+    }
+  }
+
+  private getStatus(status: string): string {
+    switch (status) {
+      case 'paid':
+        return 'Pago';
+      case 'pending':
+        return 'Processando';
+      default:
+        return status;
+    }
+  }
+
   async handlePagarmeWebhook(body: any): Promise<void> {
-    const firestore = this.firestoreService.firestore;
-    const charge_data: any = body.data;
+    const queriesService = new Queries(this.firestoreService);
 
-    if (charge_data.status === 'paid') {
-      const reservationQuery = firestore
-        .collection('reservationHistory')
-        .where('email', '==', charge_data.customer.email);
+    const chargeData = body.data;
 
-      const querySnapshot = await reservationQuery.get();
-
-      const updatePromises = querySnapshot.docs.map(async (doc) => {
-        const docData = doc.data();
-
-        if (Array.isArray(docData.charges)) {
-          const chargeIndex = docData.charges.findIndex(
-            (charge: any) => charge.chargeId === charge_data.id,
-          );
-
-          if (chargeIndex !== -1) {
-            docData.charges[chargeIndex].status = 'Pago';
-
-            await doc.ref.update({
-              status: 'Pago',
-              charges: docData.charges,
-            });
-
-            return;
-          }
-        }
-      });
-
-      await Promise.all(updatePromises);
+    if (chargeData.status === 'paid') {
+      await queriesService.updateChargeStatus(
+        chargeData.customer.email,
+        chargeData.id,
+        'Pago',
+      );
     }
   }
 }
