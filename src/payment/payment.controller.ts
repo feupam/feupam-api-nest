@@ -21,6 +21,6 @@ export class PaymentController {
 
   @Post('webhook-pagarme')
   async handlePagarmeWebhook(@Body() body: any) {
-    await this.paymentService.handlePagarmeWebhook(body);
+    return await this.paymentService.handlePagarmeWebhook(body);
   }
 }

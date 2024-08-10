@@ -166,7 +166,7 @@ export class EventsController {
   async getRegistrationStatus(
     @Param('id') id: string,
     // @Headers('authorization') authHeader: string,
-  ): Promise<{ currentDate: Date; isOpen: boolean }> {
+  ) {
     // const token = authHeader?.split(' ')[1];
     // await this.authService.verifyToken(token);
     return this.eventsService.checkRegistrationStatus(id);

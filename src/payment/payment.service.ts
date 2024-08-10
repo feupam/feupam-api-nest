@@ -3,7 +3,7 @@ import { ChargeDto } from './dto/create-payment.dto';
 import { Queries } from './queries';
 import { Pagarme } from './pagarme';
 import { BuildBody } from './build-body';
-import { FirestoreService } from 'src/firebase/firebase.service';
+import { FirestoreService } from '../firebase/firebase.service';
 import { ConfigService } from '@nestjs/config';
 
 @Injectable()
@@ -24,6 +24,7 @@ export class PaymentService {
       const pagarmeService = new Pagarme();
       const user = await queriesService.getUserByEmail(req.customer.email);
       const bodyPagarme = this.buildRequestBody(req, user[0]);
+
       const existingReservation =
         await queriesService.getReservationByEmailAndEvent(
           bodyPagarme.customer.email,
@@ -38,12 +39,45 @@ export class PaymentService {
       }
 
       const response = await pagarmeService.createPayment(bodyPagarme);
-      const charge = this.buildChargeDto(response);
+      let payLink: string = '';
+      if (response.charges[0].payment_method === 'credit_card') {
+        payLink = response.charges[0].last_transaction.acquirer_message;
+      } else if (response.charges[0].payment_method === 'boleto') {
+        payLink = response.charges[0].last_transaction.pdf;
+      } else if (response.charges[0].payment_method === 'pix') {
+        payLink = response.charges[0].last_transaction.qr_code;
+      } else {
+        throw new Error('Meio de pagamento não cadastrado');
+      }
+
+      let status: string = '';
+      if (response.status == 'paid') {
+        status = 'Pago';
+      } else if (response.status == 'pending') {
+        status = 'Processando';
+      } else {
+        status = response.status;
+      }
+
+      const charge: ChargeDto = {
+        event: response.items[0].description,
+        chargeId: response.charges[0].id,
+        status: status,
+        amount: response.items[0].amount,
+        payLink: payLink,
+        qrcodePix: response.charges[0].last_transaction.qr_code_url ?? '',
+        meio: response.charges[0].payment_method,
+        email: response.customer.email,
+        userID: '',
+        lote: 0,
+        envioWhatsapp: false,
+      };
+
       await queriesService.updateReservationStatus(
         bodyPagarme.customer.email,
         bodyPagarme.items[0].description,
         charge,
-        charge.status,
+        status,
       );
 
       return charge;
@@ -52,7 +86,7 @@ export class PaymentService {
     }
   }
 
-  private buildRequestBody(req: any, user: any): any {
+  public buildRequestBody(req: any, user: any): any {
     const buildBody = new BuildBody();
     switch (req.payments.payment_method) {
       case 'credit_card':
@@ -66,26 +100,7 @@ export class PaymentService {
     }
   }
 
-  private buildChargeDto(response: any): ChargeDto {
-    const payLink = this.getPayLink(response.charges[0]);
-    const status = this.getStatus(response.status);
-
-    return {
-      event: response.items[0].description,
-      chargeId: response.charges[0].id,
-      status: status,
-      amount: response.items[0].amount,
-      payLink: payLink,
-      qrcodePix: response.charges[0].last_transaction.qr_code_url ?? '',
-      meio: response.charges[0].payment_method,
-      email: response.customer.email,
-      userID: '',
-      lote: 0,
-      envioWhatsapp: false,
-    };
-  }
-
-  private getPayLink(charge: any): string {
+  public getPayLink(charge: any): string {
     switch (charge.payment_method) {
       case 'credit_card':
         return charge.last_transaction.acquirer_message;
@@ -98,7 +113,7 @@ export class PaymentService {
     }
   }
 
-  private getStatus(status: string): string {
+  public getStatus(status: string): string {
     switch (status) {
       case 'paid':
         return 'Pago';
@@ -109,7 +124,7 @@ export class PaymentService {
     }
   }
 
-  async handlePagarmeWebhook(body: any): Promise<void> {
+  async handlePagarmeWebhook(body: any) {
     const queriesService = new Queries(this.firestoreService);
 
     const chargeData = body.data;
@@ -121,5 +136,6 @@ export class PaymentService {
         'Pago',
       );
     }
+    return { message: 'ok' };
   }
 }

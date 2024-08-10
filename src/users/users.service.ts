@@ -29,7 +29,7 @@ export class UsersService {
     const userRef = usersCollection.doc();
     await userRef.set({
       ...createUserDto,
-      createdAt: new Date(),
+      createdAt: new Date().toISOString(),
     });
 
     return { id: userRef.id, ...createUserDto };
@@ -55,7 +55,7 @@ export class UsersService {
     const userRef = this.firestoreService.firestore.collection('users').doc(id);
     await userRef.update({
       ...updateUserDto,
-      updatedAt: new Date(),
+      updatedAt: new Date().toISOString(),
     });
     return { id, ...updateUserDto };
   }

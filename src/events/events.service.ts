@@ -7,7 +7,7 @@ import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
 import { FirestoreService } from '../firebase/firebase.service';
 import { EventType, UserType, Gender } from './dto/enum';
-import { TicketStatus, SpotStatus } from '../spots/dto/enum';
+import { TicketStatus, SpotStatus } from './dto/enum-spot';
 import { ReserveSpotDto } from './dto/reserve-spot.dto';
 import { Timestamp } from 'firebase-admin/firestore';
 
@@ -86,9 +86,7 @@ export class EventsService {
     return { id };
   }
 
-  async checkRegistrationStatus(
-    id: string,
-  ): Promise<{ currentDate: Date; isOpen: boolean }> {
+  async checkRegistrationStatus(id: string) {
     const eventRef = this.firestoreService.firestore
       .collection('events')
       .doc(id);
@@ -138,12 +136,12 @@ export class EventsService {
       const eventRef = firestore.collection('events').doc(dto.eventId);
       const eventDoc = await eventRef.get();
       if (!eventDoc.exists) {
-        throw new NotFoundException('Event not found');
+        new NotFoundException('Event not found');
       }
 
       const eventData = eventDoc.data();
       if (!eventData) {
-        throw new Error('Event data is missing');
+        throw new NotFoundException('Event data is missing');
       }
 
       // Verifique se os spots existem
@@ -214,7 +212,6 @@ export class EventsService {
         .where('email', '==', dto.email)
         .where('eventId', '==', dto.eventId);
       const userReservationsSnapshot = await userReservationsQuery.get();
-
       if (!userReservationsSnapshot.empty) {
         throw new BadRequestException(
           'User already has a reservation for this event',
@@ -296,20 +293,19 @@ export class EventsService {
       });
 
       await batch.commit();
-      return existingSpots.map((spot) => ({
+      const resp = existingSpots.map((spot) => ({
         spotId: spot.id,
         ticketKind: dto.ticket_kind,
         email: dto.email,
         eventId: dto.eventId,
         userId: dto.userId,
       }));
+      return resp[0];
     } catch (e) {
-      if (e instanceof BadRequestException) {
+      if (e instanceof Error) {
         throw e;
       } else {
-        throw new BadRequestException(
-          'An error occurred while reserving spots',
-        );
+        throw new Error(`Unknown error: ${e}`);
       }
     }
   }
@@ -336,7 +332,7 @@ export class EventsService {
     }
   }
 
-  async getInstallments(eventId: string): Promise<any> {
+  async getInstallments(eventId: string) {
     const firestore = this.firestoreService.firestore;
 
     // Verifique se o evento existe

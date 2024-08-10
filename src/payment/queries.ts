@@ -7,7 +7,7 @@ export class Queries {
     this.firestoreService = firestoreService;
   }
 
-  async getUserByEmail(email: string): Promise<any[]> {
+  public async getUserByEmail(email: string) {
     const user: any = [];
     const userQuery = this.firestoreService.firestore
       .collection('users')
@@ -17,7 +17,7 @@ export class Queries {
     return user;
   }
 
-  async getReservationByEmailAndEvent(
+  public async getReservationByEmailAndEvent(
     email: string,
     eventId: string,
   ): Promise<any[]> {
@@ -31,12 +31,12 @@ export class Queries {
     return hist;
   }
 
-  async updateReservationStatus(
+  public async updateReservationStatus(
     email: string,
     eventId: string,
     charge: ChargeDto,
     status: string,
-  ): Promise<void> {
+  ) {
     const reservationQuery = this.firestoreService.firestore
       .collection('reservationHistory')
       .where('email', '==', email)
@@ -47,6 +47,7 @@ export class Queries {
       const docData = doc.data();
       const updatedCharges = docData.charges || [];
       updatedCharges.push(charge);
+      console.log(status);
       return doc.ref.update({
         charges: updatedCharges,
         status: status,
@@ -56,7 +57,7 @@ export class Queries {
     await Promise.all(updatePromises);
   }
 
-  async updateChargeStatus(
+  public async updateChargeStatus(
     email: string,
     chargeId: string,
     status: string,

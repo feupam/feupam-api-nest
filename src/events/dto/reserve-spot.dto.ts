@@ -5,7 +5,7 @@ import {
   IsOptional,
   IsString,
 } from 'class-validator';
-import { TicketKind } from '../../spots/dto/enum';
+import { TicketKind } from './enum-spot';
 import { UserType, Gender } from './enum';
 
 export class ReserveSpotDto {
@@ -33,4 +33,12 @@ export class ReserveSpotDto {
   @IsNotEmpty()
   @IsEnum(Gender)
   gender?: Gender; // Gênero do usuário (opcional, necessário para eventos gender_specific)
+}
+
+export class ReservedDto {
+  spotId: string;
+  ticketKind: TicketKind;
+  email: string;
+  eventId: string;
+  userId: string;
 }
