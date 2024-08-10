@@ -8,6 +8,7 @@ import { PaymentModule } from './payment/payment.module';
 import { ConfigModule } from '@nestjs/config';
 import { StaffPassModule } from './staff-pass/staff-pass.module';
 import { CommentsModule } from './comments/comments.module';
+import { CuponsModule } from './cupom/cupons.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { CommentsModule } from './comments/comments.module';
     }),
     CommentsModule,
     StaffPassModule,
+    CuponsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
