@@ -83,7 +83,10 @@ export class UsersService {
   }
 
   async updateUserReservations(email: string) {
-    const reservationsSnapshot = await this.firestoreService.firestore
+    const firestore = this.firestoreService.firestore;
+
+    // Obtém todas as reservas do usuário com o e-mail fornecido
+    const reservationsSnapshot = await firestore
       .collection('reservationHistory')
       .where('email', '==', email)
       .get();
@@ -92,13 +95,31 @@ export class UsersService {
       throw new NotFoundException('Reservations not found for this user');
     }
 
+    // Obtém o primeiro documento de reserva
     const firstReservationDoc = reservationsSnapshot.docs[0];
+    const reservationData = firstReservationDoc.data();
+    const spotId = reservationData.spotId;
 
+    // Atualiza o status da reserva e o spotId para uma string vazia
     await firstReservationDoc.ref.update({
       status: 'cancelled',
+      spotId: '',
       updatedAt: new Date(),
     });
 
-    return { email: email, message: 'Reserva cancelada com sucesso' };
+    if (spotId) {
+      // Deleta o documento do spot se spotId estiver presente
+      const spotRef = firestore.collection('spots').doc(spotId);
+      try {
+        await spotRef.delete();
+      } catch (error) {
+        throw new BadRequestException('Error deleting spot document');
+      }
+    }
+
+    return {
+      email: email,
+      message: 'Reserva cancelada',
+    };
   }
 }
