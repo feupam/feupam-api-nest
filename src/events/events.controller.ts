@@ -137,6 +137,22 @@ export class EventsController {
     }
   }
 
+  @Post(':id/check-spot')
+  async checkSpot(
+    @Param('id') eventId: string,
+    // @Headers('authorization') authHeader: string,
+  ) {
+    // const token = authHeader?.split(' ')[1];
+    // await this.authService.verifyToken(token);
+    try {
+      const reservation = await this.eventsService.checkSpot(eventId);
+      return reservation;
+    } catch (error) {
+      const err = error as Error;
+      throw new HttpException(err.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
   @Get(':id/reservations')
   async getEventReservations(
     @Param('id') id: string,

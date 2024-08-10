@@ -121,19 +121,13 @@ export class EventsService {
     return { currentDate, isOpen };
   }
 
-  async reserveSpot(
-    dto: ReserveSpotDto & {
-      eventId: string;
-      userType: UserType;
-      gender?: Gender;
-    },
-  ) {
+  public async checkSpot(eventId: string) {
+    const email = 'test@test.com';
     const firestore = this.firestoreService.firestore;
-    const batch = firestore.batch();
 
     try {
       // Verifique se o evento existe
-      const eventRef = firestore.collection('events').doc(dto.eventId);
+      const eventRef = firestore.collection('events').doc(eventId);
       const eventDoc = await eventRef.get();
       if (!eventDoc.exists) {
         throw new NotFoundException('Event not found');
@@ -144,32 +138,10 @@ export class EventsService {
         throw new NotFoundException('Event data is missing');
       }
 
-      // Verifique se o usuário já tem uma reserva
-      const userReservationsQuery = firestore
-        .collection('reservationHistory')
-        .where('email', '==', dto.email)
-        .where('eventId', '==', dto.eventId);
-      const userReservationsSnapshot = await userReservationsQuery.get();
-
-      let existingReservation = null;
-
-      if (!userReservationsSnapshot.empty) {
-        userReservationsSnapshot.forEach((doc) => {
-          const reservation = doc.data();
-          if (reservation.status !== 'cancelled') {
-            throw new BadRequestException(
-              'User already has a reservation for this event',
-            );
-          } else {
-            existingReservation = doc; // Reserva cancelada encontrada
-          }
-        });
-      }
-
       // Contagem de spots existentes para o evento
       const spotsQuery = firestore
         .collection('spots')
-        .where('eventId', '==', dto.eventId);
+        .where('eventId', '==', eventId);
       const spotsSnapshot = await spotsQuery.get();
 
       const spotsCount = {
@@ -215,9 +187,7 @@ export class EventsService {
           spotsCount.clientMale + spotsCount.clientFemale >=
             eventData.maxGeneralSpots)
       ) {
-        const waitingListRef = firestore
-          .collection('waitingList')
-          .doc(dto.eventId);
+        const waitingListRef = firestore.collection('waitingList').doc(eventId);
         const waitingListDoc = await waitingListRef.get();
 
         if (waitingListDoc.exists) {
@@ -225,9 +195,9 @@ export class EventsService {
           const waitingListData = waitingListDoc.data();
           const existingEmails = waitingListData?.emails || [];
 
-          if (!existingEmails.includes(dto.email)) {
+          if (!existingEmails.includes(email)) {
             // Adiciona o novo e-mail e atualiza o documento
-            const updatedEmails = [...existingEmails, dto.email];
+            const updatedEmails = [...existingEmails, email];
             await waitingListRef.set(
               { emails: updatedEmails },
               { merge: true },
@@ -236,60 +206,106 @@ export class EventsService {
         } else {
           // Se o documento não existe, crie um novo com a lista de e-mails
           await waitingListRef.set({
-            emails: [dto.email],
+            emails: [email],
           });
         }
 
-        throw new BadRequestException('Você entrou para lista de espera');
+        return false;
       }
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
 
-      // Criação de um novo spot
-      const newSpotRef = firestore.collection('spots').doc();
-      const newSpot = {
-        eventId: dto.eventId,
-        status: SpotStatus.reserved,
-        gender: dto.gender || Gender.MALE,
-        userType: dto.userType,
-      };
-      batch.set(newSpotRef, newSpot);
+  async reserveSpot(
+    dto: ReserveSpotDto & {
+      eventId: string;
+      userType: UserType;
+      gender?: Gender;
+    },
+  ) {
+    try {
+      const firestore = this.firestoreService.firestore;
+      const batch = firestore.batch();
 
-      if (existingReservation) {
-        // Atualize a reserva existente
-        batch.update(existingReservation.ref, {
-          spotId: newSpotRef.id,
-          status: TicketStatus.reserved,
-          updatedAt: new Date(),
-        });
-      } else {
-        // Criação de uma nova reserva
-        const reservationRef = firestore.collection('reservationHistory').doc();
-        batch.set(reservationRef, {
+      const has_spot = await this.checkSpot(dto.eventId);
+      console.log(has_spot);
+      if (has_spot) {
+        // Verifique se o usuário já tem uma reserva
+        const userReservationsQuery = firestore
+          .collection('reservationHistory')
+          .where('email', '==', dto.email)
+          .where('eventId', '==', dto.eventId);
+        const userReservationsSnapshot = await userReservationsQuery.get();
+
+        let existingReservation = null;
+
+        if (!userReservationsSnapshot.empty) {
+          userReservationsSnapshot.forEach((doc) => {
+            const reservation = doc.data();
+            if (reservation.status !== 'cancelled') {
+              throw new BadRequestException(
+                'User already has a reservation for this event',
+              );
+            } else {
+              existingReservation = doc; // Reserva cancelada encontrada
+            }
+          });
+        }
+
+        // Criação de um novo spot
+        const newSpotRef = firestore.collection('spots').doc();
+        const newSpot = {
+          eventId: dto.eventId,
+          status: SpotStatus.reserved,
+          gender: dto.gender || Gender.MALE,
+          userType: dto.userType,
+        };
+        batch.set(newSpotRef, newSpot);
+
+        if (existingReservation) {
+          // Atualize a reserva existente
+          batch.update(existingReservation.ref, {
+            spotId: newSpotRef.id,
+            status: TicketStatus.reserved,
+            updatedAt: new Date(),
+          });
+        } else {
+          // Criação de uma nova reserva
+          const reservationRef = firestore
+            .collection('reservationHistory')
+            .doc();
+          batch.set(reservationRef, {
+            spotId: newSpotRef.id,
+            ticketKind: dto.ticket_kind,
+            email: dto.email,
+            status: TicketStatus.reserved,
+            userType: dto.userType,
+            gender: newSpot.gender,
+            eventId: dto.eventId,
+          });
+        }
+
+        // Criação de um novo ticket
+        const ticketRef = firestore.collection('tickets').doc();
+        batch.set(ticketRef, {
           spotId: newSpotRef.id,
           ticketKind: dto.ticket_kind,
           email: dto.email,
-          status: TicketStatus.reserved,
-          userType: dto.userType,
-          gender: newSpot.gender,
           eventId: dto.eventId,
         });
+
+        await batch.commit();
+        return {
+          spotId: newSpotRef.id,
+          ticketKind: dto.ticket_kind,
+          email: dto.email,
+          eventId: dto.eventId,
+        };
+      } else {
+        throw new BadRequestException('Você entrou para lista de espera');
       }
-
-      // Criação de um novo ticket
-      const ticketRef = firestore.collection('tickets').doc();
-      batch.set(ticketRef, {
-        spotId: newSpotRef.id,
-        ticketKind: dto.ticket_kind,
-        email: dto.email,
-        eventId: dto.eventId,
-      });
-
-      await batch.commit();
-      return {
-        spotId: newSpotRef.id,
-        ticketKind: dto.ticket_kind,
-        email: dto.email,
-        eventId: dto.eventId,
-      };
     } catch (e) {
       if (e instanceof Error) {
         throw e;

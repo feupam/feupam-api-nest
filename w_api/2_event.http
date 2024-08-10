@@ -56,9 +56,6 @@ DELETE {{base_url}}/events/{{eventId}}
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
-###
-# @name waitingList
-GET {{base_url}}/events/{{eventId}}/waiting-list
 
 ###
 # @name excel
