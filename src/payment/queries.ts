@@ -47,7 +47,6 @@ export class Queries {
       const docData = doc.data();
       const updatedCharges = docData.charges || [];
       updatedCharges.push(charge);
-      console.log(status);
       return doc.ref.update({
         charges: updatedCharges,
         status: status,

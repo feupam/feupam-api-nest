@@ -1,0 +1,32 @@
+### Base URL
+@base_url=http://localhost:3000
+@token=eyJhbGciOiJSUzI1NiIsImtpZCI6IjFkYmUwNmI1ZDdjMmE3YzA0NDU2MzA2MWZmMGZlYTM3NzQwYjg2YmMiLCJ0eXAiOiJKV1QifQ.eyJuYW1lIjoiQXJpZWxhIE1hcsOnYWwgU3RlZmFuaW5pIiwicGljdHVyZSI6Imh0dHBzOi8vbGgzLmdvb2dsZXVzZXJjb250ZW50LmNvbS9hL0FDZzhvY0wyVW1XWVdaTF9PR1ViNm5UbWdLbGVyRGE4dWdHU1BkcnczaW9fQnRrTmhRPXM5Ni1jIiwiaXNzIjoiaHR0cHM6Ly9zZWN1cmV0b2tlbi5nb29nbGUuY29tL2ZlZGVyYS1hcGkiLCJhdWQiOiJmZWRlcmEtYXBpIiwiYXV0aF90aW1lIjoxNzE1MTkwODIzLCJ1c2VyX2lkIjoiOWRLalJrTUVzSmhUWmxiazhqcVZ4ZXhGeW16MiIsInN1YiI6IjlkS2pSa01Fc0poVFpsYms4anFWeGV4RnltejIiLCJpYXQiOjE3MjI4OTU0NDksImV4cCI6MTcyMjg5OTA0OSwiZW1haWwiOiJhcmllbGEuc3RlZmFuaW5pQHNvdS51bmlmYWwtbWcuZWR1LmJyIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsImZpcmViYXNlIjp7ImlkZW50aXRpZXMiOnsiZ29vZ2xlLmNvbSI6WyIxMDE5ODIzNTg4NDU0MDkwMzU3ODEiXSwiZW1haWwiOlsiYXJpZWxhLnN0ZWZhbmluaUBzb3UudW5pZmFsLW1nLmVkdS5iciJdfSwic2lnbl9pbl9wcm92aWRlciI6Imdvb2dsZS5jb20ifX0.sTCuYhZRWn59dJt-X0kU_Mu_LC9vXKbr7YqvuoyRfUJKJOfYI-Zh8rC670fvZ31YYyfl6u0EAC9knqKCPXuuc8Hnd-5QEgfT76WdliRa-2Is0eK27xqs9iyLQ1Nyg53AtnrCqVh_AJRjean_iIKhpnXKdqDPB0sRmLsY_zdYyjEsf8sub9hsc1TtmglD-uiNVpkxebsBeFz79StlOZVFsgf-mdcdzx_syVrfdz8xHMv01K3BvYEbb2QYhLIo8EJI_HRNb4VQoYchiyMNzAjpogT7FGwIwyFN3RRCwiCKUb5SeDQOs6aF5Zp8T-jUCQMNpKaus5lZkA7oCNqR11ZXkw
+@email=test@test.com
+@eventId=federa
+
+###
+# @name makeReservation
+POST {{base_url}}/events/{{eventId}}/reserve-spot
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "spots": ["Spot A1"],
+  "ticket_kind": "full",
+  "email": "ariela.stefanini@sou.unifal-mg.edu.br",
+  "userType": "client",
+  "gender": "male",
+  "email": "{{email}}"
+}
+
+### Get reservations for a specific user
+# @name getReservationByUser
+GET {{base_url}}/users/{{email}}/reservations
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+### Get reservations for a specific event
+# @name getReservationByEvents
+GET {{base_url}}/events/{{eventId}}/reservations
+Content-Type: application/json
+Authorization: Bearer {{token}}
