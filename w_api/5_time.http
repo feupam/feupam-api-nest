@@ -6,6 +6,6 @@
 
 ### Verificar Status de Inscrição para um Evento
 # @name time
-GET {{base_url}}/events/{{eventId}}/registration-status
+GET {{base_url}}/events/{{eventId}}/event-status
 Content-Type: application/json
 Authorization: Bearer {{token}}

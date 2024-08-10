@@ -13,12 +13,14 @@ import {
   // Headers,
   UsePipes,
   ValidationPipe,
+  Res,
 } from '@nestjs/common';
 import { EventsService } from './events.service';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
 import { ReserveSpotDto } from './dto/reserve-spot.dto';
 // import { AuthService } from '../firebase/auth.service';
+import { Response } from 'express';
 
 @Controller('events')
 export class EventsController {
@@ -111,7 +113,6 @@ export class EventsController {
       eventId,
       userType: dto.userType, // Garanta que userType esteja presente
       gender: dto.gender,
-      userId: dto.userId,
     };
     try {
       // Passa o DTO atualizado para o serviço
@@ -162,7 +163,7 @@ export class EventsController {
     return this.eventsService.getInstallments(eventId);
   }
 
-  @Get(':id/registration-status')
+  @Get(':id/event-status')
   async getRegistrationStatus(
     @Param('id') id: string,
     // @Headers('authorization') authHeader: string,
@@ -170,5 +171,42 @@ export class EventsController {
     // const token = authHeader?.split(' ')[1];
     // await this.authService.verifyToken(token);
     return this.eventsService.checkRegistrationStatus(id);
+  }
+
+  @Get(':id/waiting-list')
+  async getWaitingList(
+    @Param('id') id: string,
+    // @Headers('authorization') authHeader: string,
+  ) {
+    return this.eventsService.getWaitingList(id);
+  }
+
+  @Get(':id/excel')
+  async exportReservations(
+    @Param('id') eventId: string,
+    @Res() res: Response,
+    // @Headers('authorization') authHeader: string,
+  ) {
+    try {
+      const reservations =
+        await this.eventsService.getAllReservationsByEvent(eventId);
+      const excelFile =
+        await this.eventsService.generateExcelFile(reservations);
+
+      // Set response headers for file download
+      res.setHeader(
+        'Content-Disposition',
+        'attachment; filename=reservations.xlsx',
+      );
+      res.setHeader(
+        'Content-Type',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      );
+
+      // Send the file
+      res.send(excelFile);
+    } catch (error) {
+      return new Error(`An error occurred while generating the file ${error}`);
+    }
   }
 }

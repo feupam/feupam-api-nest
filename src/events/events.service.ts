@@ -10,6 +10,7 @@ import { EventType, UserType, Gender } from './dto/enum';
 import { TicketStatus, SpotStatus } from './dto/enum-spot';
 import { ReserveSpotDto } from './dto/reserve-spot.dto';
 import { Timestamp } from 'firebase-admin/firestore';
+import ExcelJS from 'exceljs';
 
 @Injectable()
 export class EventsService {
@@ -123,7 +124,6 @@ export class EventsService {
   async reserveSpot(
     dto: ReserveSpotDto & {
       eventId: string;
-      userId: string;
       userType: UserType;
       gender?: Gender;
     },
@@ -136,74 +136,12 @@ export class EventsService {
       const eventRef = firestore.collection('events').doc(dto.eventId);
       const eventDoc = await eventRef.get();
       if (!eventDoc.exists) {
-        new NotFoundException('Event not found');
+        throw new NotFoundException('Event not found');
       }
 
       const eventData = eventDoc.data();
       if (!eventData) {
         throw new NotFoundException('Event data is missing');
-      }
-
-      // Verifique se os spots existem
-      const spotsQuery = firestore
-        .collection('spots')
-        .where('eventId', '==', dto.eventId)
-        .where('name', 'in', dto.spots);
-      const spotsSnapshot = await spotsQuery.get();
-
-      const existingSpots = spotsSnapshot.docs.map((doc) => ({
-        id: doc.id,
-        name: doc.data().name,
-        gender: doc.data().gender || Gender.MALE,
-      }));
-
-      const foundSpotsName = existingSpots.map((spot) => spot.name);
-      const notFoundSpotsName = dto.spots.filter(
-        (spotName) => !foundSpotsName.includes(spotName),
-      );
-
-      // Crie novos spots se eles não existirem
-      for (const spotName of notFoundSpotsName) {
-        const spotNumber = parseInt(spotName.match(/\d+/)?.[0] || '0', 10);
-        let maxSpots = 0;
-
-        if (eventData.eventType === EventType.GENERAL) {
-          maxSpots = eventData.maxGeneralSpots;
-        } else if (eventData.eventType === EventType.GENDER_SPECIFIC) {
-          if (dto.userType === UserType.CLIENT) {
-            maxSpots =
-              dto.gender === Gender.MALE
-                ? eventData.maxClientMale
-                : eventData.maxClientFemale;
-          } else if (dto.userType === UserType.STAFF) {
-            maxSpots =
-              dto.gender === Gender.MALE
-                ? eventData.maxStaffMale
-                : eventData.maxStaffFemale;
-          }
-        }
-
-        if (spotNumber > maxSpots) {
-          throw new BadRequestException(
-            `Spot number ${spotNumber} exceeds the total limit of ${maxSpots}`,
-          );
-        }
-
-        const newSpotRef = firestore.collection('spots').doc();
-        const newSpot = {
-          name: spotName,
-          eventId: dto.eventId,
-          userId: dto.userId,
-          status: SpotStatus.available,
-          gender: dto.gender || Gender.MALE,
-        };
-        batch.set(newSpotRef, newSpot);
-
-        existingSpots.push({
-          id: newSpotRef.id,
-          name: spotName,
-          gender: newSpot.gender,
-        });
       }
 
       // Verifique se o usuário já tem uma reserva
@@ -212,95 +150,146 @@ export class EventsService {
         .where('email', '==', dto.email)
         .where('eventId', '==', dto.eventId);
       const userReservationsSnapshot = await userReservationsQuery.get();
+
+      let existingReservation = null;
+
       if (!userReservationsSnapshot.empty) {
-        throw new BadRequestException(
-          'User already has a reservation for this event',
-        );
+        userReservationsSnapshot.forEach((doc) => {
+          const reservation = doc.data();
+          if (reservation.status !== 'cancelled') {
+            throw new BadRequestException(
+              'User already has a reservation for this event',
+            );
+          } else {
+            existingReservation = doc; // Reserva cancelada encontrada
+          }
+        });
       }
 
-      // Lógica para eventos com divisão por gênero
-      if (eventData.eventType === EventType.GENDER_SPECIFIC) {
-        const maxSpots = {
-          clientMale: eventData.maxClientMale,
-          clientFemale: eventData.maxClientFemale,
-          staffMale: eventData.maxStaffMale,
-          staffFemale: eventData.maxStaffFemale,
-        };
+      // Contagem de spots existentes para o evento
+      const spotsQuery = firestore
+        .collection('spots')
+        .where('eventId', '==', dto.eventId);
+      const spotsSnapshot = await spotsQuery.get();
 
-        const spotsCount = {
-          clientMale: 0,
-          clientFemale: 0,
-          staffMale: 0,
-          staffFemale: 0,
-        };
+      const spotsCount = {
+        clientMale: 0,
+        clientFemale: 0,
+        staffMale: 0,
+        staffFemale: 0,
+      };
 
-        existingSpots.forEach((spot) => {
+      spotsSnapshot.docs.forEach((doc) => {
+        const spot = doc.data();
+        if (eventData.eventType === EventType.GENDER_SPECIFIC) {
           if (spot.gender === Gender.MALE) {
-            if (dto.userType === UserType.CLIENT) {
+            if (spot.userType === UserType.CLIENT) {
               spotsCount.clientMale += 1;
-            } else if (dto.userType === UserType.STAFF) {
+            } else if (spot.userType === UserType.STAFF) {
               spotsCount.staffMale += 1;
             }
           } else if (spot.gender === Gender.FEMALE) {
-            if (dto.userType === UserType.CLIENT) {
+            if (spot.userType === UserType.CLIENT) {
               spotsCount.clientFemale += 1;
-            } else if (dto.userType === UserType.STAFF) {
+            } else if (spot.userType === UserType.STAFF) {
               spotsCount.staffFemale += 1;
             }
           }
-        });
-
-        // Verifique se as reservas excedem os limites por gênero e tipo
-        if (
-          spotsCount.clientMale > maxSpots.clientMale ||
-          spotsCount.clientFemale > maxSpots.clientFemale ||
-          spotsCount.staffMale > maxSpots.staffMale ||
-          spotsCount.staffFemale > maxSpots.staffFemale
-        ) {
-          throw new BadRequestException(
-            'The number of spots reserved exceeds the limit for the specified gender or type',
-          );
+        } else {
+          // Para eventos do tipo GENERAL, contagem total
+          if (spot.userType === UserType.CLIENT) {
+            spotsCount.clientMale += 1; // Usando uma contagem unificada
+          } else if (spot.userType === UserType.STAFF) {
+            spotsCount.staffMale += 1;
+          }
         }
+      });
+      // Verifique se as reservas excedem os limites por gênero e tipo
+      if (
+        (eventData.eventType === EventType.GENDER_SPECIFIC &&
+          (spotsCount.clientMale >= eventData.maxClientMale ||
+            spotsCount.clientFemale >= eventData.maxClientFemale ||
+            spotsCount.staffMale >= eventData.maxStaffMale ||
+            spotsCount.staffFemale >= eventData.maxStaffFemale)) ||
+        (eventData.eventType === EventType.GENERAL &&
+          spotsCount.clientMale + spotsCount.clientFemale >=
+            eventData.maxGeneralSpots)
+      ) {
+        const waitingListRef = firestore
+          .collection('waitingList')
+          .doc(dto.eventId);
+        const waitingListDoc = await waitingListRef.get();
+
+        if (waitingListDoc.exists) {
+          // Se o documento existe, atualize a lista de e-mails
+          const waitingListData = waitingListDoc.data();
+          const existingEmails = waitingListData?.emails || [];
+
+          if (!existingEmails.includes(dto.email)) {
+            // Adiciona o novo e-mail e atualiza o documento
+            const updatedEmails = [...existingEmails, dto.email];
+            await waitingListRef.set(
+              { emails: updatedEmails },
+              { merge: true },
+            );
+          }
+        } else {
+          // Se o documento não existe, crie um novo com a lista de e-mails
+          await waitingListRef.set({
+            emails: [dto.email],
+          });
+        }
+
+        throw new BadRequestException('Você entrou para lista de espera');
       }
 
-      // Criação de reservas e atualização de status dos spots
-      existingSpots.forEach((spot) => {
+      // Criação de um novo spot
+      const newSpotRef = firestore.collection('spots').doc();
+      const newSpot = {
+        eventId: dto.eventId,
+        status: SpotStatus.reserved,
+        gender: dto.gender || Gender.MALE,
+        userType: dto.userType,
+      };
+      batch.set(newSpotRef, newSpot);
+
+      if (existingReservation) {
+        // Atualize a reserva existente
+        batch.update(existingReservation.ref, {
+          spotId: newSpotRef.id,
+          status: TicketStatus.reserved,
+          updatedAt: new Date(),
+        });
+      } else {
+        // Criação de uma nova reserva
         const reservationRef = firestore.collection('reservationHistory').doc();
         batch.set(reservationRef, {
-          spotId: spot.id,
+          spotId: newSpotRef.id,
           ticketKind: dto.ticket_kind,
           email: dto.email,
           status: TicketStatus.reserved,
           userType: dto.userType,
-          gender: spot.gender,
+          gender: newSpot.gender,
           eventId: dto.eventId,
-          userId: dto.userId,
         });
+      }
 
-        const spotRef = firestore.collection('spots').doc(spot.id);
-        batch.update(spotRef, {
-          status: SpotStatus.reserved,
-        });
-
-        const ticketRef = firestore.collection('tickets').doc();
-        batch.set(ticketRef, {
-          spotId: spot.id,
-          ticketKind: dto.ticket_kind,
-          email: dto.email,
-          eventId: dto.eventId,
-          userId: dto.userId,
-        });
-      });
-
-      await batch.commit();
-      const resp = existingSpots.map((spot) => ({
-        spotId: spot.id,
+      // Criação de um novo ticket
+      const ticketRef = firestore.collection('tickets').doc();
+      batch.set(ticketRef, {
+        spotId: newSpotRef.id,
         ticketKind: dto.ticket_kind,
         email: dto.email,
         eventId: dto.eventId,
-        userId: dto.userId,
-      }));
-      return resp[0];
+      });
+
+      await batch.commit();
+      return {
+        spotId: newSpotRef.id,
+        ticketKind: dto.ticket_kind,
+        email: dto.email,
+        eventId: dto.eventId,
+      };
     } catch (e) {
       if (e instanceof Error) {
         throw e;
@@ -389,5 +378,52 @@ export class EventsService {
     }
 
     return installmentOptions;
+  }
+
+  async getWaitingList(eventId: string): Promise<string[]> {
+    const waitingListRef = this.firestoreService.firestore
+      .collection('waitingList')
+      .doc(eventId);
+    const waitingListDoc = await waitingListRef.get();
+
+    if (waitingListDoc.exists) {
+      const waitingListData = waitingListDoc.data();
+      // Retorna a lista de e-mails, ou um array vazio se não houver e-mails
+      return waitingListData?.emails || [];
+    } else {
+      // Se o documento não existir, retorna um array vazio
+      return [];
+    }
+  }
+
+  async generateExcelFile(reservations: any[]): Promise<ExcelJS.Buffer> {
+    console.log('entrou');
+    const workbook = new ExcelJS.Workbook();
+    console.log('new?...');
+    const worksheet = workbook.addWorksheet('Relatório');
+    console.log('carregou...');
+    // Define columns
+    worksheet.columns = [
+      { header: 'Gender', key: 'gender', width: 15 },
+      { header: 'Ticket Kind', key: 'ticketKind', width: 20 },
+      { header: 'User Type', key: 'userType', width: 15 },
+      { header: 'Email', key: 'email', width: 30 },
+      { header: 'Status', key: 'status', width: 15 },
+    ];
+    console.log('gerou....');
+    // Add rows
+    reservations.forEach((reservation) => {
+      worksheet.addRow({
+        gender: reservation.gender,
+        ticketKind: reservation.ticketKind,
+        userType: reservation.userType,
+        email: reservation.email,
+        status: reservation.status,
+      });
+    });
+
+    // Generate Excel file buffer
+    const buffer = await workbook.xlsx.writeBuffer();
+    return buffer;
   }
 }

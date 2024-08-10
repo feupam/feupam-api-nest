@@ -66,10 +66,10 @@ export class UsersService {
     return { id };
   }
 
-  async getUserReservations(userId: string) {
+  async getUserReservations(email: string) {
     const reservationsSnapshot = await this.firestoreService.firestore
       .collection('reservationHistory')
-      .where('userId', '==', userId)
+      .where('email', '==', email)
       .get();
 
     if (reservationsSnapshot.empty) {
@@ -80,5 +80,25 @@ export class UsersService {
       id: doc.id,
       ...doc.data(),
     }));
+  }
+
+  async updateUserReservations(email: string) {
+    const reservationsSnapshot = await this.firestoreService.firestore
+      .collection('reservationHistory')
+      .where('email', '==', email)
+      .get();
+
+    if (reservationsSnapshot.empty) {
+      throw new NotFoundException('Reservations not found for this user');
+    }
+
+    const firstReservationDoc = reservationsSnapshot.docs[0];
+
+    await firstReservationDoc.ref.update({
+      status: 'cancelled',
+      updatedAt: new Date(),
+    });
+
+    return { email: email, message: 'Reserva cancelada com sucesso' };
   }
 }

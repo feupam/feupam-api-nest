@@ -13,10 +13,6 @@ export class ReserveSpotDto {
   @IsOptional()
   eventId: string;
 
-  @IsString()
-  @IsOptional()
-  userId: string;
-
   @IsArray()
   @IsString({ each: true })
   spots: string[]; // IDs dos spots a serem reservados
