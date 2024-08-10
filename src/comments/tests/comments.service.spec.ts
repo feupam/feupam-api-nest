@@ -59,7 +59,7 @@ describe('CommentsService', () => {
 
   it('should create a comment successfully', async () => {
     const dto: CreateCommentDto = {
-      content: 'Great post!',
+      comment: 'Great post!',
       emailUser: 'user123',
       hide: false,
     };
@@ -112,7 +112,7 @@ describe('CommentsService', () => {
 
   it('should update a comment successfully', async () => {
     const dto: UpdateCommentDto = {
-      content: 'Updated comment',
+      comment: 'Updated comment',
       hide: false,
     };
     const commentRef = {
