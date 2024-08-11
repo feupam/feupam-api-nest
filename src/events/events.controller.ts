@@ -10,7 +10,7 @@ import {
   HttpStatus,
   HttpCode,
   NotFoundException,
-  // Headers,
+  Headers,
   UsePipes,
   ValidationPipe,
   Res,
@@ -19,14 +19,14 @@ import { EventsService } from './events.service';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
 import { ReserveSpotDto } from './dto/reserve-spot.dto';
-// import { AuthService } from '../firebase/auth.service';
+import { AuthService } from '../firebase/auth.service';
 import { Response } from 'express';
 
 @Controller('events')
 export class EventsController {
   constructor(
     private readonly eventsService: EventsService,
-    // private readonly authService: AuthService,
+    private readonly authService: AuthService,
   ) {}
 
   @Post()
@@ -39,27 +39,27 @@ export class EventsController {
   )
   async create(
     @Body() createEventDto: CreateEventDto,
-    // @Headers('authorization') authHeader: string,
+    @Headers('authorization') authHeader: string,
   ) {
-    // const token = authHeader?.split(' ')[1];
-    // await this.authService.verifyToken(token);
+    const token = authHeader?.split(' ')[1];
+    await this.authService.verifyToken(token);
     return this.eventsService.create(createEventDto);
   }
 
   @Get()
-  async findAll() {
-    // const token = authHeader?.split(' ')[1];
-    // await this.authService.verifyToken(token);
+  async findAll(@Headers('authorization') authHeader: string) {
+    const token = authHeader?.split(' ')[1];
+    await this.authService.verifyToken(token);
     return this.eventsService.findAll();
   }
 
   @Get(':id')
   async findOne(
     @Param('id') id: string,
-    // @Headers('authorization') authHeader: string,
+    @Headers('authorization') authHeader: string,
   ) {
-    // const token = authHeader?.split(' ')[1];
-    // await this.authService.verifyToken(token);
+    const token = authHeader?.split(' ')[1];
+    await this.authService.verifyToken(token);
     return this.eventsService.findOne(id);
   }
 
@@ -74,10 +74,10 @@ export class EventsController {
   async update(
     @Param('id') id: string,
     @Body() updateEventDto: UpdateEventDto,
-    // @Headers('authorization') authHeader: string,
+    @Headers('authorization') authHeader: string,
   ) {
-    // const token = authHeader?.split(' ')[1];
-    // await this.authService.verifyToken(token);
+    const token = authHeader?.split(' ')[1];
+    await this.authService.verifyToken(token);
     return this.eventsService.update(id, updateEventDto);
   }
 
@@ -85,10 +85,10 @@ export class EventsController {
   @Delete(':id')
   async remove(
     @Param('id') id: string,
-    // @Headers('authorization') authHeader: string,
+    @Headers('authorization') authHeader: string,
   ) {
-    // const token = authHeader?.split(' ')[1];
-    // await this.authService.verifyToken(token);
+    const token = authHeader?.split(' ')[1];
+    await this.authService.verifyToken(token);
     return this.eventsService.remove(id);
   }
 
@@ -103,11 +103,10 @@ export class EventsController {
   async reserveSpots(
     @Body() dto: ReserveSpotDto,
     @Param('id') eventId: string,
-    // @Headers('authorization') authHeader: string,
+    @Headers('authorization') authHeader: string,
   ) {
-    // const token = authHeader?.split(' ')[1];
-    // await this.authService.verifyToken(token);
-    // Adicione o eventId e ajuste o DTO com informações adicionais
+    const token = authHeader?.split(' ')[1];
+    await this.authService.verifyToken(token);
     const updatedDto = {
       ...dto,
       eventId,
@@ -115,13 +114,11 @@ export class EventsController {
       gender: dto.gender,
     };
     try {
-      // Passa o DTO atualizado para o serviço
       const reservation = await this.eventsService.reserveSpot(updatedDto);
       return reservation;
     } catch (error) {
       const err = error as Error;
 
-      // Trate erros específicos
       if (err.message.includes('Spots') || err.message.includes('not found')) {
         throw new HttpException(err.message, HttpStatus.NOT_FOUND);
       } else if (
@@ -131,19 +128,25 @@ export class EventsController {
       } else if (err.message.includes('exceeds the limit')) {
         throw new HttpException(err.message, HttpStatus.BAD_REQUEST);
       } else {
-        // Erro genérico
         throw new HttpException(err.message, HttpStatus.INTERNAL_SERVER_ERROR);
       }
     }
   }
 
   @Post(':id/check-spot')
+  @UsePipes(
+    new ValidationPipe({
+      transform: true,
+      whitelist: true,
+      forbidNonWhitelisted: true,
+    }),
+  )
   async checkSpot(
     @Param('id') eventId: string,
-    // @Headers('authorization') authHeader: string,
+    @Headers('authorization') authHeader: string,
   ) {
-    // const token = authHeader?.split(' ')[1];
-    // await this.authService.verifyToken(token);
+    const token = authHeader?.split(' ')[1];
+    await this.authService.verifyToken(token);
     try {
       const reservation = await this.eventsService.checkSpot(eventId);
       return reservation;
@@ -156,10 +159,10 @@ export class EventsController {
   @Get(':id/reservations')
   async getEventReservations(
     @Param('id') id: string,
-    // @Headers('authorization') authHeader: string,
+    @Headers('authorization') authHeader: string,
   ) {
-    // const token = authHeader?.split(' ')[1];
-    // await this.authService.verifyToken(token);
+    const token = authHeader?.split(' ')[1];
+    await this.authService.verifyToken(token);
     const eventReservations =
       await this.eventsService.getAllReservationsByEvent(id);
 
@@ -172,28 +175,30 @@ export class EventsController {
   @Get(':id/installments')
   async getInstallments(
     @Param('id') eventId: string,
-    // @Headers('authorization') authHeader: string,
+    @Headers('authorization') authHeader: string,
   ) {
-    // const token = authHeader?.split(' ')[1];
-    // await this.authService.verifyToken(token);
+    const token = authHeader?.split(' ')[1];
+    await this.authService.verifyToken(token);
     return this.eventsService.getInstallments(eventId);
   }
 
   @Get(':id/event-status')
   async getRegistrationStatus(
     @Param('id') id: string,
-    // @Headers('authorization') authHeader: string,
+    @Headers('authorization') authHeader: string,
   ) {
-    // const token = authHeader?.split(' ')[1];
-    // await this.authService.verifyToken(token);
+    const token = authHeader?.split(' ')[1];
+    await this.authService.verifyToken(token);
     return this.eventsService.checkRegistrationStatus(id);
   }
 
   @Get(':id/waiting-list')
   async getWaitingList(
     @Param('id') id: string,
-    // @Headers('authorization') authHeader: string,
+    @Headers('authorization') authHeader: string,
   ) {
+    const token = authHeader?.split(' ')[1];
+    await this.authService.verifyToken(token);
     return this.eventsService.getWaitingList(id);
   }
 
@@ -201,8 +206,10 @@ export class EventsController {
   async exportReservations(
     @Param('id') eventId: string,
     @Res() res: Response,
-    // @Headers('authorization') authHeader: string,
+    @Headers('authorization') authHeader: string,
   ) {
+    const token = authHeader?.split(' ')[1];
+    await this.authService.verifyToken(token);
     try {
       const reservations =
         await this.eventsService.getAllReservationsByEvent(eventId);

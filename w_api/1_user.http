@@ -38,7 +38,7 @@ Authorization: Bearer {{token}}
 
 ###
 # @name getUserById
-GET {{base_url}}/users/{{email}}
+GET {{base_url}}/users
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
@@ -50,7 +50,7 @@ Authorization: Bearer {{token}}
 
 ###
 # @name updateUser
-PATCH  {{base_url}}/users/{{email}}
+PATCH  {{base_url}}/users
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
@@ -61,7 +61,7 @@ Authorization: Bearer {{token}}
 
 ###
 # @name deleteUser
-DELETE {{base_url}}/users/{{email}}
+DELETE {{base_url}}/users
 Content-Type: application/json
 Authorization: Bearer {{token}}
 

@@ -5,86 +5,81 @@ import {
   Post,
   Delete,
   Body,
-  Param,
-  // Headers,
+  Headers,
+  UsePipes,
+  ValidationPipe,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-// import { AuthService } from 'src/firebase/auth.service';
+import { AuthService } from 'src/firebase/auth.service';
 
 @Controller('users')
 export class UsersController {
   constructor(
     private readonly usersService: UsersService,
-    // private readonly authService: AuthService,
+    private readonly authService: AuthService,
   ) {}
 
   @Post()
+  @UsePipes(
+    new ValidationPipe({
+      transform: true,
+      whitelist: true,
+      forbidNonWhitelisted: true,
+    }),
+  )
   async create(
     @Body() createUserDto: CreateUserDto,
-    // @Headers('authorization') authHeader: string,
+    @Headers('authorization') authHeader: string,
   ) {
-    // const token = authHeader?.split(' ')[1];
-    // await this.authService.verifyToken(token);
+    const token = authHeader?.split(' ')[1];
+    await this.authService.verifyToken(token);
     return this.usersService.create(createUserDto);
   }
 
   @Get()
-  async findAll() {
-    // const token = authHeader?.split(' ')[1];
-    // await this.authService.verifyToken(token);
+  async findAll(@Headers('authorization') authHeader: string) {
+    const token = authHeader?.split(' ')[1];
+    await this.authService.verifyToken(token);
     return this.usersService.findAll();
   }
 
-  @Get(':id')
-  async findOne(
-    @Param('id') id: string,
-    // @Headers('authorization') authHeader: string,
-  ) {
-    // const token = authHeader?.split(' ')[1];
-    // await this.authService.verifyToken(token);
-    return this.usersService.findOne(id);
+  @Get()
+  async findOne(@Headers('authorization') authHeader: string) {
+    const token = authHeader?.split(' ')[1];
+    const decodedIdToken = await this.authService.verifyToken(token);
+    return this.usersService.findOne(decodedIdToken);
   }
 
-  @Patch(':id')
+  @Patch()
   async update(
-    @Param('id') id: string,
     @Body() updateUserDto: UpdateUserDto,
-    // @Headers('authorization') authHeader: string,
+    @Headers('authorization') authHeader: string,
   ) {
-    // const token = authHeader?.split(' ')[1];
-    // await this.authService.verifyToken(token);
-    return this.usersService.update(id, updateUserDto);
+    const token = authHeader?.split(' ')[1];
+    const decodedIdToken = await this.authService.verifyToken(token);
+    return this.usersService.update(decodedIdToken, updateUserDto);
   }
 
-  @Delete(':id')
-  async remove(
-    @Param('id') id: string,
-    // @Headers('authorization') authHeader: string,
-  ) {
-    // const token = authHeader?.split(' ')[1];
-    // await this.authService.verifyToken(token);
-    return this.usersService.remove(id);
+  @Delete()
+  async remove(@Headers('authorization') authHeader: string) {
+    const token = authHeader?.split(' ')[1];
+    const decodedIdToken = await this.authService.verifyToken(token);
+    return this.usersService.remove(decodedIdToken);
   }
 
-  @Get(':userId/reservations')
-  async getUserReservations(
-    @Param('userId') userId: string,
-    // @Headers('authorization') authHeader: string,
-  ) {
-    // const token = authHeader?.split(' ')[1];
-    // await this.authService.verifyToken(token);
-    return await this.usersService.getUserReservations(userId);
+  @Get('reservations')
+  async getUserReservations(@Headers('authorization') authHeader: string) {
+    const token = authHeader?.split(' ')[1];
+    const decodedIdToken = await this.authService.verifyToken(token);
+    return await this.usersService.getUserReservations(decodedIdToken);
   }
 
-  @Patch(':userId/cancel-reservation')
-  async cancelUserReservations(
-    @Param('userId') userId: string,
-    // @Headers('authorization') authHeader: string,
-  ) {
-    // const token = authHeader?.split(' ')[1];
-    // await this.authService.verifyToken(token);
-    return await this.usersService.cancelUserReservations(userId);
+  @Patch('cancel-reservation')
+  async cancelUserReservations(@Headers('authorization') authHeader: string) {
+    const token = authHeader?.split(' ')[1];
+    const decodedIdToken = await this.authService.verifyToken(token);
+    return await this.usersService.cancelUserReservations(decodedIdToken);
   }
 }

@@ -20,13 +20,13 @@ Authorization: Bearer {{token}}
 
 ### Get reservations for a specific user
 # @name getReservationByUser
-GET {{base_url}}/users/{{email}}/reservations
+GET {{base_url}}/users/reservations
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
 ### Get reservations for a specific user
 # @name cancelledReservationByUser
-PATCH {{base_url}}/users/{{email}}/cancel-reservation
+PATCH {{base_url}}/users/cancel-reservation
 Content-Type: application/json
 Authorization: Bearer {{token}}
 

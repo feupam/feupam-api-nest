@@ -133,7 +133,6 @@ describe('EventsController', () => {
     it('should reserve a spot for an event', async () => {
       const reserveSpotDto: ReserveSpotDto = {
         eventId: '',
-        userId: '',
         spots: [],
         ticket_kind: TicketKind.FULL,
         email: '',

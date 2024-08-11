@@ -87,7 +87,7 @@ describe('UsersController', () => {
 
   describe('getUserReservations', () => {
     it('should return reservations for a user', async () => {
-      expect(await controller.getUserReservations('1')).toEqual([
+      expect(await controller.getUserReservations()).toEqual([
         { id: '1', userId: '1' },
       ]);
     });

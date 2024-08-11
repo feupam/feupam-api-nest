@@ -61,14 +61,12 @@ export class PaymentService {
 
       const charge: ChargeDto = {
         event: response.items[0].description,
-        chargeId: response.charges[0].id,
         status: status,
         amount: response.items[0].amount,
         payLink: payLink,
         qrcodePix: response.charges[0].last_transaction.qr_code_url ?? '',
         meio: response.charges[0].payment_method,
         email: response.customer.email,
-        userID: '',
         lote: 0,
         envioWhatsapp: false,
       };

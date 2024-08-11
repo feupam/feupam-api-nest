@@ -6,16 +6,30 @@ import {
   Body,
   Param,
   Patch,
+  Headers,
+  UsePipes,
+  ValidationPipe,
 } from '@nestjs/common';
 import { CommentsService } from './comments.service';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { UpdateCommentDto } from './dto/update-comment.dto';
+import { AuthService } from 'src/firebase/auth.service';
 
 @Controller('comments')
 export class CommentsController {
-  constructor(private readonly commentsService: CommentsService) {}
+  constructor(
+    private readonly commentsService: CommentsService,
+    private readonly authService: AuthService,
+  ) {}
 
   @Post()
+  @UsePipes(
+    new ValidationPipe({
+      transform: true,
+      whitelist: true,
+      forbidNonWhitelisted: true,
+    }),
+  )
   async create(@Body() createCommentsDto: CreateCommentDto) {
     return this.commentsService.create(createCommentsDto);
   }
@@ -34,7 +48,10 @@ export class CommentsController {
   async update(
     @Param('id') id: string,
     @Body() updateCommentsDto: UpdateCommentDto,
+    @Headers('authorization') authHeader: string,
   ) {
+    const token = authHeader?.split(' ')[1];
+    await this.authService.verifyToken(token);
     return this.commentsService.update(id, updateCommentsDto);
   }
 

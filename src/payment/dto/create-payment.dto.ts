@@ -229,10 +229,6 @@ export class ChargeDto {
 
   @IsString()
   @IsNotEmpty()
-  chargeId: string;
-
-  @IsString()
-  @IsNotEmpty()
   status: string;
 
   @IsNumber()
@@ -254,10 +250,6 @@ export class ChargeDto {
   @IsEmail()
   @IsNotEmpty()
   email: string;
-
-  @IsString()
-  @IsNotEmpty()
-  userID: string;
 
   @IsNumber()
   @IsNotEmpty()

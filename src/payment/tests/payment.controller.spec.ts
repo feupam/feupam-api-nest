@@ -114,14 +114,12 @@ describe('PaymentController', () => {
       };
       const resp: ChargeDto = {
         event: 'federa',
-        chargeId: '',
         status: 'Pago',
         amount: 30000,
         payLink: 'payLink',
         qrcodePix: 'response.charges[0].last_transaction.qr_code_url',
         meio: 'pix',
         email: 'ariela.stefanini@sou.unifal-mg.edu.br',
-        userID: '',
         lote: 0,
         envioWhatsapp: false,
       };

@@ -42,31 +42,62 @@ export class UsersService {
     return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
   }
 
-  async findOne(id: string) {
-    const userRef = this.firestoreService.firestore.collection('users').doc(id);
+  async findOne(decodedIdToken) {
+    const email = decodedIdToken.email ?? '';
+    const userRef = this.firestoreService.firestore
+      .collection('users')
+      .where('email', '==', email);
     const doc = await userRef.get();
-    if (!doc.exists) {
+    if (doc.empty) {
       throw new NotFoundException('User not found');
     }
-    return { id: doc.id, ...doc.data() };
+    const userId = doc.docs[0];
+    return { userId };
   }
 
-  async update(id: string, updateUserDto: UpdateUserDto) {
-    const userRef = this.firestoreService.firestore.collection('users').doc(id);
-    await userRef.update({
-      ...updateUserDto,
-      updatedAt: new Date().toISOString(),
+  async update(decodedIdToken, updateUserDto: UpdateUserDto) {
+    const email = decodedIdToken.email ?? '';
+
+    const userRef = this.firestoreService.firestore
+      .collection('users')
+      .where('email', '==', email);
+    const querySnapshot = await userRef.get();
+    await querySnapshot.docs.map(async (doc) => {
+      doc.data();
+      return doc.ref.update({
+        ...updateUserDto,
+        updatedAt: new Date().toISOString(),
+      });
     });
-    return { id, ...updateUserDto };
+
+    return { updateUserDto };
   }
 
-  async remove(id: string) {
-    const userRef = this.firestoreService.firestore.collection('users').doc(id);
-    await userRef.delete();
-    return { id };
+  async remove(decodedIdToken) {
+    const email = decodedIdToken.email ?? '';
+    const userRef = this.firestoreService.firestore
+      .collection('users')
+      .where('email', '==', email);
+
+    const querySnapshot = await userRef.get();
+
+    if (querySnapshot.empty) {
+      return { message: 'No user found with the provided email' };
+    }
+
+    const batch = this.firestoreService.firestore.batch();
+
+    querySnapshot.forEach((doc) => {
+      batch.delete(doc.ref);
+    });
+
+    await batch.commit();
+
+    return { message: 'User(s) deleted successfully' };
   }
 
-  async getUserReservations(email: string) {
+  async getUserReservations(decodedIdToken) {
+    const email = decodedIdToken.email ?? '';
     const reservationsSnapshot = await this.firestoreService.firestore
       .collection('reservationHistory')
       .where('email', '==', email)
@@ -82,9 +113,9 @@ export class UsersService {
     }));
   }
 
-  async cancelUserReservations(email: string) {
+  async cancelUserReservations(decodedIdToken) {
     const firestore = this.firestoreService.firestore;
-
+    const email = decodedIdToken.email ?? '';
     // Obtém todas as reservas do usuário com o e-mail fornecido
     const reservationsSnapshot = await firestore
       .collection('reservationHistory')
