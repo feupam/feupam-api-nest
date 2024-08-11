@@ -26,7 +26,7 @@ Authorization: Bearer {{token}}
 
 ### Get reservations for a specific user
 # @name cancelledReservationByUser
-PATCH {{base_url}}/users/{{email}}/reservations
+PATCH {{base_url}}/users/{{email}}/cancel-reservation
 Content-Type: application/json
 Authorization: Bearer {{token}}
 

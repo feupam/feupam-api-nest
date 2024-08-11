@@ -82,7 +82,7 @@ export class UsersService {
     }));
   }
 
-  async updateUserReservations(email: string) {
+  async cancelUserReservations(email: string) {
     const firestore = this.firestoreService.firestore;
 
     // Obtém todas as reservas do usuário com o e-mail fornecido

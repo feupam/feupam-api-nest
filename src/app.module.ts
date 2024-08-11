@@ -9,6 +9,7 @@ import { ConfigModule } from '@nestjs/config';
 import { StaffPassModule } from './staff-pass/staff-pass.module';
 import { CommentsModule } from './comments/comments.module';
 import { CuponsModule } from './cupom/cupons.module';
+import { AdminModule } from './admin/admin.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { CuponsModule } from './cupom/cupons.module';
     CommentsModule,
     StaffPassModule,
     CuponsModule,
+    AdminModule,
   ],
   controllers: [AppController],
   providers: [AppService],

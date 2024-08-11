@@ -78,13 +78,13 @@ export class UsersController {
     return await this.usersService.getUserReservations(userId);
   }
 
-  @Patch(':userId/reservations')
-  async updateUserReservations(
+  @Patch(':userId/cancel-reservation')
+  async cancelUserReservations(
     @Param('userId') userId: string,
     // @Headers('authorization') authHeader: string,
   ) {
     // const token = authHeader?.split(' ')[1];
     // await this.authService.verifyToken(token);
-    return await this.usersService.updateUserReservations(userId);
+    return await this.usersService.cancelUserReservations(userId);
   }
 }
