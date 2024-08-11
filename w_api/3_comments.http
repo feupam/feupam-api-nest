@@ -13,7 +13,6 @@ Authorization: Bearer {{token}}
 
 {
     "comment": "string",
-    "emailUser": "{{email}}",
     "hide": false
 }
 

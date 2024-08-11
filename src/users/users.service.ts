@@ -43,6 +43,7 @@ export class UsersService {
   }
 
   async findOne(decodedIdToken) {
+    console.log('oi');
     const email = decodedIdToken.email ?? '';
     const userRef = this.firestoreService.firestore
       .collection('users')

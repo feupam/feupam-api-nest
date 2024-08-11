@@ -15,7 +15,6 @@ Authorization: Bearer {{token}}
   "ticket_kind": "full",
   "userType": "client",
   "gender": "male",
-  "email": "{{email}}"
 }
 
 ### Get reservations for a specific user

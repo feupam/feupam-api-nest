@@ -3,8 +3,6 @@ import { EventsService } from './events.service';
 import { EventsController } from './events.controller';
 import { FirebaseModule } from '../firebase/firebase.module';
 import { AuthMiddleware } from 'src/firebase/auth.middleware';
-import { PaymentController } from 'src/payment/payment.controller';
-// import { AuthMiddleware } from '../firebase/auth.middleware';
 
 @Module({
   imports: [FirebaseModule],
@@ -13,6 +11,6 @@ import { PaymentController } from 'src/payment/payment.controller';
 })
 export class EventsModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer.apply(AuthMiddleware).forRoutes(PaymentController);
+    consumer.apply(AuthMiddleware).forRoutes(EventsController);
   }
 }
