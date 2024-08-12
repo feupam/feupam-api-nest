@@ -19,11 +19,11 @@ export class UsersService {
 
     // Verifique se já existe um usuário com o mesmo CPF
     const existingUserSnapshot = await usersCollection
-      .where('cpf', '==', createUserDto.cpf)
+      .where('email', '==', createUserDto.email)
       .get();
 
     if (!existingUserSnapshot.empty) {
-      throw new BadRequestException('User with this CPF already exists');
+      throw new BadRequestException('User with this email already exists');
     }
 
     const userRef = usersCollection.doc();

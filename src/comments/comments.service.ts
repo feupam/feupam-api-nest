@@ -8,6 +8,7 @@ export class CommentsService {
   constructor(private firestoreService: FirestoreService) {}
 
   async create(createCommentsDto: CreateCommentDto) {
+    createCommentsDto.hide = false;
     const commentsRef = this.firestoreService.firestore
       .collection('comments')
       .doc();
