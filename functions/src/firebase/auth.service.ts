@@ -1,10 +1,7 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import * as admin from 'firebase-admin';
 import { FirestoreService } from './firebase.service';
-import * as dotenv from 'dotenv';
 import axios from 'axios';
-
-dotenv.config();
 
 @Injectable()
 export class AuthService {
@@ -16,7 +13,6 @@ export class AuthService {
       const decodedToken = await this.firestoreService
         .getAuth()
         .verifyIdToken(token);
-      console.log('jajaja');
       return decodedToken;
     } catch (error) {
       throw new UnauthorizedException('Invalid or expired token');
