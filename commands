@@ -1,11 +1,20 @@
-npm run start:dev
-
+# gerar pastas com crud
 nest g resource
 
-docker compose up
-docker compose down
+# run local
+npm run start:dev
+npm test -- --watch
 
-npx prisma generate
-npx prisma migrate dev
+firebase login
+# make backup firebase
+npx -p node-firestore-import-export firestore-import -a federa_api.json -b backup.json
+npx firestore-export --accountCredentials federa_api.json --backupFile backup.json
 
-docker compose exec app bash
+# deploy model on fly
+flyctl launch
+
+flyctl auth login
+flyctl deploy
+
+
+cat aqui.json | jq -c '. | to_entries | .[] | {(.key): .value}' > formatado.json
