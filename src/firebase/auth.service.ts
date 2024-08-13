@@ -4,9 +4,6 @@ import { FirestoreService } from './firebase.service';
 import * as jwt from 'jsonwebtoken';
 import * as bcrypt from 'bcryptjs';
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-require('dotenv').config();
-
 @Injectable()
 export class AuthService {
   private readonly saltRounds = 10;

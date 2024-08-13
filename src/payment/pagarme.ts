@@ -1,8 +1,5 @@
 import fetch from 'node-fetch';
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-require('dotenv').config();
-
 export class Pagarme {
   public async createPayment(bodyPagarme: any): Promise<any> {
     const key = process.env.PAGARME_KEY ?? 'pagarme sem chave';
