@@ -9,16 +9,16 @@ import { FirestoreService } from '../firebase/firebase.service';
 export class PaymentService {
   constructor(private readonly firestoreService: FirestoreService) {}
 
-  async payment(req: any): Promise<ChargeDto> {
+  async payment(req: any, email: string): Promise<ChargeDto> {
     try {
       const queriesService = new Queries(this.firestoreService);
       const pagarmeService = new Pagarme();
-      const user = await queriesService.getUserByEmail(req.customer.email);
+      const user = await queriesService.getUserByEmail(email);
       const bodyPagarme = this.buildRequestBody(req, user[0]);
 
       const existingReservation =
         await queriesService.getReservationByEmailAndEvent(
-          bodyPagarme.customer.email,
+          email,
           bodyPagarme.items[0].description,
         );
 
@@ -26,7 +26,16 @@ export class PaymentService {
         existingReservation[0]?.eventId === bodyPagarme.items[0].description &&
         existingReservation[0]?.status === 'Pago'
       ) {
-        return { message: 'usuario ja comprou' } as any;
+        throw new Error('usuario ja comprou');
+      }
+
+      const reservationQuery = this.firestoreService.firestore
+        .collection('reservationHistory')
+        .where('email', '==', email)
+        .where('eventId', '==', bodyPagarme.items[0].description);
+      const queryReservation = await reservationQuery.get();
+      if (queryReservation.empty) {
+        throw new Error('Você nao possui reserva para esse evento');
       }
 
       const response = await pagarmeService.createPayment(bodyPagarme);
@@ -49,7 +58,7 @@ export class PaymentService {
       } else {
         status = response.status;
       }
-
+      console.log(response);
       const charge: ChargeDto = {
         event: response.items[0].description,
         status: status,
@@ -60,13 +69,13 @@ export class PaymentService {
         email: response.customer.email,
         lote: 0,
         envioWhatsapp: false,
+        chargeId: response.charges[0].id,
       };
 
       await queriesService.updateReservationStatus(
-        bodyPagarme.customer.email,
-        bodyPagarme.items[0].description,
         charge,
         status,
+        queryReservation,
       );
 
       return charge;
@@ -116,12 +125,12 @@ export class PaymentService {
   async handlePagarmeWebhook(body: any) {
     const queriesService = new Queries(this.firestoreService);
 
-    const chargeData = body.data;
+    const webhookData = body.data;
 
-    if (chargeData.status === 'paid') {
+    if (webhookData.status === 'paid') {
       await queriesService.updateChargeStatus(
-        chargeData.customer.email,
-        chargeData.id,
+        webhookData.customer.email,
+        webhookData.id,
         'Pago',
       );
     }

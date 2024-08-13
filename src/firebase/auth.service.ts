@@ -57,7 +57,6 @@ export class AuthService {
         }
       }
     } catch (error) {
-      console.error('Unexpected error:', error);
       throw new UnauthorizedException('Invalid email or password');
     }
   }

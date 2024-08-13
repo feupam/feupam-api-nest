@@ -30,8 +30,13 @@ export class CommentsController {
       forbidNonWhitelisted: true,
     }),
   )
-  async create(@Body() createCommentsDto: CreateCommentDto) {
-    return this.commentsService.create(createCommentsDto);
+  async create(
+    @Body() createCommentsDto: CreateCommentDto,
+    @Headers('authorization') authHeader: string,
+  ) {
+    const token = authHeader?.split(' ')[1];
+    const decoded = await this.authService.verifyToken(token);
+    return this.commentsService.create(createCommentsDto, decoded.email);
   }
 
   @Get()

@@ -2,13 +2,14 @@
 @base_url=http://localhost:3000
 @email=test1@test.com
 @eventId=federa
-@token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImNvc3R1bWVyQGNvc3R1bWVyLmJyIiwiaWF0IjoxNzIzNTExNjAyLCJleHAiOjE3MjM1MTUyMDJ9.gXfHYsLWKOZzTcMMrEHh_kXjC7q-Q4AbUA5CQTlyyNA
+@token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImNvc3R1bWVyMkBjb3N0dW1lci5iciIsImlhdCI6MTcyMzU1NjgyMiwiZXhwIjoxNzIzNTYwNDIyfQ.kV3KHjQerPSkz-f0oMkyzDcXd6AmzBkHHe2FreYORvA
+
 
 ###
 # @name createUser
 POST {{base_url}}/users
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImNvc3R1bWVyQGNvc3R1bWVyLmJyIiwiaWF0IjoxNzIzNTExNjAyLCJleHAiOjE3MjM1MTUyMDJ9.gXfHYsLWKOZzTcMMrEHh_kXjC7q-Q4AbUA5CQTlyyNA
+Authorization: Bearer {{token}}
 
 {
   "userType": "client",
@@ -19,7 +20,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImNvc3R1b
   "cellphone": "99818536351",
   "gender": "male",
   "cep": "37.940-000",
-  "cpf": "0188551598295",
+  "cpf": "91",
   "data_nasc":"17/03/1993",
   "idade": 18,
   "responsavel": "Paulo",

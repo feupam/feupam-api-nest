@@ -106,15 +106,16 @@ export class EventsController {
     @Headers('authorization') authHeader: string,
   ) {
     const token = authHeader?.split(' ')[1];
-    await this.authService.verifyToken(token);
+    const decoded = await this.authService.verifyToken(token);
     const updatedDto = {
       ...dto,
       eventId,
-      userType: dto.userType, // Garanta que userType esteja presente
-      gender: dto.gender,
     };
     try {
-      const reservation = await this.eventsService.reserveSpot(updatedDto);
+      const reservation = await this.eventsService.reserveSpot(
+        updatedDto,
+        decoded.email,
+      );
       return reservation;
     } catch (error) {
       const err = error as Error;
@@ -183,12 +184,7 @@ export class EventsController {
   }
 
   @Get(':id/event-status')
-  async getRegistrationStatus(
-    @Param('id') id: string,
-    @Headers('authorization') authHeader: string,
-  ) {
-    const token = authHeader?.split(' ')[1];
-    await this.authService.verifyToken(token);
+  async getRegistrationStatus(@Param('id') id: string) {
     return this.eventsService.checkRegistrationStatus(id);
   }
 

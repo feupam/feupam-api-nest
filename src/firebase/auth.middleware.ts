@@ -12,21 +12,24 @@ require('dotenv').config();
 @Injectable()
 export class AuthMiddleware implements NestMiddleware {
   async use(req: Request, res: Response, next: NextFunction) {
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    let authHeader = req.headers.authorization;
+    if (!authHeader) {
+      authHeader = req.headers.authorization = 'Bearer semtoken';
+      return next();
+    }
+    if (!authHeader.startsWith('Bearer ')) {
       throw new UnauthorizedException('Token não fornecido ou mal formatado');
     }
 
     const token = authHeader.split('Bearer ')[1];
     try {
       const secretKey = process.env.PASS_KEY;
-      console.log(secretKey);
 
       const decodedToken: any = jwt.verify(token, secretKey);
       req['user'] = decodedToken;
       next();
     } catch (error) {
-      throw new UnauthorizedException('Token inválido AQUI');
+      throw new UnauthorizedException('Token inválido');
     }
   }
 }

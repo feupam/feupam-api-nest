@@ -1,4 +1,4 @@
-import { IsBoolean, IsNotEmpty, IsString } from 'class-validator';
+import { IsBoolean, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class CreateCommentDto {
   @IsString()
@@ -6,10 +6,10 @@ export class CreateCommentDto {
   comment: string;
 
   @IsString()
-  @IsNotEmpty()
+  @IsOptional()
   emailUser: string;
 
   @IsBoolean()
-  @IsNotEmpty()
+  @IsOptional()
   hide: boolean;
 }

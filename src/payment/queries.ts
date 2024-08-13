@@ -32,17 +32,10 @@ export class Queries {
   }
 
   public async updateReservationStatus(
-    email: string,
-    eventId: string,
     charge: ChargeDto,
     status: string,
+    querySnapshot,
   ) {
-    const reservationQuery = this.firestoreService.firestore
-      .collection('reservationHistory')
-      .where('email', '==', email)
-      .where('eventId', '==', eventId);
-    const querySnapshot = await reservationQuery.get();
-
     const updatePromises = querySnapshot.docs.map(async (doc) => {
       const docData = doc.data();
       const updatedCharges = docData.charges || [];
@@ -68,6 +61,7 @@ export class Queries {
 
     const updatePromises = querySnapshot.docs.map(async (doc) => {
       const docData = doc.data();
+
       if (Array.isArray(docData.charges)) {
         const chargeIndex = docData.charges.findIndex(
           (charge: any) => charge.chargeId === chargeId,
