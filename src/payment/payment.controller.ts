@@ -7,7 +7,7 @@ import {
   ValidationPipe,
 } from '@nestjs/common';
 import { PaymentService } from './payment.service';
-import { AuthService } from 'src/firebase/auth.service';
+import { AuthService } from '../firebase/auth.service';
 
 @Controller('payments')
 export class PaymentController {

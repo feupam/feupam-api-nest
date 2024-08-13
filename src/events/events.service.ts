@@ -230,7 +230,6 @@ export class EventsService {
       const batch = firestore.batch();
 
       const has_spot = await this.checkSpot(dto.eventId);
-      console.log(has_spot);
       if (has_spot) {
         // Verifique se o usuário já tem uma reserva
         const userReservationsQuery = firestore
@@ -413,11 +412,8 @@ export class EventsService {
   }
 
   async generateExcelFile(reservations: any[]): Promise<ExcelJS.Buffer> {
-    console.log('entrou');
     const workbook = new ExcelJS.Workbook();
-    console.log('new?...');
     const worksheet = workbook.addWorksheet('Relatório');
-    console.log('carregou...');
     // Define columns
     worksheet.columns = [
       { header: 'Gender', key: 'gender', width: 15 },
@@ -426,7 +422,6 @@ export class EventsService {
       { header: 'Email', key: 'email', width: 30 },
       { header: 'Status', key: 'status', width: 15 },
     ];
-    console.log('gerou....');
     // Add rows
     reservations.forEach((reservation) => {
       worksheet.addRow({

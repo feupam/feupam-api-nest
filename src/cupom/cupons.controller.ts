@@ -11,7 +11,7 @@ import {
   ValidationPipe,
 } from '@nestjs/common';
 import { CuponsService } from './cupons.service';
-import { AuthService } from 'src/firebase/auth.service';
+import { AuthService } from '../firebase/auth.service';
 
 @Controller('cupons')
 export class CuponsController {

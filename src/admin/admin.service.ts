@@ -4,8 +4,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { FirestoreService } from '../firebase/firebase.service';
-import { UserType } from 'src/events/dto/enum';
-import { TicketKind } from 'src/events/dto/enum-spot';
+import { UserType } from '../events/dto/enum';
+import { TicketKind } from '../events/dto/enum-spot';
 
 @Injectable()
 export class AdminService {
@@ -154,7 +154,6 @@ export class AdminService {
     if (querySnapshot.empty) {
       throw new NotFoundException('User not found');
     }
-    console.log(email);
     await querySnapshot.docs.map(async (doc) => {
       doc.data();
       return doc.ref.update({

@@ -1,4 +1,4 @@
-import { CreateUserDto } from 'src/users/dto/create-user.dto';
+import { CreateUserDto } from '../users/dto/create-user.dto';
 import { ReqPaymentDto } from './dto/req-payment.dto';
 import { BadRequestException } from '@nestjs/common';
 

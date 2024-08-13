@@ -2,7 +2,7 @@ import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { UsersController } from './users.controller';
 import { FirebaseModule } from '../firebase/firebase.module';
-import { AuthMiddleware } from 'src/firebase/auth.middleware';
+import { AuthMiddleware } from '../firebase/auth.middleware';
 
 @Module({
   imports: [FirebaseModule],

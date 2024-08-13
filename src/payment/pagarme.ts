@@ -1,15 +1,15 @@
 import fetch from 'node-fetch';
 
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+require('dotenv').config();
+
 export class Pagarme {
   public async createPayment(bodyPagarme: any): Promise<any> {
+    const key = process.env.PAGARME_KEY ?? 'pagarme sem chave';
     const response = await fetch('https://api.pagar.me/core/v5/orders', {
       method: 'post',
       headers: {
-        Authorization:
-          'Basic ' +
-          Buffer.from('sk_test_9f212bc3e77b43c88b919dc0ca577c13:').toString(
-            'base64',
-          ),
+        Authorization: 'Basic ' + Buffer.from(key).toString('base64'),
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(bodyPagarme),

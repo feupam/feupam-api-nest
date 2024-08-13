@@ -13,7 +13,7 @@ import {
 import { CommentsService } from './comments.service';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { UpdateCommentDto } from './dto/update-comment.dto';
-import { AuthService } from 'src/firebase/auth.service';
+import { AuthService } from '../firebase/auth.service';
 
 @Controller('comments')
 export class CommentsController {

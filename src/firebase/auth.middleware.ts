@@ -4,24 +4,29 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
-import { AuthService } from './auth.service';
+import * as jwt from 'jsonwebtoken';
+
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+require('dotenv').config();
 
 @Injectable()
 export class AuthMiddleware implements NestMiddleware {
-  constructor(private readonly authService: AuthService) {}
-
   async use(req: Request, res: Response, next: NextFunction) {
-    const token = req.headers.authorization?.split(' ')[1]; // Assume Bearer token
-
-    if (!token) {
-      throw new UnauthorizedException('Token not provided');
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      throw new UnauthorizedException('Token não fornecido ou mal formatado');
     }
 
+    const token = authHeader.split('Bearer ')[1];
     try {
-      await this.authService.verifyToken(token);
+      const secretKey = process.env.PASS_KEY;
+      console.log(secretKey);
+
+      const decodedToken: any = jwt.verify(token, secretKey);
+      req['user'] = decodedToken;
       next();
     } catch (error) {
-      throw new UnauthorizedException('Invalid or expired token');
+      throw new UnauthorizedException('Token inválido AQUI');
     }
   }
 }

@@ -1,5 +1,5 @@
 import { ChargeDto } from './dto/create-payment.dto';
-import { FirestoreService } from 'src/firebase/firebase.service';
+import { FirestoreService } from '../firebase/firebase.service';
 
 export class Queries {
   firestoreService: FirestoreService;

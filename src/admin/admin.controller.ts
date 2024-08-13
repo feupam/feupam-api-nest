@@ -9,7 +9,7 @@ import {
   ValidationPipe,
 } from '@nestjs/common';
 import { AdminService } from './admin.service';
-import { AuthService } from 'src/firebase/auth.service';
+import { AuthService } from '../firebase/auth.service';
 
 @Controller('admin')
 export class AdminController {

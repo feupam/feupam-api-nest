@@ -11,7 +11,7 @@ import {
   ValidationPipe,
 } from '@nestjs/common';
 import { StaffPassService } from './staff-pass.service';
-import { AuthService } from 'src/firebase/auth.service';
+import { AuthService } from '../firebase/auth.service';
 
 @Controller('staffpass')
 export class StaffPassController {

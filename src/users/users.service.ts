@@ -13,26 +13,30 @@ export class UsersService {
 
   private userCollection = this.firestoreService.firestore.collection('users');
 
-  async create(createUserDto: CreateUserDto) {
+  async create(createUserDto: CreateUserDto, email: string) {
     const firestore = this.firestoreService.getFirestore();
     const usersCollection = firestore.collection('users');
 
     // Verifique se já existe um usuário com o mesmo CPF
     const existingUserSnapshot = await usersCollection
-      .where('email', '==', createUserDto.email)
+      .where('cpf', '==', createUserDto.cpf)
       .get();
 
     if (!existingUserSnapshot.empty) {
-      throw new BadRequestException('User with this email already exists');
+      throw new BadRequestException('User with this cpf already exists');
     }
 
-    const userRef = usersCollection.doc();
-    await userRef.set({
+    const userRecord = await this.firestoreService.firestore
+      .collection('users')
+      .where('email', '==', email)
+      .get();
+    const doc = userRecord.docs[0];
+    await doc.ref.update({
       ...createUserDto,
       createdAt: new Date().toISOString(),
     });
 
-    return { id: userRef.id, ...createUserDto };
+    return { ...createUserDto };
   }
 
   async findAll() {
@@ -42,9 +46,7 @@ export class UsersService {
     return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
   }
 
-  async findOne(decodedIdToken) {
-    console.log('oi');
-    const email = decodedIdToken.email ?? '';
+  async findOne(email: string) {
     const userRef = this.firestoreService.firestore
       .collection('users')
       .where('email', '==', email);
@@ -53,7 +55,8 @@ export class UsersService {
       throw new NotFoundException('User not found');
     }
     const userId = doc.docs[0];
-    return { userId };
+    const data = userId.data();
+    return { data };
   }
 
   async update(decodedIdToken, updateUserDto: UpdateUserDto) {

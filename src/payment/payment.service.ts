@@ -4,19 +4,10 @@ import { Queries } from './queries';
 import { Pagarme } from './pagarme';
 import { BuildBody } from './build-body';
 import { FirestoreService } from '../firebase/firebase.service';
-import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class PaymentService {
-  private readonly key: string;
-
-  constructor(
-    private readonly firestoreService: FirestoreService,
-    private readonly configService: ConfigService,
-  ) {
-    this.key =
-      this.configService.get<string>('TEST_PRIVATE_KEY') ?? 'n tem chave';
-  }
+  constructor(private readonly firestoreService: FirestoreService) {}
 
   async payment(req: any): Promise<ChargeDto> {
     try {
