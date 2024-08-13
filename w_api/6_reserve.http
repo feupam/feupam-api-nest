@@ -2,7 +2,7 @@
 @base_url=http://localhost:3000
 @email=test1@test.com
 @eventId=federa1
-@token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImNvc3R1bWVyMkBjb3N0dW1lci5iciIsImlhdCI6MTcyMzU1OTMxNywiZXhwIjoxNzIzNTYyOTE3fQ.XqWVe0UCMilosDHgEjlnYRFyzgnuBKuQi1hVM5OZmrk
+@token="${env:TOKEN}"
 
 ###
 # @name makeReservation

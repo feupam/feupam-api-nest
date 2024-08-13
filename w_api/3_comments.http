@@ -1,9 +1,8 @@
 ### Base URL
 @base_url=http://localhost:3000
-@token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImNvc3R1bWVyQGNvc3R1bWVyLmJyIiwiaWF0IjoxNzIzNTUxNjExLCJleHAiOjE3MjM1NTUyMTF9._MbgnuFLKpFDfgHtJt1FxjTK3ZDeKZ5RYmfJ9zcBpoY
-
 @commentsId=federa
 @email=test@test.com
+@token="${env:TOKEN}"
 
 ###
 # @name createComments
