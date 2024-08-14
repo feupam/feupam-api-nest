@@ -7,8 +7,8 @@ export class AuthController {
 
   @Post('login')
   async login(@Body() body: { email: string; password: string }) {
-    const { email } = body;
-    const token = await this.authService.validateUser(email);
+    const { email, password } = body;
+    const token = await this.authService.validateUser(email, password);
     return { token };
   }
 }

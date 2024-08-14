@@ -34,25 +34,22 @@ export class UsersController {
     @Headers('authorization') authHeader: string,
   ) {
     const token = authHeader?.split(' ')[1];
-    await this.authService.verifyToken(token);
-    return this.usersService.create(createUserDto);
+    const decodedIdToken = await this.authService.verifyToken(token);
+    return this.usersService.create(createUserDto, decodedIdToken.email);
   }
 
   @Get('list-users')
-  async findAll(@Headers('authorization') authHeader: string) {
+  async findAll(@Headers('Authorization') authHeader: string) {
     const token = authHeader?.split(' ')[1];
     await this.authService.verifyToken(token);
     return this.usersService.findAll();
   }
 
   @Get()
-  async findOne(@Headers('authorization') authHeader: string) {
-    console.log('oi');
+  async findOne(@Headers('Authorization') authHeader: string) {
     const token = authHeader?.split(' ')[1];
-    console.log('oi2');
     const decodedIdToken = await this.authService.verifyToken(token);
-    console.log('oi3');
-    return this.usersService.findOne(decodedIdToken);
+    return this.usersService.findOne(decodedIdToken.email);
   }
 
   @Patch()

@@ -72,7 +72,7 @@ describe('CommentsService', () => {
       doc: mockDoc,
     } as any);
 
-    const result = await service.create(dto);
+    const result = await service.create(dto, '');
     expect(result).toEqual({ id: undefined, ...dto });
   });
 

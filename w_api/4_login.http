@@ -1,0 +1,12 @@
+@base_url=https://us-central1-federa-api.cloudfunctions.net/api
+
+
+### Chamada POST login
+# @name login
+POST {{base_url}}/auth/login
+Content-Type: application/json
+
+{
+    "email": "costume@costumer.br",
+    "password": "a123"
+}

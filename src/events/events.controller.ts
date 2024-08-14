@@ -13,14 +13,14 @@ import {
   Headers,
   UsePipes,
   ValidationPipe,
-  // Res,
+  Res,
 } from '@nestjs/common';
 import { EventsService } from './events.service';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
 import { ReserveSpotDto } from './dto/reserve-spot.dto';
 import { AuthService } from '../firebase/auth.service';
-// import { Response } from 'express';
+import { Response } from 'express';
 
 @Controller('events')
 export class EventsController {
@@ -106,15 +106,16 @@ export class EventsController {
     @Headers('authorization') authHeader: string,
   ) {
     const token = authHeader?.split(' ')[1];
-    await this.authService.verifyToken(token);
+    const decoded = await this.authService.verifyToken(token);
     const updatedDto = {
       ...dto,
       eventId,
-      userType: dto.userType, // Garanta que userType esteja presente
-      gender: dto.gender,
     };
     try {
-      const reservation = await this.eventsService.reserveSpot(updatedDto);
+      const reservation = await this.eventsService.reserveSpot(
+        updatedDto,
+        decoded.email,
+      );
       return reservation;
     } catch (error) {
       const err = error as Error;
@@ -183,12 +184,7 @@ export class EventsController {
   }
 
   @Get(':id/event-status')
-  async getRegistrationStatus(
-    @Param('id') id: string,
-    @Headers('authorization') authHeader: string,
-  ) {
-    const token = authHeader?.split(' ')[1];
-    await this.authService.verifyToken(token);
+  async getRegistrationStatus(@Param('id') id: string) {
     return this.eventsService.checkRegistrationStatus(id);
   }
 
@@ -202,35 +198,34 @@ export class EventsController {
     return this.eventsService.getWaitingList(id);
   }
 
-  //   @Get(':id/excel')
-  //   async exportReservations(
-  //     @Param('id') eventId: string,
-  //     @Res() res: Response,
-  //     @Headers('authorization') authHeader: string,
-  //   ) {
-  //     const token = authHeader?.split(' ')[1];
-  //     await this.authService.verifyToken(token);
-  //     try {
-  //       const reservations =
-  //         await this.eventsService.getAllReservationsByEvent(eventId);
-  //       const excelFile =
-  //         await this.eventsService.generateExcelFile(reservations);
+  @Get(':id/excel')
+  async exportReservations(
+    @Param('id') eventId: string,
+    @Res() res: Response,
+    @Headers('authorization') authHeader: string,
+  ) {
+    const token = authHeader?.split(' ')[1];
+    await this.authService.verifyToken(token);
+    try {
+      const reservations =
+        await this.eventsService.getAllReservationsByEvent(eventId);
+      const excelFile =
+        await this.eventsService.generateExcelFile(reservations);
 
-  //       // Set response headers for file download
-  //       res.setHeader(
-  //         'Content-Disposition',
-  //         'attachment; filename=reservations.xlsx',
-  //       );
-  //       res.setHeader(
-  //         'Content-Type',
-  //         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-  //       );
+      // Set response headers for file download
+      res.setHeader(
+        'Content-Disposition',
+        'attachment; filename=reservations.xlsx',
+      );
+      res.setHeader(
+        'Content-Type',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      );
 
-  //       // Send the file
-  //       res.send(excelFile);
-  //     } catch (error) {
-  //       return new Error(`An error occurred while generating the file ${error}`);
-  //     }
-  //   }
-  // }
+      // Send the file
+      res.send(excelFile);
+    } catch (error) {
+      return new Error(`An error occurred while generating the file ${error}`);
+    }
+  }
 }

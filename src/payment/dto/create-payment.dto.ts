@@ -225,6 +225,10 @@ export class CreatePaymentDto {
 export class ChargeDto {
   @IsString()
   @IsNotEmpty()
+  chargeId: string;
+
+  @IsString()
+  @IsNotEmpty()
   event: string;
 
   @IsString()

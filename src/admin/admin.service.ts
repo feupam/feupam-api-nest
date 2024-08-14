@@ -154,7 +154,6 @@ export class AdminService {
     if (querySnapshot.empty) {
       throw new NotFoundException('User not found');
     }
-    console.log(email);
     await querySnapshot.docs.map(async (doc) => {
       doc.data();
       return doc.ref.update({

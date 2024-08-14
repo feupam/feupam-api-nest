@@ -43,7 +43,7 @@ describe('CommentsController', () => {
       ...dto,
     });
 
-    const result = await controller.create(dto);
+    const result = await controller.create(dto, '');
     expect(result).toEqual({ id: 'newCommentId', ...dto });
     expect(service.create).toHaveBeenCalledWith(dto);
   });

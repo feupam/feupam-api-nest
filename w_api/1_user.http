@@ -1,13 +1,14 @@
 ### Base URL
-@base_url=http://localhost:3000
+@base_url=http://127.0.0.1:5001/federa-api/us-central1/api
 @email=test1@test.com
 @eventId=federa
+@token="${env:TOKEN}"
 
 ###
 # @name createUser
-POST {{base_url}}/create-users
+POST {{base_url}}/users
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJodHRwczovL2lkZW50aXR5dG9vbGtpdC5nb29nbGVhcGlzLmNvbS9nb29nbGUuaWRlbnRpdHkuaWRlbnRpdHl0b29sa2l0LnYxLklkZW50aXR5VG9vbGtpdCIsImlhdCI6MTcyMzQxNDU4NCwiZXhwIjoxNzIzNDE4MTg0LCJpc3MiOiJmaXJlYmFzZS1hZG1pbnNkay0zbmZvekBmZWRlcmEtYXBpLmlhbS5nc2VydmljZWFjY291bnQuY29tIiwic3ViIjoiZmlyZWJhc2UtYWRtaW5zZGstM25mb3pAZmVkZXJhLWFwaS5pYW0uZ3NlcnZpY2VhY2NvdW50LmNvbSIsInVpZCI6IjlkS2pSa01Fc0poVFpsYms4anFWeGV4RnltejIifQ.pbYxb1czH52DgVwtNCTMn2f78C7DNqfqpL-aHwXnYBAP0_pMZ1RtTbl4lQpLUvEHEu09G8VuI-cDg6RtMQ2l90WDVZqTXI1SnA4RIU32bYelmwBXVjtd3tvk82ZtLScEdd-tb9mDjpwTecMRhkHDapPHHeuSGHdA3yMnsNpYEuvADUc9CZnV9QMtsR5FEQ3xzasoiJLBNcJ3mg1LewHlkl4INZAOvDBIDThOLYdzWv1blCYAiLorz8e6YBVtf8BuD0iQmssjgN0HUKu6WTlZV3UvLRvURSQH-8aHv0MZWVWY22hqv_qIIp9BUpDQdfjuahUbhiHBrJtBPOPdET7XLg
+Authorization: Bearer {{token}}
 
 {
   "userType": "client",
@@ -18,7 +19,7 @@ Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJodHRwczovL
   "cellphone": "99818536351",
   "gender": "male",
   "cep": "37.940-000",
-  "cpf": "01885159895",
+  "cpf": "91",
   "data_nasc":"17/03/1993",
   "idade": 18,
   "responsavel": "Paulo",
@@ -38,27 +39,14 @@ Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJodHRwczovL
 # @name getUserById
 GET {{base_url}}/users
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJodHRwczovL2lkZW50aXR5dG9vbGtpdC5nb29nbGVhcGlzLmNvbS9nb29nbGUuaWRlbnRpdHkuaWRlbnRpdHl0b29sa2l0LnYxLklkZW50aXR5VG9vbGtpdCIsImlhdCI6MTcyMzQxNDU4NCwiZXhwIjoxNzIzNDE4MTg0LCJpc3MiOiJmaXJlYmFzZS1hZG1pbnNkay0zbmZvekBmZWRlcmEtYXBpLmlhbS5nc2VydmljZWFjY291bnQuY29tIiwic3ViIjoiZmlyZWJhc2UtYWRtaW5zZGstM25mb3pAZmVkZXJhLWFwaS5pYW0uZ3NlcnZpY2VhY2NvdW50LmNvbSIsInVpZCI6IjlkS2pSa01Fc0poVFpsYms4anFWeGV4RnltejIifQ.pbYxb1czH52DgVwtNCTMn2f78C7DNqfqpL-aHwXnYBAP0_pMZ1RtTbl4lQpLUvEHEu09G8VuI-cDg6RtMQ2l90WDVZqTXI1SnA4RIU32bYelmwBXVjtd3tvk82ZtLScEdd-tb9mDjpwTecMRhkHDapPHHeuSGHdA3yMnsNpYEuvADUc9CZnV9QMtsR5FEQ3xzasoiJLBNcJ3mg1LewHlkl4INZAOvDBIDThOLYdzWv1blCYAiLorz8e6YBVtf8BuD0iQmssjgN0HUKu6WTlZV3UvLRvURSQH-8aHv0MZWVWY22hqv_qIIp9BUpDQdfjuahUbhiHBrJtBPOPdET7XLg
+Authorization: Bearer {{token}}
 
-
-### Chamada POST login
-# @name login
-POST {{base_url}}/auth/login
-Content-Type: application/json
-
-{
-    "email": "ariela.stefanini@sou.unifal-mg.edu.br"
-}
-
-###
-@token = {{login.response.body.token}}
 
 ###
 # @name ListUser
 GET {{base_url}}/users/list-users
 Content-Type: application/json
 Authorization: Bearer {{token}}
-
 
 ###
 # @name updateUser
@@ -68,7 +56,7 @@ Authorization: Bearer {{token}}
 
 {
     "name": "Updated Name",
-    "email": "ariela.stefanini@sou.unifal-mg.edu.br"
+    "email": "costumer@costumer.br"
 }
 
 ###
@@ -76,7 +64,3 @@ Authorization: Bearer {{token}}
 DELETE {{base_url}}/users
 Content-Type: application/json
 Authorization: Bearer {{token}}
-
-###
-# @name listUsers
-GET {{base_url}}/users

@@ -1,50 +1,63 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import * as admin from 'firebase-admin';
 import { FirestoreService } from './firebase.service';
-import axios from 'axios';
+import * as jwt from 'jsonwebtoken';
+import * as bcrypt from 'bcryptjs';
+import * as functions from 'firebase-functions';
 
 @Injectable()
 export class AuthService {
+  private readonly saltRounds = 10;
   constructor(private firestoreService: FirestoreService) {}
 
   // Função para verificar o token JWT
   async verifyToken(token: string): Promise<admin.auth.DecodedIdToken> {
     try {
-      const decodedToken = await this.firestoreService
-        .getAuth()
-        .verifyIdToken(token);
+      const secretKey = functions.config().config.pass_key;
+      console.log('socorro')
+      console.log(token)
+      console.log(secretKey)
+      const decodedToken: any = jwt.verify(token, secretKey);
+
       return decodedToken;
     } catch (error) {
-      throw new UnauthorizedException('Invalid or expired token');
+      throw new UnauthorizedException('Invalid or expired token AQUI');
     }
   }
 
   // Função para validar o usuário usando email e senha
-  async validateUser(email: string): Promise<string> {
+  async validateUser(email: string, password: string): Promise<string> {
     try {
-      const userRecord = await this.firestoreService.auth.getUserByEmail(email);
+      const userRecord = await this.firestoreService.firestore
+        .collection('users')
+        .where('email', '==', email)
+        .get();
+      const secretKey = functions.config().config.pass_key;
+      const hashedPassword = await bcrypt.hash(password, this.saltRounds);
 
-      // Se o usuário for encontrado, você pode gerar um token personalizado aqui
-      if (userRecord) {
-        // Gerar um token personalizado (opcional)
-        const customToken = await admin
-          .auth()
-          .createCustomToken(userRecord.uid);
+      if (userRecord.empty) {
+        await this.firestoreService.firestore.collection('users').doc().set({
+          email: email,
+          password: hashedPassword,
+        });
+        const customToken = jwt.sign({ email }, secretKey, {
+          expiresIn: '1h',
+        });
         return customToken;
       } else {
-        throw new UnauthorizedException('Invalid email or password');
+        const doc = userRecord.docs[0];
+        const data = doc.data();
+        const isMatch = await bcrypt.compare(password, data.password);
+        if (isMatch) {
+          const customToken = jwt.sign({ email }, secretKey, {
+            expiresIn: '1h',
+          });
+          return customToken;
+        } else {
+          throw new Error('falha');
+        }
       }
     } catch (error) {
-      if (axios.isAxiosError(error)) {
-        // Log detailed error from Axios
-        console.error(
-          'Authentication error:',
-          error.response?.data || error.message,
-        );
-      } else {
-        // Log general error
-        console.error('Unexpected error:', error);
-      }
       throw new UnauthorizedException('Invalid email or password');
     }
   }

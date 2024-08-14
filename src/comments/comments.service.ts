@@ -7,13 +7,14 @@ import { UpdateCommentDto } from './dto/update-comment.dto';
 export class CommentsService {
   constructor(private firestoreService: FirestoreService) {}
 
-  async create(createCommentsDto: CreateCommentDto) {
+  async create(createCommentsDto: CreateCommentDto, email: string) {
     createCommentsDto.hide = false;
     const commentsRef = this.firestoreService.firestore
       .collection('comments')
       .doc();
     await commentsRef.set({
       ...createCommentsDto,
+      email: email,
       createdAt: new Date().toISOString(),
     });
 

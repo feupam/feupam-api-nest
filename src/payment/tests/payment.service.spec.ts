@@ -131,7 +131,7 @@ describe('PaymentService', () => {
     jest.spyOn(pagarme, 'createPayment').mockResolvedValue(response);
     jest.spyOn(queries, 'updateReservationStatus').mockResolvedValue();
 
-    const result = await service.payment(req);
+    const result = await service.payment(req, 'email@test');
     expect(result).toEqual(response);
   });
 

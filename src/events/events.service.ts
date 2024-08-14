@@ -74,7 +74,7 @@ export class EventsService {
       .doc(id);
     await eventRef.update({
       ...updateEventDto,
-      date: new Date(updateEventDto.date),
+      date: new Date().toISOString(),
     });
     return { id, ...updateEventDto };
   }
@@ -221,21 +221,26 @@ export class EventsService {
   async reserveSpot(
     dto: ReserveSpotDto & {
       eventId: string;
-      userType: UserType;
-      gender?: Gender;
     },
+    email: string,
   ) {
     try {
       const firestore = this.firestoreService.firestore;
       const batch = firestore.batch();
 
+      const userRecord = firestore
+        .collection('users')
+        .where('email', '==', email)
+        .get();
+      const userDoc = (await userRecord).docs[0];
+      const userData = userDoc.data();
+
       const has_spot = await this.checkSpot(dto.eventId);
-      console.log(has_spot);
       if (has_spot) {
         // Verifique se o usuário já tem uma reserva
         const userReservationsQuery = firestore
           .collection('reservationHistory')
-          .where('email', '==', dto.email)
+          .where('email', '==', email)
           .where('eventId', '==', dto.eventId);
         const userReservationsSnapshot = await userReservationsQuery.get();
 
@@ -259,8 +264,8 @@ export class EventsService {
         const newSpot = {
           eventId: dto.eventId,
           status: SpotStatus.reserved,
-          gender: dto.gender || Gender.MALE,
-          userType: dto.userType,
+          gender: userData.gender || Gender.MALE,
+          userType: userData.userType,
         };
         batch.set(newSpotRef, newSpot);
 
@@ -279,9 +284,9 @@ export class EventsService {
           batch.set(reservationRef, {
             spotId: newSpotRef.id,
             ticketKind: dto.ticket_kind,
-            email: dto.email,
+            email: userData.email,
             status: TicketStatus.reserved,
-            userType: dto.userType,
+            userType: userData.userType,
             gender: newSpot.gender,
             eventId: dto.eventId,
           });
@@ -292,7 +297,7 @@ export class EventsService {
         batch.set(ticketRef, {
           spotId: newSpotRef.id,
           ticketKind: dto.ticket_kind,
-          email: dto.email,
+          email: userData.email,
           eventId: dto.eventId,
         });
 
@@ -300,10 +305,29 @@ export class EventsService {
         return {
           spotId: newSpotRef.id,
           ticketKind: dto.ticket_kind,
-          email: dto.email,
+          email: userData.email,
           eventId: dto.eventId,
         };
       } else {
+        const waitingListRef = firestore
+          .collection('waitingList')
+          .doc(dto.eventId);
+        const waitingListDoc = await waitingListRef.get();
+
+        if (waitingListDoc.exists) {
+          // Se o documento existe, atualize a lista de e-mails
+          const waitingListData = waitingListDoc.data();
+          const existingEmails = waitingListData?.emails || [];
+
+          if (!existingEmails.includes(email)) {
+            // Adiciona o novo e-mail e atualiza o documento
+            const updatedEmails = [...existingEmails, email];
+            await waitingListRef.set(
+              { emails: updatedEmails },
+              { merge: true },
+            );
+          }
+        }
         throw new BadRequestException('Você entrou para lista de espera');
       }
     } catch (e) {
@@ -413,11 +437,8 @@ export class EventsService {
   }
 
   async generateExcelFile(reservations: any[]): Promise<ExcelJS.Buffer> {
-    console.log('entrou');
     const workbook = new ExcelJS.Workbook();
-    console.log('new?...');
     const worksheet = workbook.addWorksheet('Relatório');
-    console.log('carregou...');
     // Define columns
     worksheet.columns = [
       { header: 'Gender', key: 'gender', width: 15 },
@@ -426,7 +447,6 @@ export class EventsService {
       { header: 'Email', key: 'email', width: 30 },
       { header: 'Status', key: 'status', width: 15 },
     ];
-    console.log('gerou....');
     // Add rows
     reservations.forEach((reservation) => {
       worksheet.addRow({
