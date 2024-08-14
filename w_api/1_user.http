@@ -1,5 +1,5 @@
 ### Base URL
-@base_url=http://localhost:3000
+@base_url=http://127.0.0.1:5001/federa-api/us-central1/api
 @email=test1@test.com
 @eventId=federa
 @token="${env:TOKEN}"

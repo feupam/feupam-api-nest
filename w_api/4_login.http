@@ -1,4 +1,4 @@
-@base_url=http://localhost:3000
+@base_url=https://us-central1-federa-api.cloudfunctions.net/api
 
 
 ### Chamada POST login
@@ -7,6 +7,6 @@ POST {{base_url}}/auth/login
 Content-Type: application/json
 
 {
-    "email": "costumer2@costumer.br",
-    "password": "a"
+    "email": "costume@costumer.br",
+    "password": "a123"
 }

@@ -1,8 +1,10 @@
 import fetch from 'node-fetch';
+import * as functions from 'firebase-functions';
+
 
 export class Pagarme {
   public async createPayment(bodyPagarme: any): Promise<any> {
-    const key = process.env.PAGARME_KEY ?? 'pagarme sem chave';
+    const key = functions.config().config.pagarme_key;
 
     const response = await fetch('https://api.pagar.me/core/v5/orders', {
       method: 'post',

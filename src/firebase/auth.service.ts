@@ -3,6 +3,7 @@ import * as admin from 'firebase-admin';
 import { FirestoreService } from './firebase.service';
 import * as jwt from 'jsonwebtoken';
 import * as bcrypt from 'bcryptjs';
+import * as functions from 'firebase-functions';
 
 @Injectable()
 export class AuthService {
@@ -12,7 +13,10 @@ export class AuthService {
   // Função para verificar o token JWT
   async verifyToken(token: string): Promise<admin.auth.DecodedIdToken> {
     try {
-      const secretKey = process.env.PASS_KEY;
+      const secretKey = functions.config().config.pass_key;
+      console.log('socorro')
+      console.log(token)
+      console.log(secretKey)
       const decodedToken: any = jwt.verify(token, secretKey);
 
       return decodedToken;
@@ -28,7 +32,7 @@ export class AuthService {
         .collection('users')
         .where('email', '==', email)
         .get();
-      const secretKey = process.env.PASS_KEY;
+      const secretKey = functions.config().config.pass_key;
       const hashedPassword = await bcrypt.hash(password, this.saltRounds);
 
       if (userRecord.empty) {
