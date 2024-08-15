@@ -1,7 +1,7 @@
-@base_url=https://us-central1-federa-api.cloudfunctions.net/api
-@email=costumer@costumer.br
+@base_url=http://localhost:3000
+@email=c@costumer.br
 @eventId=federa
-@token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImNvc3R1bWVyQGNvc3R1bWVyLmJyIiwiaWF0IjoxNzIzNjg5MzM2LCJleHAiOjE3MjM2OTI5MzZ9.IkVlsYLO9g3Qm_QX5V9xzW0NYz_rTVmdgTsk812rvz8
+@token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImNvc3R1bWVyMUBjb3N0dW1lci5iciIsImlhdCI6MTcyMzc1MjcxMiwiZXhwIjoxNzIzNzU2MzEyfQ.A2n3TeSLmdEPNbcXl5n1KqW4N1NsSAupXvRzM3iz45M
 
 ### Chamada POST cria usuario com dados fake menos email
 # @name fastUser
@@ -27,7 +27,8 @@ Authorization: Bearer {{token}}
 
 {
     "email": "{{email}}",
-    "discount": "0.1"
+    "discount": 0.20,
+    "event": "federa"
 }
 
 ### Chamada POST da inscricao

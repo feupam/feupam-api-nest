@@ -1,9 +1,8 @@
 ### Base URL
-@base_url=https://us-central1-federa-api.cloudfunctions.net/api
+@base_url=http://localhost:3000
 @email=test1@test.com
 @eventId=federa
-@token=
-
+@token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImNAY29zdHVtZXIuYnIiLCJpYXQiOjE3MjM3NTMyODMsImV4cCI6MTcyMzc1Njg4M30.yX8r_XFlq_KRdYF7DIhTi-PoB49z0O1S-IYzCnpe2Eo
 ###
 # @name makeReservation
 POST {{base_url}}/events/{{eventId}}/reserve-spot

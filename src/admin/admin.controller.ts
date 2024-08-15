@@ -27,12 +27,12 @@ export class AdminController {
     }),
   )
   async applyDiscount(
-    @Body() body: { email: string; discount: number },
+    @Body() body: { email: string; discount: number, event: string },
     @Headers('authorization') authHeader: string,
   ) {
     const token = authHeader?.split(' ')[1];
     await this.authService.verifyToken(token);
-    return this.adminService.applyDiscount(body.email, body.discount);
+    return this.adminService.applyDiscount(body.email, body.discount, body.event);
   }
 
   @Post('fast-user')

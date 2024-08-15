@@ -271,7 +271,18 @@ export class EventsService {
             throw new Error('Event data is missing');
           }
         
-          const price = eventData.price;
+          let price = eventData.price;
+          const eventDiscount = userData.discount
+          let d;
+          if (userData.discount) {
+            d = eventDiscount.find(
+              (discount) => discount.event === dto.eventId
+            );
+          }
+          console.log(eventDiscount)
+          if (eventDiscount) {
+            price = price * (1 - d.discount);
+          }
 
           const reservationRef = firestore
             .collection('reservationHistory')

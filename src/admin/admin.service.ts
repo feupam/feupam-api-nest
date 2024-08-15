@@ -11,14 +11,28 @@ import { TicketKind } from '../events/dto/enum-spot';
 export class AdminService {
   constructor(private readonly firestoreService: FirestoreService) {}
 
-  async applyDiscount(email: string, discount: number) {
-    if (discount < 0 || discount > 1) {
+  async applyDiscount(email: string, discountBody: number, eventId: string) {
+    if (discountBody < 0 || discountBody > 1) {
       throw new BadRequestException('Discount must be between 0 and 1');
     }
     const userRef = this.firestoreService.firestore
       .collection('users')
       .where('email', '==', email);
     const querySnapshot = await userRef.get();
+
+    const userDoc = querySnapshot.docs[0];
+    const dataUser = userDoc.data();
+    const discount = dataUser.discount || [];
+    const existingCouponIndex = discount.findIndex(
+      (discount) => discount.event === eventId,
+    );
+    if (existingCouponIndex > -1) {
+      discount[existingCouponIndex] = { event: eventId, discount: discountBody };
+    } else {
+      discount.push({ event: eventId, discount: discountBody });
+    }
+
+    await userDoc.ref.update({ discount });
     await querySnapshot.docs.map(async (doc) => {
       doc.data();
       return doc.ref.update({
