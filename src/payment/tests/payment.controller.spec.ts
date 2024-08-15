@@ -127,6 +127,7 @@ describe('PaymentController', () => {
         email: 'ariela.stefanini@sou.unifal-mg.edu.br',
         lote: 0,
         envioWhatsapp: false,
+        chargeId: ''
       };
 
       const paymentServiceMock = {

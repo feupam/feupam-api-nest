@@ -180,9 +180,7 @@ describe('EventsController', () => {
       };
       const reserveSpotDto: ReserveSpotDto = {
         eventId: '',
-        spots: [],
         ticket_kind: TicketKind.FULL,
-        email: '',
         userType: UserType.CLIENT,
       };
       const result = {
@@ -264,19 +262,13 @@ describe('EventsController', () => {
 
   describe('getRegistrationStatus', () => {
     it('should get registration status for an event', async () => {
-      const mockRequest = {
-        headers: {
-          authorization: 'Bearer mockToken', // Mocka o header de autenticação
-        },
-      };
+
       const result = { currentDate: new Date(), isOpen: true };
       const id = 'someId';
-      jest.spyOn(service, 'checkRegistrationStatus').mockResolvedValue(result);
 
       expect(
         await controller.getRegistrationStatus(
           id,
-          mockRequest.headers.authorization,
         ),
       ).toBe(result);
       expect(service.checkRegistrationStatus).toHaveBeenCalledWith(id);

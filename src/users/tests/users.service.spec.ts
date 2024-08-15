@@ -59,6 +59,17 @@ describe('UsersService', () => {
       estado: 'mg',
       ddd: '35',
       cellphone: '999999999',
+      church: '',
+      pastor: '',
+      data_nasc: '',
+      idade: 0,
+      responsavel: '',
+      documento_responsavel: '',
+      ddd_responsavel: '',
+      cellphone_responsavel: '',
+      alergia: '',
+      medicamento: '',
+      info_add: ''
     };
 
     const mockWhere = jest.fn().mockReturnValue({
@@ -73,7 +84,7 @@ describe('UsersService', () => {
       where: mockWhere,
       doc: mockDoc,
     } as any);
-    const result = await service.create(dto);
+    const result = await service.create(dto, '');
     expect(result).toEqual({ id: 'newUserId', ...dto });
     expect(mockFirestore.collection).toHaveBeenCalledWith('users');
     expect(mockWhere).toHaveBeenCalledWith('cpf', '==', dto.cpf);

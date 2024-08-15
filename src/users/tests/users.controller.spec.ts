@@ -53,6 +53,17 @@ describe('UsersController', () => {
         estado: undefined,
         ddd: undefined,
         cellphone: undefined,
+        church: '',
+        pastor: '',
+        data_nasc: '',
+        idade: 0,
+        responsavel: '',
+        documento_responsavel: '',
+        ddd_responsavel: '',
+        cellphone_responsavel: '',
+        alergia: '',
+        medicamento: '',
+        info_add: ''
       };
       expect(
         await controller.create(dto, mockRequest.headers.authorization),

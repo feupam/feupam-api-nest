@@ -206,7 +206,7 @@ describe('EventsService', () => {
       email: 'user@example.com',
     };
 
-    const result = await service.reserveSpot(dto);
+    const result = await service.reserveSpot(dto, '');
 
     expect(result).toEqual({
       spotId: 'spot1',
