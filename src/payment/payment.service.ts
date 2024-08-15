@@ -44,7 +44,7 @@ export class PaymentService {
       // Verificar se o valor do item corresponde ao valor reservado
       const itemAmount = bodyPagarme.items[0].amount; // Valor do item em centavos
   
-      if (itemAmount >= reservedAmount) {
+      if (itemAmount < reservedAmount) {
         throw new Error('Valor incorreto');
       }
 
@@ -69,7 +69,6 @@ export class PaymentService {
       } else {
         status = response.status;
       }
-      console.log(response);
       const charge: ChargeDto = {
         event: response.items[0].description,
         status: status,

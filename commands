@@ -5,6 +5,8 @@ nest g resource
 npm run start:dev
 npm test -- --watch
 
+nest start --watch
+
 firebase login
 firebase init
 firebase deploy --only functions

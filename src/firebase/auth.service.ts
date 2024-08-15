@@ -13,15 +13,18 @@ export class AuthService {
   // Função para verificar o token JWT
   async verifyToken(token: string): Promise<admin.auth.DecodedIdToken> {
     try {
-      const secretKey = functions.config().config.pass_key;
-      console.log('socorro')
-      console.log(token)
-      console.log(secretKey)
+      let secretKey;
+      try{
+        secretKey = functions.config().config.pass_key;
+      } catch {
+        secretKey = process.env.pass_key;
+      }
+
       const decodedToken: any = jwt.verify(token, secretKey);
 
       return decodedToken;
     } catch (error) {
-      throw new UnauthorizedException('Invalid or expired token AQUI');
+      throw new UnauthorizedException('Invalid or expired token');
     }
   }
 
@@ -32,7 +35,13 @@ export class AuthService {
         .collection('users')
         .where('email', '==', email)
         .get();
-      const secretKey = functions.config().config.pass_key;
+      let secretKey;
+      try{
+        secretKey = functions.config().config.pass_key
+       } catch {
+        secretKey = process.env.pass_key;
+       }
+      
       const hashedPassword = await bcrypt.hash(password, this.saltRounds);
 
       if (userRecord.empty) {

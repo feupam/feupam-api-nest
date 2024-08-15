@@ -4,7 +4,13 @@ import * as functions from 'firebase-functions';
 
 export class Pagarme {
   public async createPayment(bodyPagarme: any): Promise<any> {
-    const key = functions.config().config.pagarme_key;
+
+    let key;
+    try{
+      key = functions.config().config.pagarme_key;
+    } catch {
+      key = process.env.pagarme_key;
+    }
 
     const response = await fetch('https://api.pagar.me/core/v5/orders', {
       method: 'post',

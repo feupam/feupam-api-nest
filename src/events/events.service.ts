@@ -20,33 +20,16 @@ export class EventsService {
   async create(dto: CreateEventDto) {
     const firestore = this.firestoreService.firestore;
 
-    // Usar o nome do evento como ID
     const eventId = dto.name;
 
-    // Referência do documento usando o nome como ID
     const eventRef = firestore.collection('events').doc(eventId);
-
-    // Dados do evento incluindo tipo e vagas
-    const eventData = {
-      name: dto.name,
-      date: dto.date,
-      location: dto.location,
-      eventType: dto.eventType,
-      maxClientMale: dto.maxClientMale || 0,
-      maxClientFemale: dto.maxClientFemale || 0,
-      maxStaffMale: dto.maxStaffMale || 0,
-      maxStaffFemale: dto.maxStaffFemale || 0,
-      maxGeneralSpots: dto.maxGeneralSpots || 0, // Para eventos de vagas gerais
-      startDate: dto.startDate,
-      endDate: dto.endDate,
-    };
-
+    const eventData = { ...dto };
     try {
       await eventRef.set(eventData);
       return { id: eventRef.id, ...eventData };
     } catch (e) {
       throw new BadRequestException(
-        'An error occurred while creating the event',
+        `An error occurred while creating the event ${e}`,
       );
     }
   }
@@ -282,8 +265,8 @@ export class EventsService {
           if (!eventDoc.exists) {
             throw new NotFoundException('Event not found');
           }
-        
           const eventData = eventDoc.data();
+
           if (!eventData) {
             throw new Error('Event data is missing');
           }
