@@ -55,6 +55,7 @@ describe('EventsController', () => {
         maxGeneralSpots: '',
         startDate: '',
         endDate: '',
+        price: 0
       };
       const result = {
         id: '',
