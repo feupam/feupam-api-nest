@@ -1,7 +1,7 @@
 @base_url=http://localhost:3000
 @email=c@costumer.br
 @eventId=federa
-@token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImNvc3R1bWVyMUBjb3N0dW1lci5iciIsImlhdCI6MTcyMzc1MjcxMiwiZXhwIjoxNzIzNzU2MzEyfQ.A2n3TeSLmdEPNbcXl5n1KqW4N1NsSAupXvRzM3iz45M
+@token=
 
 ### Chamada POST cria usuario com dados fake menos email
 # @name fastUser
