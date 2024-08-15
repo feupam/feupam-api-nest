@@ -12,6 +12,10 @@ import {
 import { Type } from 'class-transformer';
 
 class AddressDto {
+  @IsNumber()
+  @IsNotEmpty()
+  price
+
   @IsString()
   @IsNotEmpty()
   line_1: string;

@@ -2,6 +2,7 @@ import {
   IsEmail,
   IsEnum,
   IsNotEmpty,
+  IsNumber,
   IsOptional,
   IsString,
   Validate,
@@ -23,6 +24,50 @@ export class CreateUserDto {
   @IsString()
   @IsNotEmpty()
   name: string;
+
+  @IsString()
+  @IsNotEmpty()
+  church: string;
+
+  @IsString()
+  @IsNotEmpty()
+  pastor: string;
+
+  @IsString()
+  @IsNotEmpty()
+  data_nasc: string;
+
+  @IsNumber()
+  @IsNotEmpty()
+  idade: number;
+
+  @IsString()
+  @IsNotEmpty()
+  responsavel: string;
+
+  @IsString()
+  @IsNotEmpty()
+  documento_responsavel: string;
+
+  @IsString()
+  @IsNotEmpty()
+  ddd_responsavel: string;
+
+  @IsString()
+  @IsNotEmpty()
+  cellphone_responsavel: string;
+
+  @IsString()
+  @IsNotEmpty()
+  alergia: string;
+
+  @IsString()
+  @IsNotEmpty()
+  medicamento: string;
+
+  @IsString()
+  @IsNotEmpty()
+  info_add: string;
 
   @IsEmail()
   @IsOptional()

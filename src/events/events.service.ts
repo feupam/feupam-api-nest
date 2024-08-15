@@ -11,6 +11,7 @@ import { TicketStatus, SpotStatus } from './dto/enum-spot';
 import { ReserveSpotDto } from './dto/reserve-spot.dto';
 import { Timestamp } from 'firebase-admin/firestore';
 import ExcelJS from 'exceljs';
+import * as moment from 'moment-timezone';
 
 @Injectable()
 export class EventsService {
@@ -103,22 +104,21 @@ export class EventsService {
       throw new NotFoundException('Event data is missing');
     }
 
-    const currentDate = new Date();
+    const timeZone = 'America/Sao_Paulo';
 
-    // Verifique se startDate e endDate são do tipo Timestamp
+    const currentDateInBrazil = moment.tz(new Date(), timeZone).toDate();
+
     const startDate =
       eventData.startDate instanceof Timestamp
-        ? eventData.startDate.toDate()
-        : new Date(eventData.startDate);
-
+        ? moment.tz(eventData.startDate.toDate(), timeZone).toDate()
+        : moment.tz(new Date(eventData.startDate), timeZone).toDate();
     const endDate =
       eventData.endDate instanceof Timestamp
-        ? eventData.endDate.toDate()
-        : new Date(eventData.endDate);
+        ? moment.tz(eventData.endDate.toDate(), timeZone).toDate()
+        : moment.tz(new Date(eventData.endDate), timeZone).toDate();
+    const isOpen = currentDateInBrazil >= startDate && currentDateInBrazil <= endDate;
 
-    const isOpen = currentDate >= startDate && currentDate <= endDate;
-
-    return { currentDate, isOpen };
+    return { currentDate: currentDateInBrazil.toISOString(), isOpen };
   }
 
   public async checkSpot(eventId: string) {

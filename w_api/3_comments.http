@@ -1,8 +1,8 @@
 ### Base URL
-@base_url=http://localhost:3000
+@base_url=https://us-central1-federa-api.cloudfunctions.net/api
 @commentsId=federa
 @email=test@test.com
-@token="${env:TOKEN}"
+@token=
 
 ###
 # @name createComments

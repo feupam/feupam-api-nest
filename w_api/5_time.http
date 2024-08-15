@@ -1,6 +1,6 @@
 ### Base URL
-@base_url=http://localhost:3000
-@eventId=federa1
+@base_url=https://us-central1-federa-api.cloudfunctions.net/api
+@eventId=federa
 
 ### Verificar Status de Inscrição para um Evento
 # @name time

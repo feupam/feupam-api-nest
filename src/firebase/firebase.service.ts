@@ -4,6 +4,7 @@ import * as admin from 'firebase-admin';
 @Injectable()
 export class FirestoreService {
   public firestore: admin.firestore.Firestore;
+  public admin: typeof admin;
   public auth: admin.auth.Auth;
 
   constructor() {
@@ -12,6 +13,7 @@ export class FirestoreService {
       databaseURL: 'https://federa-api.firebaseio.com',
     });
     this.firestore = admin.firestore();
+    this.admin = admin;
     this.auth = admin.auth();
   }
 
@@ -21,5 +23,9 @@ export class FirestoreService {
 
   getAuth(): admin.auth.Auth {
     return this.auth;
+  }
+
+  getAdmin(): typeof admin {
+    return this.admin;
   }
 }

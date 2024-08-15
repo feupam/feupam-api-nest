@@ -1,8 +1,9 @@
 ### Base URL
-@base_url=http://localhost:3000
+@base_url=https://us-central1-federa-api.cloudfunctions.net/api
 @eventId=federa1
 @email=test@test.com
-@token="${env:TOKEN}"
+@token=
+
 ###
 # @name createEvent
 POST {{base_url}}/events
@@ -10,17 +11,17 @@ Content-Type: application/json
 Authorization: Bearer {{token}}
 
 {
-      "name": "federa1",
+      "name": "federa",
       "date": "2024-01-01",
       "location": "betel",
       "eventType": "gender_specific",
-      "maxClientMale": "1" ,
-      "maxClientFemale": "1",
-      "maxStaffMale": "1",
-      "maxStaffFemale": "1",
+      "maxClientMale": "13" ,
+      "maxClientFemale": "3",
+      "maxStaffMale": "3",
+      "maxStaffFemale": "3",
       "maxGeneralSpots": "300",
       "startDate": "2024-08-01T00:00:00Z",
-      "endDate": "2024-08-01T23:59:59Z"
+      "endDate": "2024-08-15T23:59:59Z"
 }
 
 ###
@@ -42,9 +43,7 @@ Content-Type: application/json
 Authorization: Bearer {{token}}
 
 {
-    "name": "UPDATE",
-    "description": "Federa2024",
-    "price": 30000
+    "name": "federa1"
 }
 
 ###
