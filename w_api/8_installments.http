@@ -1,8 +1,8 @@
 ### Base URL
-@base_url=http://localhost:3000
-@eventId=federa1
+@base_url=https://us-central1-federa-api.cloudfunctions.net/api
+@eventId=federa
 @email=test@test.com
-@token="${env:TOKEN}"
+@token=
 
 ### Get installments
 # @name getInstallments

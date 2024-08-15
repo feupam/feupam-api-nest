@@ -1,8 +1,7 @@
-### Base URL
-@base_url=http://localhost:3000
-@eventId=federa1
-@email=costumer@costumer.com
-@token="${env:TOKEN}"
+@base_url=https://us-central1-federa-api.cloudfunctions.net/api
+@email=costumer@costumer.br
+@eventId=federa
+@token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImNvc3R1bWVyQGNvc3R1bWVyLmJyIiwiaWF0IjoxNzIzNjg5MzM2LCJleHAiOjE3MjM2OTI5MzZ9.IkVlsYLO9g3Qm_QX5V9xzW0NYz_rTVmdgTsk812rvz8
 
 ### Chamada POST cria usuario com dados fake menos email
 # @name fastUser

@@ -38,8 +38,19 @@ export class PaymentService {
         throw new Error('Você nao possui reserva para esse evento');
       }
 
+      const reservationData = queryReservation.docs[0].data();
+      const reservedAmount = reservationData.price; // Preço registrado na reserva (em centavos)
+  
+      // Verificar se o valor do item corresponde ao valor reservado
+      const itemAmount = bodyPagarme.items[0].amount; // Valor do item em centavos
+  
+      if (itemAmount >= reservedAmount) {
+        throw new Error('Valor incorreto');
+      }
+
       const response = await pagarmeService.createPayment(bodyPagarme);
       let payLink: string = '';
+
       if (response.charges[0].payment_method === 'credit_card') {
         payLink = response.charges[0].last_transaction.acquirer_message;
       } else if (response.charges[0].payment_method === 'boleto') {

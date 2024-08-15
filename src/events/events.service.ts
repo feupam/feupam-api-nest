@@ -277,7 +277,19 @@ export class EventsService {
             updatedAt: new Date(),
           });
         } else {
-          // Criação de uma nova reserva
+          const eventRef = firestore.collection('events').doc(dto.eventId);
+          const eventDoc = await eventRef.get();
+          if (!eventDoc.exists) {
+            throw new NotFoundException('Event not found');
+          }
+        
+          const eventData = eventDoc.data();
+          if (!eventData) {
+            throw new Error('Event data is missing');
+          }
+        
+          const price = eventData.price;
+
           const reservationRef = firestore
             .collection('reservationHistory')
             .doc();
@@ -289,17 +301,9 @@ export class EventsService {
             userType: userData.userType,
             gender: newSpot.gender,
             eventId: dto.eventId,
+            price: price,
           });
         }
-
-        // Criação de um novo ticket
-        const ticketRef = firestore.collection('tickets').doc();
-        batch.set(ticketRef, {
-          spotId: newSpotRef.id,
-          ticketKind: dto.ticket_kind,
-          email: userData.email,
-          eventId: dto.eventId,
-        });
 
         await batch.commit();
         return {
@@ -363,19 +367,21 @@ export class EventsService {
 
   async getInstallments(eventId: string) {
     const firestore = this.firestoreService.firestore;
-
-    // Verifique se o evento existe
+  
+    // Verifique se o evento existe e obtenha o preço
     const eventRef = firestore.collection('events').doc(eventId);
     const eventDoc = await eventRef.get();
     if (!eventDoc.exists) {
       throw new NotFoundException('Event not found');
     }
-
+  
     const eventData = eventDoc.data();
     if (!eventData) {
       throw new Error('Event data is missing');
     }
-
+  
+    const priceInCents = eventData.price; // Convertendo preço para centavos
+  
     // Verifique se há vagas disponíveis
     const spotsQuery = firestore
       .collection('spots')
@@ -384,9 +390,9 @@ export class EventsService {
     const reservedSpots = spotsSnapshot.docs.filter(
       (doc) => doc.data().status === 'reserved',
     ).length;
-
+  
     let maxSpots = 0;
-
+  
     if (eventData.eventType === EventType.GENERAL) {
       maxSpots = eventData.maxGeneralSpots;
     } else if (eventData.eventType === EventType.GENDER_SPECIFIC) {
@@ -396,11 +402,11 @@ export class EventsService {
         eventData.maxStaffMale +
         eventData.maxStaffFemale;
     }
-
+  
     if (reservedSpots >= maxSpots) {
       throw new BadRequestException('No spots available for this event');
     }
-
+  
     // Tabela de juros
     const interestRates = [
       0.0454, 0.0266, 0.0399, 0.0532, 0.0665, 0.0789, 0.0937, 0.1064, 0.1197,
@@ -408,17 +414,32 @@ export class EventsService {
     ];
     const maxInstallments = 10;
     const installmentOptions = [];
-
+  
+    // Configurar o formatador para o formato brasileiro
+    const numberFormat = new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+  
     for (let i = 1; i <= maxInstallments; i++) {
       const interestRate = interestRates[i - 1];
+      const totalAmount = priceInCents * (1 + interestRate * i); // Valor total com juros
+      const installmentValue = totalAmount / i; // Valor de cada parcela
+  
+      // Formatar valor para o estilo brasileiro
+      const formattedInstallmentValue = numberFormat.format(installmentValue / 100); // Convertendo de centavos para reais
+  
       installmentOptions.push({
         installmentNumber: i,
-        interestRate: interestRate,
+        valueInCents: Math.round(installmentValue), // Valor em centavos
+        valueWithInterest: formattedInstallmentValue, // Valor formatado
       });
     }
-
+  
     return installmentOptions;
-  }
+  }  
 
   async getWaitingList(eventId: string): Promise<string[]> {
     const waitingListRef = this.firestoreService.firestore

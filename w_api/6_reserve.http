@@ -1,8 +1,8 @@
 ### Base URL
 @base_url=https://us-central1-federa-api.cloudfunctions.net/api
 @email=test1@test.com
-@eventId=federa1
-@token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImNvc3R1bWVyQGNvc3R1bWVyLmJyIiwiaWF0IjoxNzIzNjgyMDEwLCJleHAiOjE3MjM2ODU2MTB9.BJ10vWyUG3vOmM2sGbszAgLyJHXuxxBv3CfL16tkbv8
+@eventId=federa
+@token=
 
 ###
 # @name makeReservation

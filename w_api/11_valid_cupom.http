@@ -1,28 +1,28 @@
 ### Base URL
-@base_url=http://localhost:3000
-@eventId=federa1
-@email=test@test.com
-@token="${env:TOKEN}"
+@base_url=https://us-central1-federa-api.cloudfunctions.net/api
+@email = test@test.com
+@eventId=federa
+@token=
 
 ###
 # @name createCupom/updateCupom
-POST http://localhost:3000/cupons/{{eventId}}
+POST {{base_url}}/cupons/{{eventId}}
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
 {
-  "name": "CUPOM2",
-  "discount": 0.7
+  "name": "CUPOM32",
+  "discount": 0.72
 }
 
 ###
 # @name listCupons
-GET http://localhost:3000/cupons/{{eventId}}
+GET {{base_url}}/cupons/{{eventId}}
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
 ###
 # @name deleteCupom
-DELETE http://localhost:3000/cupons/{{eventId}}?name=CUPOM
+DELETE {{base_url}}/cupons/{{eventId}}?name=CUPOM32
 Content-Type: application/json
 Authorization: Bearer {{token}}

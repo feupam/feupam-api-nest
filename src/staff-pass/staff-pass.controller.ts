@@ -1,6 +1,5 @@
 import {
   Controller,
-  Get,
   Post,
   Patch,
   Delete,
@@ -59,7 +58,7 @@ export class StaffPassController {
     return this.staffPassService.remove(eventId);
   }
 
-  @Get(':eventId')
+  @Post(':eventId')
   async read(
     @Param('eventId') eventId: string,
     @Body() body: { staff_pass: string },
