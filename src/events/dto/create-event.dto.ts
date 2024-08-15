@@ -4,10 +4,15 @@ import {
   IsString,
   IsNumberString,
   IsISO8601,
+  IsNumber,
 } from 'class-validator';
 import { EventType } from './enum'; // Ajuste o caminho conforme necessário
 
 export class CreateEventDto {
+  @IsNumber()
+  @IsNotEmpty()
+  price: number;
+
   @IsString()
   @IsNotEmpty()
   name: string;

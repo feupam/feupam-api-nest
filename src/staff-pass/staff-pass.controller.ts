@@ -58,7 +58,7 @@ export class StaffPassController {
     return this.staffPassService.remove(eventId);
   }
 
-  @Post(':eventId')
+  @Post(':eventId/is-staff')
   async read(
     @Param('eventId') eventId: string,
     @Body() body: { staff_pass: string },

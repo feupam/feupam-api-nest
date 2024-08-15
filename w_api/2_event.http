@@ -21,7 +21,8 @@ Authorization: Bearer {{token}}
       "maxStaffFemale": "3",
       "maxGeneralSpots": "300",
       "startDate": "2024-08-01T00:00:00Z",
-      "endDate": "2024-08-15T23:59:59Z"
+      "endDate": "2024-08-15T23:59:59Z",
+      "price": 30000
 }
 
 ###

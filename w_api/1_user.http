@@ -19,7 +19,7 @@ Authorization: Bearer {{token}}
   "cellphone": "99818536351",
   "gender": "male",
   "cep": "37.940-000",
-  "cpf": "91",
+  "cpf": "912",
   "data_nasc":"17/03/1993",
   "idade": 18,
   "responsavel": "Paulo",
