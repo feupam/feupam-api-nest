@@ -1,9 +1,9 @@
 ### Base URL
-@base_url=https://us-central1-federa-api.cloudfunctions.net/api
+@base_url=http://localhost:3000
 @eventId=federa1
 @email=test@test.com
-@token=
-
+@token=eyJhbGciOiJSUzI1NiIsImtpZCI6IjgxYjUyMjFlN2E1ZGUwZTVhZjQ5N2UzNzVhNzRiMDZkODJiYTc4OGIiLCJ0eXAiOiJKV1QifQ.eyJuYW1lIjoiQ3Jpc3RpbmEgU3RlZmFuaW5pIiwicGljdHVyZSI6Imh0dHBzOi8vbGgzLmdvb2dsZXVzZXJjb250ZW50LmNvbS9hL0FDZzhvY0ltQ1pJMUJfeVhTQTBpMW52Y3cxd3FnZWVkSUdEck9oVUctbktYMVpxRkFGS3ZLdz1zOTYtYyIsImlzcyI6Imh0dHBzOi8vc2VjdXJldG9rZW4uZ29vZ2xlLmNvbS9mZWRlcmEtYXBpIiwiYXVkIjoiZmVkZXJhLWFwaSIsImF1dGhfdGltZSI6MTczODEwMDAzMCwidXNlcl9pZCI6Ik5VMUtUaDU5QVpoNGhkR21BNGlUc255ZENnczIiLCJzdWIiOiJOVTFLVGg1OUFaaDRoZEdtQTRpVHNueWRDZ3MyIiwiaWF0IjoxNzM4MTAwMDMwLCJleHAiOjE3MzgxMDM2MzAsImVtYWlsIjoiY3Jpcy5tLnN0ZWZhbmluaUBnbWFpbC5jb20iLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiZmlyZWJhc2UiOnsiaWRlbnRpdGllcyI6eyJnb29nbGUuY29tIjpbIjExNzc5ODE1ODM3MTU0OTI0MTgzNSJdLCJlbWFpbCI6WyJjcmlzLm0uc3RlZmFuaW5pQGdtYWlsLmNvbSJdfSwic2lnbl9pbl9wcm92aWRlciI6Imdvb2dsZS5jb20ifX0.ixnojzS2s58sDiSvE3cs-q2HzlpRogz8CAA7C2WYevZBgbsdU7BIfsNGCAYZhrjpmWY676oi1XcpAZURn5mOEBNsYdyTwhCC4l1YsF6k0SIebB2byuLjYUTWvrGnVXGXAjjqXvCQEaZu-0__ZamuJi7k7V7OKbvKQDRlVyO5wfz30yQf2y3NWUcw_jfSe_foSAYMu96OCTIKB-Cs_2Fm7DYb9bwdL86oeR3spoYRKZE-TjCIDERhZm4MG9y1wWT9pJ9cuNAfAoaKP42dBI4ERlUjYpeTfMF5vN1PekIojXKTRH-O69AO2lpjKidCdYh3CxG7FXQs3CKTStLnTS0qbg
+    
 ###
 # @name createEvent
 POST {{base_url}}/events
@@ -11,18 +11,18 @@ Content-Type: application/json
 Authorization: Bearer {{token}}
 
 {
-      "name": "federa",
-      "date": "2024-01-01",
-      "location": "betel",
-      "eventType": "gender_specific",
-      "maxClientMale": "13" ,
-      "maxClientFemale": "3",
-      "maxStaffMale": "3",
-      "maxStaffFemale": "3",
-      "maxGeneralSpots": "300",
-      "startDate": "2024-08-01T00:00:00Z",
-      "endDate": "2024-08-15T23:59:59Z",
-      "price": 30000
+      "name": "conferencia2024",
+      "date": "2024-09-21",
+      "location": "ipb central de passos",
+      "eventType": "general",
+      "maxClientMale": "0" ,
+      "maxClientFemale": "0",
+      "maxStaffMale": "0",
+      "maxStaffFemale": "0",
+      "maxGeneralSpots": "200",
+      "startDate": "2024-08-19T00:00:00Z",
+      "endDate": "2024-09-21T23:59:59Z",
+      "price": 5000
 }
 
 ###

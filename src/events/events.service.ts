@@ -22,7 +22,7 @@ export class EventsService {
 
     const eventId = dto.name;
 
-    const eventRef = firestore.collection('events').doc(eventId);
+    const eventRef = firestore.collection('event').doc(eventId);
     const eventData = { ...dto };
     try {
       await eventRef.set(eventData);

@@ -1,5 +1,4 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
-import * as admin from 'firebase-admin';
 import { FirestoreService } from './firebase.service';
 import * as jwt from 'jsonwebtoken';
 import * as bcrypt from 'bcryptjs';
@@ -10,23 +9,22 @@ export class AuthService {
   private readonly saltRounds = 10;
   constructor(private firestoreService: FirestoreService) {}
 
-  // Função para verificar o token JWT
-  async verifyToken(token: string): Promise<admin.auth.DecodedIdToken> {
+  async verifyToken(token: string): Promise<{ email: string }> {
     try {
-      let secretKey;
-      try{
-        secretKey = functions.config().config.pass_key;
-      } catch {
-        secretKey = process.env.pass_key;
+      // Usa o auth do FirestoreService para validar o token
+      const decodedToken = await this.firestoreService.getAuth().verifyIdToken(token);
+      const email = decodedToken.email;
+
+      if (!email) {
+        throw new UnauthorizedException('Email not found in token');
       }
 
-      const decodedToken: any = jwt.verify(token, secretKey);
-
-      return decodedToken;
+      return { email };
     } catch (error) {
       throw new UnauthorizedException('Invalid or expired token');
     }
   }
+
 
   // Função para validar o usuário usando email e senha
   async validateUser(email: string, password: string): Promise<string> {

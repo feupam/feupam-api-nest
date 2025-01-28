@@ -3,6 +3,9 @@ nest g resource
 
 # run local
 npm run start:dev
+
+
+
 npm test -- --watch
 
 nest start --watch

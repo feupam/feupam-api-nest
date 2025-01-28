@@ -1,4 +1,4 @@
-@base_url=https://us-central1-federa-api.cloudfunctions.net/api
+@base_url=http://localhost:3000
 
 
 ### Chamada POST login

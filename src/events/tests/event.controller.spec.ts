@@ -70,6 +70,7 @@ describe('EventsController', () => {
         maxGeneralSpots: '',
         startDate: '',
         endDate: '',
+        price: 1,
       };
       jest.spyOn(service, 'create').mockResolvedValue(result);
 
