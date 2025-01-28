@@ -12,7 +12,11 @@ nest start --watch
 
 firebase login
 firebase init
+
+firebase functions:config:set config.pagarme_key="prod"
 firebase deploy --only functions
+
+ou node dist/main.js
 
 # make backup firebase
 npx -p node-firestore-import-export firestore-import -a federa_api.json -b backup.json

@@ -16,6 +16,7 @@ export class UsersService {
     const usersCollection = firestore.collection('users');
 
     // Verifique se já existe um usuário com o mesmo CPF
+    console.log(email)
     const existingUserSnapshot = await usersCollection
       .where('cpf', '==', createUserDto.cpf)
       .get();
@@ -28,6 +29,18 @@ export class UsersService {
       .collection('users')
       .where('email', '==', email)
       .get();
+
+    if (userRecord.empty) {
+      // Criar um novo usuário se não existir um com o email informado
+      const newUserRef = usersCollection.doc();
+      await newUserRef.set({
+        ...createUserDto,
+        email,
+        createdAt: new Date().toISOString(),
+      });
+
+      return { id: newUserRef.id, ...createUserDto, email };
+    }
     const doc = userRecord.docs[0];
     await doc.ref.update({
       ...createUserDto,
