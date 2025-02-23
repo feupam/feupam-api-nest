@@ -22,11 +22,11 @@ export class EventsService {
 
     const eventId = dto.name;
 
-    const eventRef = firestore.collection('event').doc(eventId);
+    const eventRef = firestore.collection('events').doc(eventId);
     const eventData = { ...dto };
     try {
       await eventRef.set(eventData);
-      return { id: eventRef.id, ...eventData };
+      return { uuid: eventRef.id, ...eventData };
     } catch (e) {
       throw new BadRequestException(
         `An error occurred while creating the event ${e}`,
@@ -38,43 +38,43 @@ export class EventsService {
     const snapshot = await this.firestoreService.firestore
       .collection('events')
       .get();
-    return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+    return snapshot.docs.map((doc) => ({ uuid: doc.id, ...doc.data() }));
   }
 
-  async findOne(id: string) {
+  async findOne(uuid: string) {
     const eventRef = this.firestoreService.firestore
       .collection('events')
-      .doc(id);
+      .doc(uuid);
     const doc = await eventRef.get();
     if (!doc.exists) {
       throw new NotFoundException('Event not found');
     }
-    return { id: doc.id, ...doc.data() };
+    return { uuid: doc.id, ...doc.data() };
   }
 
-  async update(id: string, updateEventDto: UpdateEventDto) {
+  async update(uuid: string, updateEventDto: UpdateEventDto) {
     const eventRef = this.firestoreService.firestore
       .collection('events')
-      .doc(id);
+      .doc(uuid);
     await eventRef.update({
       ...updateEventDto,
       date: new Date().toISOString(),
     });
-    return { id, ...updateEventDto };
+    return { uuid, ...updateEventDto };
   }
 
-  async remove(id: string) {
+  async remove(uuid: string) {
     const eventRef = this.firestoreService.firestore
       .collection('events')
-      .doc(id);
+      .doc(uuid);
     await eventRef.delete();
-    return { id };
+    return { uuid };
   }
 
-  async checkRegistrationStatus(id: string) {
+  async checkRegistrationStatus(uuid: string) {
     const eventRef = this.firestoreService.firestore
       .collection('events')
-      .doc(id);
+      .doc(uuid);
     const doc = await eventRef.get();
 
     if (!doc.exists) {
@@ -349,7 +349,7 @@ export class EventsService {
         throw new NotFoundException('No reservations found for this event');
       }
       return reservationsSnapshot.docs.map((doc) => ({
-        id: doc.id,
+        uuid: doc.id,
         ...doc.data(),
       }));
     } catch (e) {
