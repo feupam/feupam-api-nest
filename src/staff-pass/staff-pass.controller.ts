@@ -30,7 +30,7 @@ export class StaffPassController {
   async create(
     @Param('eventId') eventId: string,
     @Body() body: { staff_pass: string },
-    @Headers('authorization') authHeader: string,
+    @Headers('Authorization') authHeader: string,
   ) {
     const token = authHeader?.split(' ')[1];
     await this.authService.verifyToken(token);
@@ -41,7 +41,7 @@ export class StaffPassController {
   async update(
     @Param('eventId') eventId: string,
     @Body() body: { staff_pass: string },
-    @Headers('authorization') authHeader: string,
+    @Headers('Authorization') authHeader: string,
   ) {
     const token = authHeader?.split(' ')[1];
     await this.authService.verifyToken(token);
@@ -51,7 +51,7 @@ export class StaffPassController {
   @Delete(':eventId')
   async remove(
     @Param('eventId') eventId: string,
-    @Headers('authorization') authHeader: string,
+    @Headers('Authorization') authHeader: string,
   ) {
     const token = authHeader?.split(' ')[1];
     await this.authService.verifyToken(token);
@@ -62,7 +62,7 @@ export class StaffPassController {
   async read(
     @Param('eventId') eventId: string,
     @Body() body: { staff_pass: string },
-    @Headers('authorization') authHeader: string,
+    @Headers('Authorization') authHeader: string,
   ) {
     const token = authHeader?.split(' ')[1];
     await this.authService.verifyToken(token);

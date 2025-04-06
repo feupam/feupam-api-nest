@@ -26,7 +26,7 @@ export class PaymentController {
   )
   async payment(
     @Body() body: any,
-    @Headers('authorization') authHeader: string,
+    @Headers('Authorization') authHeader: string,
   ) {
     const token = authHeader?.split(' ')[1];
     const decoded = await this.authService.verifyToken(token);

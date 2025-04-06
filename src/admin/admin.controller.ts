@@ -28,7 +28,7 @@ export class AdminController {
   )
   async applyDiscount(
     @Body() body: { email: string; discount: number, event: string },
-    @Headers('authorization') authHeader: string,
+    @Headers('Authorization') authHeader: string,
   ) {
     const token = authHeader?.split(' ')[1];
     await this.authService.verifyToken(token);
@@ -45,7 +45,7 @@ export class AdminController {
   )
   async createFastUser(
     @Body() body: { email: string },
-    @Headers('authorization') authHeader: string,
+    @Headers('Authorization') authHeader: string,
   ) {
     const token = authHeader?.split(' ')[1];
     await this.authService.verifyToken(token);
@@ -63,7 +63,7 @@ export class AdminController {
   async freeEvent(
     @Param('id') eventId: string,
     @Body() body: { email: string },
-    @Headers('authorization') authHeader: string,
+    @Headers('Authorization') authHeader: string,
   ) {
     const token = authHeader?.split(' ')[1];
     await this.authService.verifyToken(token);
@@ -73,7 +73,7 @@ export class AdminController {
   @Patch('set-staff')
   async setStaffStatus(
     @Body() body: { email: string; isStaff: boolean },
-    @Headers('authorization') authHeader: string,
+    @Headers('Authorization') authHeader: string,
   ) {
     const token = authHeader?.split(' ')[1];
     await this.authService.verifyToken(token);
@@ -83,7 +83,7 @@ export class AdminController {
   @Patch('update-email')
   async updateEmail(
     @Body() body: { email: string; newEmail: string },
-    @Headers('authorization') authHeader: string,
+    @Headers('Authorization') authHeader: string,
   ) {
     const token = authHeader?.split(' ')[1];
     await this.authService.verifyToken(token);

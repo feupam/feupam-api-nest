@@ -37,7 +37,7 @@ export class EventsController {
   )
   async create(
     @Body() createEventDto: CreateEventDto,
-    @Headers('authorization') authHeader: string,
+    @Headers('Authorization') authHeader: string,
   ) {
     const token = authHeader?.split(' ')[1];
     await this.authService.verifyToken(token);
@@ -45,7 +45,7 @@ export class EventsController {
   }
 
   @Get()
-  async findAll(@Headers('authorization') authHeader: string) {
+  async findAll(@Headers('Authorization') authHeader: string) {
     const token = authHeader?.split(' ')[1];
     await this.authService.verifyToken(token);
     return this.eventsService.findAll();
@@ -54,7 +54,7 @@ export class EventsController {
   @Get(':id')
   async findOne(
     @Param('id') id: string,
-    @Headers('authorization') authHeader: string,
+    @Headers('Authorization') authHeader: string,
   ) {
     const token = authHeader?.split(' ')[1];
     await this.authService.verifyToken(token);
@@ -72,7 +72,7 @@ export class EventsController {
   async update(
     @Param('id') id: string,
     @Body() updateEventDto: UpdateEventDto,
-    @Headers('authorization') authHeader: string,
+    @Headers('Authorization') authHeader: string,
   ) {
     const token = authHeader?.split(' ')[1];
     await this.authService.verifyToken(token);
@@ -83,7 +83,7 @@ export class EventsController {
   @Delete(':id')
   async remove(
     @Param('id') id: string,
-    @Headers('authorization') authHeader: string,
+    @Headers('Authorization') authHeader: string,
   ) {
     const token = authHeader?.split(' ')[1];
     await this.authService.verifyToken(token);
@@ -101,7 +101,7 @@ export class EventsController {
   async reserveSpots(
     @Body() dto: ReserveSpotDto,
     @Param('id') eventId: string,
-    @Headers('authorization') authHeader: string,
+    @Headers('Authorization') authHeader: string,
   ) {
     const token = authHeader?.split(' ')[1];
     const decoded = await this.authService.verifyToken(token);
@@ -142,7 +142,7 @@ export class EventsController {
   )
   async checkSpot(
     @Param('id') eventId: string,
-    @Headers('authorization') authHeader: string,
+    @Headers('Authorization') authHeader: string,
   ) {
     const token = authHeader?.split(' ')[1];
     await this.authService.verifyToken(token);
@@ -158,7 +158,7 @@ export class EventsController {
   @Get(':id/reservations')
   async getEventReservations(
     @Param('id') id: string,
-    @Headers('authorization') authHeader: string,
+    @Headers('Authorization') authHeader: string,
   ) {
     const token = authHeader?.split(' ')[1];
     await this.authService.verifyToken(token);
@@ -174,7 +174,7 @@ export class EventsController {
   @Get(':id/installments')
   async getInstallments(
     @Param('id') eventId: string,
-    @Headers('authorization') authHeader: string,
+    @Headers('Authorization') authHeader: string,
   ) {
     const token = authHeader?.split(' ')[1];
     await this.authService.verifyToken(token);
@@ -189,7 +189,7 @@ export class EventsController {
   @Get(':id/waiting-list')
   async getWaitingList(
     @Param('id') id: string,
-    @Headers('authorization') authHeader: string,
+    @Headers('Authorization') authHeader: string,
   ) {
     const token = authHeader?.split(' ')[1];
     await this.authService.verifyToken(token);

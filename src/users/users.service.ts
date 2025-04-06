@@ -50,65 +50,60 @@ export class UsersService {
     return { ...createUserDto };
   }
 
-  async findAll() {
+  async findAll(page = 1, limit = 10) {
+    const offset = (page - 1) * limit;
+  
     const snapshot = await this.firestoreService.firestore
       .collection('users')
+      .orderBy('createdAt', 'desc') // ou 'name', 'email', etc
+      .offset(offset)
+      .limit(limit)
       .get();
-    return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+  
+    const users = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+  
+    return {
+      page,
+      limit,
+      count: users.length,
+      users,
+    };
   }
 
-  async findOne(email: string) {
-    const userRef = this.firestoreService.firestore
-      .collection('users')
-      .where('email', '==', email);
-    const doc = await userRef.get();
-    if (doc.empty) {
+  async findOneById(id: string) {
+    const userDoc = await this.firestoreService.firestore.collection('users').doc(id).get();
+    if (!userDoc.exists) {
       throw new NotFoundException('User not found');
     }
-    const userId = doc.docs[0];
-    const data = userId.data();
-    return { data };
+    return { id: userDoc.id, ...userDoc.data() };
   }
-
-  async update(decodedIdToken, updateUserDto: UpdateUserDto) {
-    const email = decodedIdToken.email ?? '';
-
-    const userRef = this.firestoreService.firestore
-      .collection('users')
-      .where('email', '==', email);
-    const querySnapshot = await userRef.get();
-    await querySnapshot.docs.map(async (doc) => {
-      doc.data();
-      return doc.ref.update({
-        ...updateUserDto,
-        updatedAt: new Date().toISOString(),
-      });
-    });
-
-    return { updateUserDto };
-  }
-
-  async remove(decodedIdToken) {
-    const email = decodedIdToken.email ?? '';
-    const userRef = this.firestoreService.firestore
-      .collection('users')
-      .where('email', '==', email);
-
-    const querySnapshot = await userRef.get();
-
-    if (querySnapshot.empty) {
-      return { message: 'No user found with the provided email' };
+  
+  async updateById(id: string, updateUserDto: UpdateUserDto) {
+    const userRef = this.firestoreService.firestore.collection('users').doc(id);
+    const doc = await userRef.get();
+  
+    if (!doc.exists) {
+      throw new NotFoundException('User not found');
     }
-
-    const batch = this.firestoreService.firestore.batch();
-
-    querySnapshot.forEach((doc) => {
-      batch.delete(doc.ref);
+  
+    await userRef.update({
+      ...updateUserDto,
+      updatedAt: new Date().toISOString(),
     });
-
-    await batch.commit();
-
-    return { message: 'User(s) deleted successfully' };
+  
+    return { id, ...updateUserDto };
+  }
+  
+  async removeById(id: string) {
+    const userRef = this.firestoreService.firestore.collection('users').doc(id);
+    const doc = await userRef.get();
+  
+    if (!doc.exists) {
+      throw new NotFoundException('User not found');
+    }
+  
+    await userRef.delete();
+    return { message: 'User deleted successfully', id };
   }
 
   async getUserReservations(decodedIdToken) {

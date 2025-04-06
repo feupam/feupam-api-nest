@@ -52,10 +52,3 @@ Authorization: Bearer {{token}}
 DELETE {{base_url}}/events/{{eventId}}
 Content-Type: application/json
 Authorization: Bearer {{token}}
-
-
-###
-# @name excel
-GET {{base_url}}/events/{{eventId}}/excel
-Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
-Authorization: Bearer {{token}}

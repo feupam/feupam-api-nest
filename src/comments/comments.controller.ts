@@ -32,7 +32,7 @@ export class CommentsController {
   )
   async create(
     @Body() createCommentsDto: CreateCommentDto,
-    @Headers('authorization') authHeader: string,
+    @Headers('Authorization') authHeader: string,
   ) {
     const token = authHeader?.split(' ')[1];
     const decoded = await this.authService.verifyToken(token);
@@ -53,7 +53,7 @@ export class CommentsController {
   async update(
     @Param('id') id: string,
     @Body() updateCommentsDto: UpdateCommentDto,
-    @Headers('authorization') authHeader: string,
+    @Headers('Authorization') authHeader: string,
   ) {
     const token = authHeader?.split(' ')[1];
     await this.authService.verifyToken(token);

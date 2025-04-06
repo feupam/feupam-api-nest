@@ -2,6 +2,8 @@
   "functions": [
     {
       "source": ".",
+      "runtime": "nodejs18",
+      "entryPoint": "api",
       "codebase": "default",
       "ignore": [
         "node_modules",

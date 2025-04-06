@@ -6,11 +6,11 @@
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
-    "build": "tsc",
+    "build": "nest build",
     "build:watch": "tsc --watch",
     "serve": "npm run build && firebase emulators:start --only functions",
     "shell": "npm run build && firebase functions:shell",
-    "start": "npm run shell",
+    "start": "nest start",
     "deploy": "firebase deploy --only functions",
     "logs": "firebase functions:log",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",

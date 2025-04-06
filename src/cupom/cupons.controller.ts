@@ -32,7 +32,7 @@ export class CuponsController {
     @Param('eventId') eventId: string,
     @Body('name') name: string,
     @Body('discount') discount: number,
-    @Headers('authorization') authHeader: string,
+    @Headers('Authorization') authHeader: string,
   ) {
     const token = authHeader?.split(' ')[1];
     await this.authService.verifyToken(token);
@@ -42,7 +42,7 @@ export class CuponsController {
   @Get(':eventId')
   async getCupons(
     @Param('eventId') eventId: string,
-    @Headers('authorization') authHeader: string,
+    @Headers('Authorization') authHeader: string,
   ) {
     const token = authHeader?.split(' ')[1];
     await this.authService.verifyToken(token);
@@ -53,7 +53,7 @@ export class CuponsController {
   async deleteCoupon(
     @Param('eventId') eventId: string,
     @Query('name') name: string,
-    @Headers('authorization') authHeader: string,
+    @Headers('Authorization') authHeader: string,
   ) {
     const token = authHeader?.split(' ')[1];
     await this.authService.verifyToken(token);
