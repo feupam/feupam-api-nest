@@ -1,0 +1,9 @@
+# .firebaseignore
+**/src
+**/.git
+**/.env
+**/test
+**/wa-weo
+**/firebase-debug.log
+**/firebase-debug.*.log
+**/node_modules

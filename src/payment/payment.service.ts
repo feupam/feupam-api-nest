@@ -4,10 +4,14 @@ import { Queries } from './queries';
 import { Pagarme } from './pagarme';
 import { BuildBody } from './build-body';
 import { FirestoreService } from '../firebase/firebase.service';
+import { RedisService } from '../redis/redis.service'; // Novo import
 
 @Injectable()
 export class PaymentService {
-  constructor(private readonly firestoreService: FirestoreService) {}
+  constructor(
+    private readonly firestoreService: FirestoreService,
+    private readonly redisService: RedisService, // Novo
+  ) {}
 
   async payment(req: any, email: string): Promise<ChargeDto> {
     try {
@@ -15,15 +19,19 @@ export class PaymentService {
       const pagarmeService = new Pagarme();
       const user = await queriesService.getUserByEmail(email);
       const bodyPagarme = this.buildRequestBody(req, user[0]);
+      const eventId = bodyPagarme.items[0].description;
+
+      // Verifica se a reserva ainda está válida no Redis
+      const isValid = await this.redisService.isReservationValid(email, eventId);
+      if (!isValid) {
+        throw new Error('Sua reserva expirou. Por favor, tente novamente.');
+      }
 
       const existingReservation =
-        await queriesService.getReservationByEmailAndEvent(
-          email,
-          bodyPagarme.items[0].description,
-        );
+        await queriesService.getReservationByEmailAndEvent(email, eventId);
 
       if (
-        existingReservation[0]?.eventId === bodyPagarme.items[0].description &&
+        existingReservation[0]?.eventId === eventId &&
         existingReservation[0]?.status === 'Pago'
       ) {
         throw new Error('usuario ja comprou');
@@ -32,25 +40,23 @@ export class PaymentService {
       const reservationQuery = this.firestoreService.firestore
         .collection('reservationHistory')
         .where('email', '==', email)
-        .where('eventId', '==', bodyPagarme.items[0].description);
+        .where('eventId', '==', eventId);
       const queryReservation = await reservationQuery.get();
       if (queryReservation.empty) {
         throw new Error('Você nao possui reserva para esse evento');
       }
 
       const reservationData = queryReservation.docs[0].data();
-      const reservedAmount = reservationData.price; // Preço registrado na reserva (em centavos)
-  
-      // Verificar se o valor do item corresponde ao valor reservado
-      const itemAmount = bodyPagarme.items[0].amount; // Valor do item em centavos
-  
+      const reservedAmount = reservationData.price;
+      const itemAmount = bodyPagarme.items[0].amount;
+
       if (itemAmount < reservedAmount) {
         throw new Error('Valor incorreto');
       }
 
       const response = await pagarmeService.createPayment(bodyPagarme);
-      let payLink: string = '';
 
+      let payLink: string = '';
       if (response.charges[0].payment_method === 'credit_card') {
         payLink = response.charges[0].last_transaction.acquirer_message;
       } else if (response.charges[0].payment_method === 'boleto') {
@@ -64,11 +70,15 @@ export class PaymentService {
       let status: string = '';
       if (response.status == 'paid') {
         status = 'Pago';
+
+        // Limpa a chave do Redis após pagamento concluído
+        await this.redisService.deleteReservationKey(email, eventId);
       } else if (response.status == 'pending') {
         status = 'Processando';
       } else {
         status = response.status;
       }
+
       const charge: ChargeDto = {
         event: response.items[0].description,
         status: status,
@@ -82,11 +92,7 @@ export class PaymentService {
         chargeId: response.charges[0].id,
       };
 
-      await queriesService.updateReservationStatus(
-        charge,
-        status,
-        queryReservation,
-      );
+      await queriesService.updateReservationStatus(charge, status, queryReservation);
 
       return charge;
     } catch (error) {
@@ -134,7 +140,6 @@ export class PaymentService {
 
   async handlePagarmeWebhook(body: any) {
     const queriesService = new Queries(this.firestoreService);
-
     const webhookData = body.data;
 
     if (webhookData.status === 'paid') {
