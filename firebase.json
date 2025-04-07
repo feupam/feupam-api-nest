@@ -4,15 +4,7 @@
       "source": ".",
       "runtime": "nodejs18",
       "entryPoint": "api",
-      "codebase": "default",
-      "ignore": [
-        "node_modules",
-        ".git",
-        "firebase-debug.log",
-        "firebase-debug.*.log",
-        ".env",
-        "*.local"
-      ]
+      "ignore": ["node_modules", ".git", ".env", "*.local"]
     }
   ]
 }

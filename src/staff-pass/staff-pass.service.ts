@@ -6,17 +6,18 @@ export class StaffPassService {
   constructor(private readonly firestoreService: FirestoreService) {}
 
   async create(eventId: string, staff_pass: string) {
-    const collection =
-      this.firestoreService.firestore.collection('staffPasswords');
-
-    // Check if the eventId already exists
+    const collection = this.firestoreService.firestore.collection('staffPasswords');
     const snapshot = await collection.where('eventId', '==', eventId).get();
+  
     if (!snapshot.empty) {
-      throw new Error('Event ID already exists. Use update to modify.');
+      // Atualiza o primeiro documento encontrado
+      const docRef = snapshot.docs[0].ref;
+      await docRef.update({ staff_pass });
+    } else {
+      // Cria um novo
+      await collection.add({ eventId, staff_pass });
     }
-
-    // Add new entry to the collection
-    await collection.add({ eventId, staff_pass });
+  
     return this.findAll();
   }
 
