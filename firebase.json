@@ -1,7 +1,7 @@
 {
   "functions": [
     {
-      "source": ".",
+      "source": "functions",
       "runtime": "nodejs18",
       "entryPoint": "api",
       "ignore": ["node_modules", ".git", ".env", "*.local"]

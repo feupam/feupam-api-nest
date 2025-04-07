@@ -9,8 +9,8 @@
     "target": "ES6",
     "sourceMap": true,
     "outDir": "./dist",
-    "rootDir": "./src",
-    "baseUrl": "./src",
+    "rootDir": "./functions/src",
+    "baseUrl": "./functions/src",
     "incremental": true,
     "skipLibCheck": true,
     "strictNullChecks": false,
@@ -26,8 +26,6 @@
     }
   },
   "compileOnSave": true,
-  "include": [
-    "src/**/*.ts"
-  ],
+  "include": ["functions/src/**/*.ts"],
   "exclude": ["node_modules"]
 }
