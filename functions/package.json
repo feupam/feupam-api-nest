@@ -93,5 +93,5 @@
   "engines": {
     "node": "18"
   },
-  "main": "dist/main.js"
+  "main": "dist/index.js"
 }

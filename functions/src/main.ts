@@ -1,11 +1,14 @@
+// main.ts
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
-import * as dotenv from 'dotenv';
-dotenv.config();
+import { ExpressAdapter } from '@nestjs/platform-express';
+import express from 'express';
 
-async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+export const expressApp = express();
+
+export async function createNestApp() {
+  const app = await NestFactory.create(AppModule, new ExpressAdapter(expressApp));
   app.useGlobalPipes(
     new ValidationPipe({
       transform: true,
@@ -13,7 +16,12 @@ async function bootstrap() {
     }),
   );
   app.enableCors();
-  await app.listen(3000);
-  console.log('NestJS is running on http://localhost:3000');
+  await app.init();
+  return expressApp;
 }
-bootstrap();
+
+if (!process.env.FUNCTION_NAME) {
+  createNestApp().then((app) => {
+    app.listen(3000, () => console.log('NestJS running on http://localhost:3000'));
+  });
+}

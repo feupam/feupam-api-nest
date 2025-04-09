@@ -76,8 +76,8 @@ export class RedisService implements OnModuleInit {
   }
 
   async deleteReservationKey(email: string, eventId: string): Promise<void> {
-    const key = `reservation:${email}:${eventId}`;
-    await axios.delete(`${this.baseUrl}/del/${key}`, {
+    const reservationKey = `reservation:${email}:${eventId}`;
+    await axios.delete(`${this.baseUrl}/del/${reservationKey}`, {
       headers: { Authorization: `Bearer ${this.token}` },
     });
   }
