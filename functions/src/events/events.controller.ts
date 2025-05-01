@@ -45,9 +45,7 @@ export class EventsController {
   }
 
   @Get()
-  async findAll(@Headers('Authorization') authHeader: string) {
-    const token = authHeader?.split(' ')[1];
-    await this.authService.verifyToken(token);
+  async findAll() {
     return this.eventsService.findAll();
   }
 
