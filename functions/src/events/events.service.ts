@@ -10,7 +10,6 @@ import { EventType, UserType, Gender } from './dto/enum';
 import { TicketStatus, SpotStatus } from './dto/enum-spot';
 import { ReserveSpotDto } from './dto/reserve-spot.dto';
 import { Timestamp } from 'firebase-admin/firestore';
-import ExcelJS from 'exceljs';
 import * as moment from 'moment-timezone';
 
 @Injectable()
@@ -449,32 +448,5 @@ export class EventsService {
       // Se o documento não existir, retorna um array vazio
       return [];
     }
-  }
-
-  async generateExcelFile(reservations: any[]): Promise<ExcelJS.Buffer> {
-    const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet('Relatório');
-    // Define columns
-    worksheet.columns = [
-      { header: 'Gender', key: 'gender', width: 15 },
-      { header: 'Ticket Kind', key: 'ticketKind', width: 20 },
-      { header: 'User Type', key: 'userType', width: 15 },
-      { header: 'Email', key: 'email', width: 30 },
-      { header: 'Status', key: 'status', width: 15 },
-    ];
-    // Add rows
-    reservations.forEach((reservation) => {
-      worksheet.addRow({
-        gender: reservation.gender,
-        ticketKind: reservation.ticketKind,
-        userType: reservation.userType,
-        email: reservation.email,
-        status: reservation.status,
-      });
-    });
-
-    // Generate Excel file buffer
-    const buffer = await workbook.xlsx.writeBuffer();
-    return buffer;
   }
 }

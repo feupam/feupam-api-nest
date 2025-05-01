@@ -4,7 +4,16 @@
       "source": "functions",
       "runtime": "nodejs18",
       "entryPoint": "api",
-      "ignore": ["node_modules", ".git", ".env", "*.local"]
+      "predeploy": [
+        "npm --prefix ./functions run build"
+      ],
+      "ignore": [
+        "tests/**",
+        "node_modules/**",
+        ".git/**",
+        "README.md",
+        "**/*.spec.ts"
+      ]
     }
   ]
 }
