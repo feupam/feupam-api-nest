@@ -9,7 +9,7 @@ export class Pagarme {
     try{
       key = functions.config().config.pagarme_key;
     } catch {
-      key = process.env.pagarme_key;
+      key = "sk_test_26ef8ce83e7041dd8f89a2780635720d";
     }
 
     const response = await fetch('https://api.pagar.me/core/v5/orders', {
