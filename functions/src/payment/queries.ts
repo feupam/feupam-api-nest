@@ -28,6 +28,9 @@ export class Queries {
       .where('eventId', '==', eventId);
     const querySnapshot = await reservationQuery.get();
     querySnapshot.forEach((doc) => hist.push(doc.data()));
+    if (querySnapshot.empty) {
+      throw new Error('Você nao possui reserva para esse evento');
+    }
     return hist;
   }
 

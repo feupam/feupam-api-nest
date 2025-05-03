@@ -1,16 +1,10 @@
 import fetch from 'node-fetch';
-import * as functions from 'firebase-functions';
 
 
 export class Pagarme {
   public async createPayment(bodyPagarme: any): Promise<any> {
 
-    let key;
-    try{
-      key = functions.config().config.pagarme_key;
-    } catch {
-      key = "sk_test_26ef8ce83e7041dd8f89a2780635720d";
-    }
+    const key = "sk_test_26ef8ce83e7041dd8f89a2780635720d";
 
     const response = await fetch('https://api.pagar.me/core/v5/orders', {
       method: 'post',
@@ -21,6 +15,7 @@ export class Pagarme {
       body: JSON.stringify(bodyPagarme),
     });
 
+    console.log(response)
     const resp = await response.json();
     if (response.status !== 200) {
       const errorFields = Object.keys(resp.errors).map((key) => ({

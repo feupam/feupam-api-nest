@@ -7,7 +7,7 @@ export class RedisService implements OnModuleInit {
   private readonly logger = new Logger(RedisService.name);
 
   onModuleInit() {
-    this.baseUrl = "https://elegant-ray-29722.upstash.io";
+    this.baseUrl = "https://certain-caiman-21436.upstash.io";
     this.token = "";
 
     if (!this.baseUrl || !this.token) {

@@ -30,10 +30,10 @@ export class TicketService {
       // Grant reservation and set TTL
       await this.redisService.set(reservationKey, '1', this.reservationTTL);
 
+      console.log("quase")
       await this.firestoreService.firestore.collection('reservationHistory').add({
         email,
         eventId,
-        price: 7000, // valor do ingresso
         status: 'Reservado',
         createdAt: new Date(),
       });

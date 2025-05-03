@@ -26,6 +26,7 @@ export class PaymentService {
       if (!isValid) {
         throw new Error('Sua reserva expirou. Por favor, tente novamente.');
       }
+
       const existingReservation =
         await queriesService.getReservationByEmailAndEvent(email, eventId);
 
@@ -36,16 +37,8 @@ export class PaymentService {
         throw new Error('usuario ja comprou');
       }
 
-      const reservationQuery = this.firestoreService.firestore
-        .collection('reservationHistory')
-        .where('email', '==', email)
-        .where('eventId', '==', eventId);
-      const queryReservation = await reservationQuery.get();
-      if (queryReservation.empty) {
-        throw new Error('Você nao possui reserva para esse evento');
-      }
 
-      const reservationData = queryReservation.docs[0].data();
+      const reservationData = existingReservation[1];
       const reservedAmount = reservationData.price;
       const itemAmount = bodyPagarme.items[0].amount;
 
@@ -53,7 +46,9 @@ export class PaymentService {
         throw new Error('Valor incorreto');
       }
 
+      console.log("antes")
       const response = await pagarmeService.createPayment(bodyPagarme);
+      console.log("depois")
 
       let payLink: string = '';
       if (response.charges[0].payment_method === 'credit_card') {
@@ -91,7 +86,7 @@ export class PaymentService {
         chargeId: response.charges[0].id,
       };
 
-      await queriesService.updateReservationStatus(charge, status, queryReservation);
+      await queriesService.updateReservationStatus(charge, status, existingReservation);
 
       return charge;
     } catch (error) {
