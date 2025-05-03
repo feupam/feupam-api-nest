@@ -10,6 +10,7 @@ import { StaffPassModule } from './staff-pass/staff-pass.module';
 import { CommentsModule } from './comments/comments.module';
 import { CuponsModule } from './cupom/cupons.module';
 import { AdminModule } from './admin/admin.module';
+import { TicketModule } from './ticket/ticket.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { AdminModule } from './admin/admin.module';
     StaffPassModule,
     CuponsModule,
     AdminModule,
+    TicketModule,
   ],
   controllers: [AppController],
   providers: [AppService],

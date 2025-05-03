@@ -130,7 +130,7 @@ export class EventsController {
     }
   }
 
-  @Post(':id/check-spot')
+  @Get(':id/check-spot')
   @UsePipes(
     new ValidationPipe({
       transform: true,

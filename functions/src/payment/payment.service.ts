@@ -26,7 +26,6 @@ export class PaymentService {
       if (!isValid) {
         throw new Error('Sua reserva expirou. Por favor, tente novamente.');
       }
-
       const existingReservation =
         await queriesService.getReservationByEmailAndEvent(email, eventId);
 

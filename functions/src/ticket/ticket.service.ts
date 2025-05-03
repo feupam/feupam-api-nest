@@ -1,5 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { RedisService } from '../redis/redis.service';
+import { FirestoreService } from '../firebase/firebase.service';
+
 
 @Injectable()
 export class TicketService {
@@ -7,9 +9,12 @@ export class TicketService {
   private readonly releaseBatch = 5;
   private readonly reservationTTL = 600; // 10 minutes in seconds
 
-  constructor(private readonly redisService: RedisService) {}
+  constructor(
+    private readonly redisService: RedisService,
+    private readonly firestoreService: FirestoreService,
+  ) {}
 
-  async purchaseTicket(eventId: string, email: string): Promise<{ status: string; message: string }> {
+  async purchaseTicket(eventId: string, email: string) {
     const reservationKey = `reservation:${email}:${eventId}`;
     const countKey = `event:${eventId}:count`;
     const queueKey = `event:${eventId}:queue`;
@@ -19,13 +24,24 @@ export class TicketService {
     if (hasReservation) {
       return { status: 'reserved', message: 'Você já possui uma reserva ativa para esse evento.' };
     }
-
     const count = await this.redisService.incr(countKey);
 
     if (count <= this.maxSpots) {
       // Grant reservation and set TTL
       await this.redisService.set(reservationKey, '1', this.reservationTTL);
-      return { status: 'reserved', message: 'Reserva efetuada com sucesso. Você tem 10 minutos para completar o pagamento.' };
+
+      await this.firestoreService.firestore.collection('reservationHistory').add({
+        email,
+        eventId,
+        price: 7000, // valor do ingresso
+        status: 'Reservado',
+        createdAt: new Date(),
+      });
+  
+      return {
+        status: 'reserved',
+        message: 'Reserva efetuada com sucesso. Você tem 10 minutos para completar o pagamento.',
+      };
     } else {
       // Rollback increment
       await this.redisService.decr(countKey);
@@ -40,7 +56,7 @@ export class TicketService {
     }
   }
 
-  async releaseSpots(eventId: string): Promise<void> {
+  async releaseSpots(eventId: string) {
     const countKey = `event:${eventId}:count`;
     const queueKey = `event:${eventId}:queue`;
 

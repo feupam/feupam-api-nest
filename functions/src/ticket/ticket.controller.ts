@@ -1,14 +1,22 @@
-import { Controller, Post, Param, Body } from '@nestjs/common';
+import { Controller, Get, Param, Headers } from '@nestjs/common';
 import { TicketService } from './ticket.service';
+import { AuthService } from '../firebase/auth.service';
 
 @Controller('tickets')
 export class TicketController {
-  constructor(private readonly ticketService: TicketService) {}
+  constructor(
+    private readonly ticketService: TicketService,
+    private readonly authService: AuthService
+  ) {}
 
-  // POST /tickets/:id/purchase?email=fulano@email.com
-  @Post(':id/purchase')
-  async purchase(@Param('id') id: string, @Body('email') email: string): Promise<any> {
-    return this.ticketService.purchaseTicket(id, email);
+  @Get(':id/purchase')
+  async purchase(
+    @Param('id') id: string,    
+    @Headers('Authorization') authHeader: string,
+    ) {
+      const token = authHeader?.split(' ')[1];
+      const decoded = await this.authService.verifyToken(token);
+      return this.ticketService.purchaseTicket(id, decoded.email);
   }
 }
 
