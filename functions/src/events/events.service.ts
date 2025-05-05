@@ -290,7 +290,7 @@ export class EventsService {
             spotId: newSpotRef.id,
             ticketKind: dto.ticket_kind,
             email: userData.email,
-            status: TicketStatus.reserved,
+            status: TicketStatus.available,
             userType: userData.userType,
             gender: newSpot.gender,
             eventId: dto.eventId,

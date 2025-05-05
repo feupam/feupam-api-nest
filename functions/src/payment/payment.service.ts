@@ -14,49 +14,44 @@ export class PaymentService {
   ) {}
 
   async payment(req: any, email: string): Promise<ChargeDto> {
+    
+    const NUMERO_VAGAS_EVENTO = 1
+    const VALOR_DO_EVENTO = 36500
+
     try {
       const queriesService = new Queries(this.firestoreService);
       const pagarmeService = new Pagarme();
       const user = await queriesService.getUserByEmail(email);
       const bodyPagarme = this.buildRequestBody(req, user[0]);
       const eventId = bodyPagarme.items[0].description;
-      console.log("socorro")
-      // Verifica se a reserva ainda está válida no Redis
+
       const isValid = await this.redisService.isReservationValid(email, eventId);
       if (!isValid) {
         throw new Error('Sua reserva expirou. Por favor, tente novamente.');
       }
-      console.log("isValid")
-      console.log(isValid)
 
-      // Verifica se a quantidade de ingressos pagos já atingiu o limite
-      // const paidCount = await queriesService.countPaidTickets(eventId);
-      // if (paidCount >= 250) {
-      //   throw new Error('Ingressos esgotados. Pagamento não permitido.');
-      // }
+      const paidCount = Number(await this.redisService.get(`event:${eventId}:count`));
+      if (paidCount > NUMERO_VAGAS_EVENTO) {
+        throw new Error('Ingressos esgotados. Pagamento não permitido.');
+      }
 
-      // const existingReservation =
-      //   await queriesService.getReservationByEmailAndEvent(email, eventId);
+      const existingReservation =
+        await queriesService.getReservationByEmailAndEvent(email, eventId);
 
-      // if (
-      //   existingReservation[0]?.eventId === eventId &&
-      //   existingReservation[0]?.status === 'Pago'
-      // ) {
-      //   throw new Error('usuario ja comprou');
-      // }
+      if (
+        existingReservation[0]?.eventId === eventId &&
+        existingReservation[0]?.status === 'Pago'
+      ) {
+        throw new Error('usuario ja comprou');
+      }
 
-      //const reservationData = existingReservation[1];
-      //const reservedAmount = 90000//reservationData.price;
-      //const itemAmount = bodyPagarme.items[0].amount;
-      console.log("oi2")
+      const itemAmount = bodyPagarme.items[0].amount;
 
-      // if (itemAmount < reservedAmount) {
-      //   throw new Error('Valor incorreto');
-      // }
+      if (itemAmount < VALOR_DO_EVENTO) {
+        throw new Error('Valor menor que o ingresso');
+      }
 
-      console.log("antes");
       const response = await pagarmeService.createPayment(bodyPagarme);
-      console.log("depois");
 
       let payLink: string = '';
       if (response.charges[0].payment_method === 'credit_card') {
@@ -92,7 +87,8 @@ export class PaymentService {
         chargeId: response.charges[0].id,
       };
 
-      await queriesService.updateReservationStatus(charge, status, "existingReservation");
+      
+      await queriesService.updateReservationStatus(charge, status);
 
       return charge;
     } catch (error) {

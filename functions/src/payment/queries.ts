@@ -37,19 +37,28 @@ export class Queries {
   public async updateReservationStatus(
     charge: ChargeDto,
     status: string,
-    querySnapshot,
-  ) {
-    const updatePromises = querySnapshot.docs.map(async (doc) => {
-      const docData = doc.data();
-      const updatedCharges = docData.charges || [];
-      updatedCharges.push(charge);
-      return doc.ref.update({
-        charges: updatedCharges,
-        status: status,
-      });
+  ): Promise<void> {
+    const snapshot = await this.firestoreService.firestore
+      .collection('reservationHistory')
+      .where('email', '==', charge.email)
+      .where('eventId', '==', charge.event)
+      .limit(1)
+      .get();
+  
+    if (snapshot.empty) {
+      throw new Error('Reserva não encontrada para este email e evento.');
+    }
+  
+    const doc = snapshot.docs[0];
+    const docData = doc.data();
+    const updatedCharges = docData?.charges || [];
+    updatedCharges.push(charge);
+  
+    await doc.ref.update({
+      charges: updatedCharges,
+      status: status,
+      updatedAt: new Date(),
     });
-
-    await Promise.all(updatePromises);
   }
 
   public async updateChargeStatus(
@@ -83,13 +92,4 @@ export class Queries {
     await Promise.all(updatePromises);
   }
 
-  async countPaidTickets(eventId: string): Promise<number> {
-    const snapshot = await this.firestoreService.firestore
-      .collection('reservationHistory')
-      .where('eventId', '==', eventId)
-      .where('status', '==', 'Pago')
-      .get();
-  
-    return snapshot.size;
-  }
 }

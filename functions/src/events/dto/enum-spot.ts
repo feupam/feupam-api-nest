@@ -8,6 +8,7 @@ export enum SpotStatus {
 
 export enum TicketStatus {
   reserved = 'reserved',
+  available = 'available',
   pago = 'Pago',
   cancelled = 'cancelled',
 }

@@ -61,11 +61,22 @@ export class TicketService {
       await this.redisService.set(reservationKey, '1', this.reservationTTL);
       await this.redisService.hset(expireKey, 'expiresAt', (Date.now() + this.reservationTTL * 1000).toString());
 
-      await this.firestoreService.firestore.collection('reservationHistory').add({
-        email,
-        eventId,
-        status: 'reserved',
-        createdAt: new Date(),
+        const snapshot = await this.firestoreService.firestore
+        .collection('reservationHistory')
+        .where('email', '==', email)
+        .where('eventId', '==', eventId)
+        .where('status', '==', "available")
+        .get();
+      
+      if (snapshot.empty) {
+        throw new Error('Reserva não encontrada para este email e evento.');
+      }
+      
+      snapshot.forEach(async (doc) => {
+        await doc.ref.update({
+          status: 'reserved',
+          updatedAt: new Date(),
+        });
       });
   
       return {
