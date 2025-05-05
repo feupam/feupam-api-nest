@@ -6,7 +6,7 @@
 # @name makeReservation
 POST {{base_url}}/events/{{eventId}}/reserve-spot
 Content-Type: application/json
-Authorization: Bearer  
+Authorization: Bearer
 
 {
   "ticket_kind": "full",
@@ -17,13 +17,13 @@ Authorization: Bearer
 # @name getReservationByUser
 GET {{base_url}}/users/reservations
 Content-Type: application/json
-Authorization: Bearer  
+Authorization: Bearer 
 
 ### Get reservations for a specific user
 # @name cancelledReservationByUser
 PATCH {{base_url}}/users/cancel-reservation
 Content-Type: application/json
-Authorization: Bearer  
+Authorization: Bearer 
 
 ### Get reservations for a specific event
 # @name getReservationByEvents

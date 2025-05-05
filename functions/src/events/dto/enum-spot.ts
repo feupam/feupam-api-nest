@@ -1,7 +1,9 @@
 export enum SpotStatus {
   available = 'available',
   reserved = 'reserved',
-  occupied = 'occupied',
+  occupied = 'Pago',
+  cancelled = 'cancelled',
+
 }
 
 export enum TicketStatus {

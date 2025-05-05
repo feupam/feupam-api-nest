@@ -7,8 +7,8 @@ export class RedisService implements OnModuleInit {
   private readonly logger = new Logger(RedisService.name);
 
   onModuleInit() {
-    this.baseUrl = "https://certain-caiman-21436.upstash.io";
-    this.token = "";
+    this.baseUrl = "https://tight-stud-20647.upstash.io";
+    this.token = "AVCnAAIjcDFhOTgyYzE0ZmJlNWQ0MzMzOGQwNTZiMGVjODQwZTNiYXAxMA";
 
     if (!this.baseUrl || !this.token) {
       this.logger.error('RedisService não inicializado corretamente. Verifique REDIS_REST_URL e REDIS_REST_TOKEN.');
@@ -22,22 +22,26 @@ export class RedisService implements OnModuleInit {
     path: string,
     body?: any,
   ): Promise<any> {
+    const hasBody = body !== undefined && method === 'POST';
+  
     const res = await fetch(`${this.baseUrl}${path}`, {
       method,
       headers: {
         Authorization: `Bearer ${this.token}`,
-        'Content-Type': 'application/json',
+        ...(hasBody ? { 'Content-Type': 'application/json' } : {}),
       },
-      body: body ? JSON.stringify(body) : undefined,
+      body: hasBody ? JSON.stringify(body) : undefined,
     });
-
+  
     const json = await res.json();
+  
     if (!res.ok) {
       throw new Error(`Erro Redis: ${res.status} - ${json.error || JSON.stringify(json)}`);
     }
-
+  
     return json.result;
   }
+  
 
   async set(key: string, value: string, ttlSeconds: number): Promise<void> {
     await this.fetchRedis('POST', `/set/${key}`, {
@@ -77,5 +81,23 @@ export class RedisService implements OnModuleInit {
 
   async deleteReservationKey(email: string, eventId: string): Promise<void> {
     await this.fetchRedis('DELETE', `/del/reservation:${email}:${eventId}`);
+  }
+
+  async hset(key: string, field: string, value: string): Promise<void> {
+    const url = `/hset/${key}/${field}/${value}`;
+    await this.fetchRedis('POST', url);
+  }
+  
+  async hgetall(key: string): Promise<Record<string, string>> {
+    return await this.fetchRedis('GET', `/hgetall/${key}`);
+  }
+  
+  async hdel(key: string): Promise<void> {
+    await this.fetchRedis('POST', `/del/${key}`);
+  }
+  
+  async ttl(key: string): Promise<number> {
+    const res = await this.fetchRedis('GET', `/ttl/${key}`);
+    return parseInt(res, 10);
   }
 }

@@ -82,4 +82,14 @@ export class Queries {
 
     await Promise.all(updatePromises);
   }
+
+  async countPaidTickets(eventId: string): Promise<number> {
+    const snapshot = await this.firestoreService.firestore
+      .collection('reservationHistory')
+      .where('eventId', '==', eventId)
+      .where('status', '==', 'Pago')
+      .get();
+  
+    return snapshot.size;
+  }
 }

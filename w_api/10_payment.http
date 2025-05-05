@@ -1,6 +1,6 @@
 ### Base URL
 @base_url=http://localhost:3000
-@eventId=federa
+@eventId=federa2025
 
 ### Chamada POST para a API payPaymentsPagarme
 # @name pagarmeCredit
@@ -43,7 +43,7 @@ Authorization: Bearer
 
 ###
 # @name pagarmeBoleto
-POST http://localhost:3000/payments
+POST {{base_url}}/payments
 Content-Type: application/json
 Authorization: Bearer  
 

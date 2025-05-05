@@ -4,12 +4,12 @@ import fetch from 'node-fetch';
 export class Pagarme {
   public async createPayment(bodyPagarme: any): Promise<any> {
 
-    const key = "sk_test_26ef8ce83e7041dd8f89a2780635720d";
-
+    const key = "26ef8ce83e7041dd8f89a2780635720d";
+    console.log('Basic ' + Buffer.from(key).toString('base64'))
     const response = await fetch('https://api.pagar.me/core/v5/orders', {
       method: 'post',
       headers: {
-        Authorization: 'Basic ' + Buffer.from(key).toString('base64'),
+        Authorization: 'Basic ' + Buffer.from("sk_test_*:").toString('base64'),
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(bodyPagarme),

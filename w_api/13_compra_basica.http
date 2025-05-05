@@ -1,0 +1,50 @@
+@base_url=http://localhost:3000
+@eventId=federa2025
+
+# Retorna true ou false, quando há vagas disponiveis
+# @name checkSpot
+GET {{base_url}}/events/{{eventId}}/check-spot
+Content-Type: application/json
+Authorization: Bearer 
+
+###
+# @name makeReservation
+POST {{base_url}}/events/{{eventId}}/reserve-spot
+Content-Type: application/json
+Authorization: Bearer 
+
+{
+  "ticket_kind": "full",
+  "userType": "client"
+}
+
+###
+# @name getTicket
+GET {{base_url}}/tickets/{{eventId}}/purchase
+Content-Type: application/json
+Authorization: Bearer 
+
+# SO PAGA SE TIVER TICKET
+###
+# @name pagarmeBoleto
+POST {{base_url}}/payments
+Content-Type: application/json
+Authorization: Bearer 
+
+{
+  "items": [
+    {
+      "amount": 2990,
+      "description": "{{eventId}}"
+    }
+  ],
+  "customer": {
+    "email": "ariela.stefanini@sou.unifal-mg.edu.br"
+  },
+  "payments": {
+    "payment_method": "boleto",
+    "boleto": {
+      "due_at": "2024-08-13T00:00:00Z"
+    }
+  }
+}

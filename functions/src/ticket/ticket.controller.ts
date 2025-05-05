@@ -13,11 +13,16 @@ export class TicketController {
   async purchase(
     @Param('id') id: string,    
     @Headers('Authorization') authHeader: string,
-    ) {
-      const token = authHeader?.split(' ')[1];
-      const decoded = await this.authService.verifyToken(token);
-      return this.ticketService.purchaseTicket(id, decoded.email);
+  ) {
+    const token = authHeader?.split(' ')[1];
+    const decoded = await this.authService.verifyToken(token);
+    return this.ticketService.purchaseTicket(id, decoded.email);
+  }
+
+  @Get(':id/retry')
+  async retry(@Param('id') id: string, @Headers('Authorization') authHeader: string) {
+    const token = authHeader?.split(' ')[1];
+    const decoded = await this.authService.verifyToken(token);
+    return this.ticketService.getReservationStatus(id, decoded.email);
   }
 }
-
-
