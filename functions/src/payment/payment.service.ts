@@ -139,6 +139,8 @@ export class PaymentService {
     const webhookData = body.data;
 
     if (webhookData.status === 'paid') {
+      const pagoKey = `pago:pagarme:count`;
+      await this.redisService.incr(pagoKey);
       await queriesService.updateChargeStatus(
         webhookData.customer.email,
         webhookData.id,

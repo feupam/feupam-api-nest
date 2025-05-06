@@ -11,6 +11,7 @@ import { CommentsModule } from './comments/comments.module';
 import { CuponsModule } from './cupom/cupons.module';
 import { AdminModule } from './admin/admin.module';
 import { TicketModule } from './ticket/ticket.module';
+import { CronModule } from './redis/cron.module'
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { TicketModule } from './ticket/ticket.module';
     CuponsModule,
     AdminModule,
     TicketModule,
+    CronModule,
   ],
   controllers: [AppController],
   providers: [AppService],
