@@ -22,7 +22,7 @@ export class ScheduledUnlockService {
         }
 
         // atualiza contagem
-        await this.redisService.set(reservationKey, (currentReservations + unlocked.length).toString(), 60 * 15);
+        await this.redisService.hset(reservationKey, 'expiresAt', (currentReservations + unlocked.length).toString());
 
         console.log(`[CRON] Desbloqueando usuários para o evento ${eventId}:`, unlocked);
       }

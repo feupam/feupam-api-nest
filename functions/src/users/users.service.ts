@@ -59,12 +59,17 @@ export class UsersService {
     const userRef = this.firestoreService.firestore
       .collection('users')
       .where('email', '==', email);
-    const doc = await userRef.get();
-    if (doc.empty) {
+  
+    const snapshot = await userRef.get();
+  
+    if (snapshot.empty) {
       throw new NotFoundException('User not found');
     }
-    const userId = doc.docs[0];
-    return { userId };
+  
+    const userDoc = snapshot.docs[0];
+    const userData = userDoc.data(); // <- Aqui extrai os dados JSON do documento
+  
+    return userData; // Retorna no formato desejado
   }
 
   async update(decodedIdToken, updateUserDto: UpdateUserDto) {

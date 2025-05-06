@@ -23,7 +23,7 @@ export class RedisService implements OnModuleInit {
     body?: any,
   ): Promise<any> {
     const hasBody = body !== undefined && method === 'POST';
-  
+
     const res = await fetch(`${this.baseUrl}${path}`, {
       method,
       headers: {
@@ -32,22 +32,18 @@ export class RedisService implements OnModuleInit {
       },
       body: hasBody ? JSON.stringify(body) : undefined,
     });
-  
+
     const json = await res.json();
-  
+
     if (!res.ok) {
       throw new Error(`Erro Redis: ${res.status} - ${json.error || JSON.stringify(json)}`);
     }
-  
+
     return json.result;
   }
-  
 
-  async set(key: string, value: string, ttlSeconds: number): Promise<void> {
-    await this.fetchRedis('POST', `/set/${key}`, {
-      value,
-      options: { EX: ttlSeconds },
-    });
+  async set(key: string, content: {} ): Promise<void> {
+    await this.fetchRedis('POST', `/set/${key}`, content);
   }
 
   async get(key: string): Promise<string | null> {
@@ -62,8 +58,12 @@ export class RedisService implements OnModuleInit {
     return await this.fetchRedis('POST', `/decr/${key}`);
   }
 
+  async expire(key: string, ttlSeconds: string): Promise<void> {
+    await this.fetchRedis('POST', `/expire/${key}`, { seconds: 600 });
+  }
+
   async enqueue(key: string, value: string): Promise<void> {
-    await this.fetchRedis('POST', `/rpush/${key}`, { value });
+    await this.fetchRedis('POST', `/rpush/${key}`, { value: value.toString() });
   }
 
   async dequeue(key: string): Promise<string | null> {
@@ -83,19 +83,23 @@ export class RedisService implements OnModuleInit {
     await this.fetchRedis('DELETE', `/del/reservation:${email}:${eventId}`);
   }
 
+  async del(key: string): Promise<void> {
+    await this.fetchRedis('DELETE', `/del/${key}`);
+  }
+
   async hset(key: string, field: string, value: string): Promise<void> {
     const url = `/hset/${key}/${field}/${value}`;
     await this.fetchRedis('POST', url);
   }
-  
+
   async hgetall(key: string): Promise<Record<string, string>> {
     return await this.fetchRedis('GET', `/hgetall/${key}`);
   }
-  
+
   async hdel(key: string): Promise<void> {
     await this.fetchRedis('POST', `/del/${key}`);
   }
-  
+
   async ttl(key: string): Promise<number> {
     const res = await this.fetchRedis('GET', `/ttl/${key}`);
     return parseInt(res, 10);
