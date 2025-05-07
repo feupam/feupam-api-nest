@@ -5,12 +5,14 @@ import { Pagarme } from './pagarme';
 import { BuildBody } from './build-body';
 import { FirestoreService } from '../firebase/firebase.service';
 import { RedisService } from '../redis/redis.service';
+import { TicketService } from 'src/ticket/ticket.service';
 
 @Injectable()
 export class PaymentService {
   constructor(
     private readonly firestoreService: FirestoreService,
     private readonly redisService: RedisService,
+    private readonly ticketService: TicketService,
   ) {}
 
   async payment(req: any, email: string): Promise<ChargeDto> {
@@ -31,7 +33,8 @@ export class PaymentService {
       }
 
       const paidCount = Number(await this.redisService.get(`event:${eventId}:count`));
-      if (paidCount > NUMERO_VAGAS_EVENTO) {
+      const paidMax = Number(await this.redisService.get(`pagarme:count`));
+      if (paidCount > NUMERO_VAGAS_EVENTO && paidMax == NUMERO_VAGAS_EVENTO) {
         throw new Error('Ingressos esgotados. Pagamento não permitido.');
       }
 
@@ -141,12 +144,22 @@ export class PaymentService {
     if (webhookData.status === 'paid') {
       const pagoKey = `pago:pagarme:count`;
       await this.redisService.incr(pagoKey);
+  
       await queriesService.updateChargeStatus(
         webhookData.customer.email,
         webhookData.id,
         'Pago',
       );
     }
+
+    const snapshot = await this.firestoreService.firestore
+    .collection('reservationHistory')
+    .where('email', '==', webhookData.customer.email)
+    .limit(1)
+    .get();
+
+    await this.ticketService.processQueue(snapshot.docs[0].data().eventId); 
+
     return { message: 'ok' };
   }
 }

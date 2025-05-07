@@ -22,16 +22,19 @@ export class RedisService implements OnModuleInit {
     path: string,
     body?: any,
   ): Promise<any> {
-    const hasBody = body !== undefined && method === 'POST';
-
+    const isBodyAllowed = ['POST', 'DELETE'].includes(method) && body !== undefined;
     const res = await fetch(`${this.baseUrl}${path}`, {
       method,
       headers: {
         Authorization: `Bearer ${this.token}`,
-        ...(hasBody ? { 'Content-Type': 'application/json' } : {}),
+        ...(isBodyAllowed ? { 'Content-Type': 'application/json' } : {}),
       },
-      body: hasBody ? JSON.stringify(body) : undefined,
+      body: isBodyAllowed ? JSON.stringify(body) : undefined,
     });
+
+    if (res.status === 204) {
+      return null;
+    }
 
     const json = await res.json();
 
@@ -76,15 +79,43 @@ export class RedisService implements OnModuleInit {
 
   async isReservationValid(email: string, eventId: string): Promise<boolean> {
     const value = await this.get(`reservation:${email}:${eventId}`);
-    return value !== null;
+    
+    const parsed = JSON.parse(value);
+    const expiresAt = new Date(parsed["expire"]);
+    const now = new Date();
+  
+    const totalGracePeriod = 10 * 60 * 1000; // 10 minutos
+    const graceDeadline = expiresAt.getTime() + totalGracePeriod;
+    const timeDifference = graceDeadline - now.getTime();
+    const expired = timeDifference <= 0;
+  
+    parsed["status"] = expired ? 'expired' : 'reserved';
+
+    if (expired) {
+      await this.deleteReservationKey(email, eventId);
+      await this.decr(`event:${eventId}:count:${parsed["gender"]}`);
+    }
+
+    return parsed["status"] == "reserved" ;
   }
 
   async deleteReservationKey(email: string, eventId: string): Promise<void> {
-    await this.fetchRedis('DELETE', `/del/reservation:${email}:${eventId}`);
-  }
-
-  async del(key: string): Promise<void> {
-    await this.fetchRedis('DELETE', `/del/${key}`);
+    const key = `reservation:${email}:${eventId}`
+    const response = await fetch(`${this.baseUrl}/`, {  // Note a "/" no final
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${this.token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(["DEL", key]),  // Comando Redis em formato de array
+    });
+  
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(`Failed to delete key: ${data.error || 'Unknown error'}`);
+    }
+  
   }
 
   async hset(key: string, field: string, value: string): Promise<void> {

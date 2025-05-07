@@ -4,8 +4,9 @@ import { FirestoreService } from '../firebase/firebase.service';
 
 @Injectable()
 export class TicketService {
-  private readonly maxSpots = 250;
-  private readonly pagoMax = 250;
+  private readonly pagoMax = 4;
+  private readonly FMax = 2;
+  private readonly MMax = 2;
 
   constructor(
     private readonly redisService: RedisService,
@@ -14,7 +15,6 @@ export class TicketService {
 
   async purchaseTicket(eventId: string, email: string) {
     const reservationKey = `reservation:${email}:${eventId}`;
-    const countKey = `event:${eventId}:count`;
     const pagoKey = `pago:pagarme:count`;
     const queueKey = `event:${eventId}:queue`;
 
@@ -22,52 +22,77 @@ export class TicketService {
       .collection('reservationHistory')
       .where('email', '==', email)
       .where('eventId', '==', eventId)
-      .where('status', '==', "available")
+      .where('status', '==', 'available')
       .get();
 
     if (reservationHistory.empty) {
-      throw new Error('Reserva não encontrada para este email e evento ou status não é valido.');
+      throw new Error('Reserva não encontrada para este email e evento ou status não é válido.');
     }
 
-    const pagoCount = await this.redisService.get(pagoKey);
-    if (pagoCount) {
-      if (Number(pagoCount) >= this.pagoMax) {
-        const waitingListRef = this.firestoreService.firestore.collection('waitingList').doc(eventId);
-        const waitingListDoc = await waitingListRef.get();
-        const existingEmails = waitingListDoc.exists ? waitingListDoc.data()?.emails || [] : [];
+    const usersRef = await this.firestoreService.firestore
+      .collection('users')
+      .where('email', '==', email)
+      .limit(1)
+      .get();
 
-        if (!existingEmails.includes(email)) {
-          await waitingListRef.set(
-            { emails: [...existingEmails, email] },
-            { merge: true }
-          );
-        }
-        return {
-          status: 'waiting-list',
-          message: 'Todos os ingressos foram pagos. Você foi adicionado à lista de interessados.',
-        };
+    if (usersRef.empty) {
+      throw new Error('Usuário não encontrado.');
+    }
+
+    const userData = usersRef.docs[0].data();
+    const gender = userData.gender;
+
+    if (!['male', 'female'].includes(gender)) {
+      throw new Error('Gênero não especificado corretamente no perfil do usuário.');
+    }
+
+    const maxByGender = gender === 'female' ? this.FMax : this.MMax;
+    const countKey = `event:${eventId}:count:${gender}`;
+    const queueGenderKey = `${queueKey}:${gender}`;
+
+    const pagoCount = await this.redisService.get(pagoKey);
+    if (pagoCount && Number(pagoCount) >= this.pagoMax) {
+      const waitingListRef = this.firestoreService.firestore.collection('waitingList').doc(eventId);
+      const waitingListDoc = await waitingListRef.get();
+      const existingEmails = waitingListDoc.exists ? waitingListDoc.data()?.emails || [] : [];
+
+      if (!existingEmails.includes(email)) {
+        await waitingListRef.set(
+          { emails: [...existingEmails, email] },
+          { merge: true },
+        );
       }
+
+      return {
+        status: 'waiting-list',
+        message: 'Todos os ingressos foram pagos. Você foi adicionado à lista de interessados.',
+      };
     }
 
     const exists = await this.redisService.get(reservationKey);
     let result: any = null;
 
     if (exists) {
-      result = await this.checkReservationStatus(exists, reservationKey);
-      if (result["status"] === "pago") {
+      result = await this.checkReservationStatus(exists, reservationKey, email, eventId);
+      if (result.status === 'pago') {
         return {
-          status: result["status"],
+          status: 'pago',
           message: 'Você já pagou a sua inscrição.',
         };
       }
     }
 
-    if (!exists || (result["status"] !== "expired" && result["status"] !== "reserved")) {
+    if (!exists || (result.status !== 'expired' && result.status !== 'reserved')) {
       const count = await this.redisService.incr(countKey);
 
-      if (count <= this.maxSpots) {
+      if (count <= maxByGender) {
         const currentDate = new Date();
-        await this.redisService.set(reservationKey, { "fifo": count.toString(), "expire": currentDate.toISOString(), "status": "reserved" });
+        await this.redisService.set(reservationKey, {
+          fifo: count.toString(),
+          expire: currentDate.toISOString(),
+          status: 'reserved',
+          gender: gender,
+        });
 
         return {
           status: 'reserved',
@@ -75,11 +100,10 @@ export class TicketService {
         };
       } else {
         await this.redisService.decr(countKey);
-
-        const queue = await this.redisService.getQueue(queueKey);
+        const queue = await this.redisService.getQueue(queueGenderKey);
 
         if (!queue.includes(email)) {
-          await this.redisService.enqueue(queueKey, email);
+          await this.redisService.enqueue(queueGenderKey, email);
         }
 
         return {
@@ -97,43 +121,49 @@ export class TicketService {
 
   async processQueue(eventId: string) {
     const pagoKey = `pago:pagarme:count`;
-    const queueKey = `event:${eventId}:queue`;
     const pagoCount = Number(await this.redisService.get(pagoKey)) || 0;
-
     if (pagoCount >= this.pagoMax) return;
 
-    const queue = await this.redisService.getQueue(queueKey);
-    for (const email of queue) {
-      const reservationKey = `reservation:${email}:${eventId}`;
-      const exists = await this.redisService.get(reservationKey);
-      if (!exists) {
-        await this.redisService.dequeue(queueKey);
-        continue;
-      }
+    const genders = ['male', 'female'];
 
-      let result: { status: 'reserved' | 'queued' | 'waiting-list' | 'expired' | 'pago' | 'unknown' } | null = null;
-      result = await this.checkReservationStatus(exists, reservationKey);
-      if (result.status === 'expired') {
-        await this.redisService.dequeue(queueKey);
-        continue;
-      }
+    for (const gender of genders) {
+      const queueGenderKey = `event:${eventId}:queue:${gender}`;
+      const maxByGender = gender === 'female' ? this.FMax : this.MMax;
+      const countKey = `event:${eventId}:count:${gender}`;
+      const queue = await this.redisService.getQueue(queueGenderKey);
 
-      if (result.status === 'queued' || result.status === 'waiting-list') {
-        const countKey = `event:${eventId}:count`;
-        const count = await this.redisService.incr(countKey);
+      for (const email of queue) {
+        const reservationKey = `reservation:${email}:${eventId}`;
+        const exists = await this.redisService.get(reservationKey);
 
-        if (count <= this.maxSpots) {
-          const currentDate = new Date();
-          await this.redisService.set(reservationKey, {
-            fifo: count.toString(),
-            expire: currentDate.toISOString(),
-            status: "reserved",
-          });
+        if (!exists) {
+          await this.redisService.dequeue(queueGenderKey);
+          continue;
+        }
 
-          await this.redisService.dequeue(queueKey);
-          break; // libera só um por chamada
-        } else {
-          await this.redisService.decr(countKey);
+        const result = await this.checkReservationStatus(exists, reservationKey, email, eventId);
+        if (result.status === 'expired') {
+          await this.redisService.dequeue(queueGenderKey);
+          continue;
+        }
+
+        if (result.status === 'queued' || result.status === 'waiting-list') {
+          const currentCount = await this.redisService.incr(countKey);
+
+          if (currentCount <= maxByGender) {
+            const currentDate = new Date();
+            await this.redisService.set(reservationKey, {
+              fifo: currentCount.toString(),
+              expire: currentDate.toISOString(),
+              status: 'reserved',
+              gender: gender,
+            });
+
+            await this.redisService.dequeue(queueGenderKey);
+            return;
+          } else {
+            await this.redisService.decr(countKey);
+          }
         }
       }
     }
@@ -141,43 +171,45 @@ export class TicketService {
 
   async getReservationStatus(eventId: string, email: string) {
     const reservationKey = `reservation:${email}:${eventId}`;
-
     const exists = await this.redisService.get(reservationKey);
 
     if (exists) {
-      const result = await this.checkReservationStatus(exists, reservationKey);
-      return result
+      const result = await this.checkReservationStatus(exists, reservationKey, email, eventId);
+      return result;
     }
 
-    return { status: 'none' };
+    return { status: 'expired' };
   }
 
-  async checkReservationStatus(exists: string, reservationKey: string): Promise<{
-    status: 'reserved' | 'expired';
+  async checkReservationStatus(
+    exists: string,
+    reservationKey: string,
+    email: string,
+    eventId: string,
+  ): Promise<{
+    status: 'reserved' | 'expired' | 'queued' | 'waiting-list';
     expiresAt: string;
     currentTime: string;
     remainingMinutes: number;
   }> {
     const parsed = JSON.parse(exists);
-    const expiresAt = new Date(parsed["expire"]);
+    const expiresAt = new Date(parsed.expire);
     const now = new Date();
-    const nowISO = now.toISOString();
-  
-    const totalGracePeriod = 10 * 60 * 1000; // 10 minutos
-    const graceDeadline = expiresAt.getTime() + totalGracePeriod;
+    const graceDeadline = expiresAt.getTime() + 10 * 60 * 1000;
     const timeDifference = graceDeadline - now.getTime();
     const expired = timeDifference <= 0;
-    const remaining = expired ? 0 : Math.max(0, timeDifference);
-  
-    parsed["status"] = expired ? 'expired' : 'reserved';
-    await this.redisService.set(reservationKey, parsed);
-  
+    const is_expired = expired ? 'expired' : 'reserved';
+
+    if (expired) {
+      await this.redisService.deleteReservationKey(email, eventId);
+      await this.redisService.decr(`event:${eventId}:count:${parsed.gender}`);
+    }
+
     return {
-      status: parsed["status"],
+      status: is_expired,
       expiresAt: expiresAt.toISOString(),
-      currentTime: nowISO,
-      remainingMinutes: Math.ceil(remaining / 60000),
+      currentTime: now.toISOString(),
+      remainingMinutes: Math.ceil(Math.max(0, timeDifference) / 60000),
     };
   }
-
 }

@@ -1,4 +1,11 @@
-import { Controller, Get, Param, Headers } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Param,
+  Headers,
+  HttpException,
+  HttpStatus,
+} from '@nestjs/common';
 import { TicketService } from './ticket.service';
 import { AuthService } from '../firebase/auth.service';
 
@@ -11,18 +18,39 @@ export class TicketController {
 
   @Get(':id/purchase')
   async purchase(
-    @Param('id') id: string,    
+    @Param('id') id: string,
     @Headers('Authorization') authHeader: string,
   ) {
-    const token = authHeader?.split(' ')[1];
-    const decoded = await this.authService.verifyToken(token);
-    return this.ticketService.purchaseTicket(id, decoded.email);
+    try {
+      const token = authHeader?.split(' ')[1];
+      const decoded = await this.authService.verifyToken(token);
+      const result = await this.ticketService.purchaseTicket(id, decoded.email);
+      return result;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Erro inesperado';
+      throw new HttpException(
+        { status: 'error', message },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
   }
 
   @Get(':id/retry')
-  async retry(@Param('id') id: string, @Headers('Authorization') authHeader: string) {
-    const token = authHeader?.split(' ')[1];
-    const decoded = await this.authService.verifyToken(token);
-    return this.ticketService.getReservationStatus(id, decoded.email);
+  async retry(
+    @Param('id') id: string,
+    @Headers('Authorization') authHeader: string,
+  ) {
+    try {
+      const token = authHeader?.split(' ')[1];
+      const decoded = await this.authService.verifyToken(token);
+      const result = await this.ticketService.getReservationStatus(id, decoded.email);
+      return result;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Erro inesperado';
+      throw new HttpException(
+        { status: 'error', message },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
   }
 }

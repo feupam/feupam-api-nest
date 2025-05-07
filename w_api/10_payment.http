@@ -1,6 +1,8 @@
 ### Base URL
 @base_url=http://localhost:3000
 @eventId=federa2025
+@token=eyJhbGciOiJSUzI1NiIsImtpZCI6IjNmOWEwNTBkYzRhZTgyOGMyODcxYzMyNTYzYzk5ZDUwMjc3ODRiZTUiLCJ0eXAiOiJKV1QifQ.eyJuYW1lIjoiQXJpZWxhIFN0ZWZhbmluaSIsInBpY3R1cmUiOiJodHRwczovL2xoMy5nb29nbGV1c2VyY29udGVudC5jb20vYS9BQ2c4b2NMTF9GNjIwTWw3ZENzNUVwdVFDLWhUUkZQVzh6VGVoVXdRNDlWQWgzc3p0bHRyZ2lnVD1zOTYtYyIsImlzcyI6Imh0dHBzOi8vc2VjdXJldG9rZW4uZ29vZ2xlLmNvbS9mZWRlcmEtYXBpIiwiYXVkIjoiZmVkZXJhLWFwaSIsImF1dGhfdGltZSI6MTc0NjU0NjY4NywidXNlcl9pZCI6IkxtSFU0amlCRU5NZHQ2UUtyR29HMW9tdVdDRDIiLCJzdWIiOiJMbUhVNGppQkVOTWR0NlFLckdvRzFvbXVXQ0QyIiwiaWF0IjoxNzQ2NTQ2Njg3LCJleHAiOjE3NDY1NTAyODcsImVtYWlsIjoiYXJpZWxhYWFhYTFAZ21haWwuY29tIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsImZpcmViYXNlIjp7ImlkZW50aXRpZXMiOnsiZ29vZ2xlLmNvbSI6WyIxMTA5MDg5Nzc5MTY0MTc2Mjc1MDgiXSwiZW1haWwiOlsiYXJpZWxhYWFhYTFAZ21haWwuY29tIl19LCJzaWduX2luX3Byb3ZpZGVyIjoiZ29vZ2xlLmNvbSJ9fQ.DxChDP3KA5qUDkLp9ubkhuiwku0XGhW_r1tpmtGlxMY_qfteHN50ANmndD_kJunYEP5DWx57jKAdJoyx1pCub2NNum-58Y-x1S67qExFKwFSG7Ti8juIh_D2-LEXV7sSvmPP0jkVtGPpPgc-bfhh_gTEVzR6WiMUUjMHOEQaCObhWAnKcSSluE2B8u8QvtcFHrL0T8HMjqD7X2kOoJC2omAJYAhmMTONmzZcXv7Ju3WxkKqtPM8OnObLe7Ik3Qw1p49Ly2K2BhkOs3GKjgaRvCdpP0bcxYLJyRAd7cDfqIRojNwvVz-EjkvIZPxcfKNug90AN5g-zWdQ5lgDy6AYGg
+
 
 ### Chamada POST para a API payPaymentsPagarme
 # @name pagarmeCredit
@@ -45,7 +47,7 @@ Authorization: Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6IjNmOWEwNTBkYzRhZTgyOGMyODcxYz
 # @name pagarmeBoleto
 POST {{base_url}}/payments
 Content-Type: application/json
-Authorization: Bearer  
+Authorization: Bearer {{token}}
 
 {
   "items": [
@@ -69,12 +71,12 @@ Authorization: Bearer
 # @name pagarmePix
 POST {{base_url}}/payments
 Content-Type: application/json
-Authorization: Bearer
+Authorization: Bearer {{token}}
 
 {
   "items": [
     {
-      "amount": 2990,
+      "amount": 36500,
       "description": "{{eventId}}"
     }
   ],

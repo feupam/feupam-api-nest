@@ -278,7 +278,6 @@ export class EventsService {
               (discount) => discount.event === dto.eventId
             );
           }
-          console.log(eventDiscount)
           if (eventDiscount) {
             price = price * (1 - d.discount);
           }

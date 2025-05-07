@@ -8,5 +8,6 @@ import { FirebaseModule } from '../firebase/firebase.module';
   imports: [RedisModule, FirebaseModule],
   controllers: [TicketController],
   providers: [TicketService],
+  exports: [TicketService],
 })
 export class TicketModule {}

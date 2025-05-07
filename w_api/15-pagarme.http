@@ -1,4 +1,0 @@
-# @name pagarme
-POST https://api.pagar.me/core/v5/orders
-Content-Type: application/json
-Authorization: Basic c2tfdGVzdF8yNmVmOGNlODNlNzA0MWRkOGY4OWEyNzgwNjM1NzIwZA==
