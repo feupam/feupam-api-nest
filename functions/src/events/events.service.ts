@@ -360,31 +360,21 @@ export class EventsService {
   async getInstallments(eventId: string) {
     const firestore = this.firestoreService.firestore;
   
-    // Verifique se o evento existe e obtenha o preço
     const eventRef = firestore.collection('events').doc(eventId);
     const eventDoc = await eventRef.get();
-    if (!eventDoc.exists) {
-      throw new NotFoundException('Event not found');
-    }
+    if (!eventDoc.exists) throw new NotFoundException('Event not found');
   
     const eventData = eventDoc.data();
-    if (!eventData) {
-      throw new Error('Event data is missing');
-    }
+    if (!eventData) throw new Error('Event data is missing');
   
-    const priceInCents = eventData.price; // Convertendo preço para centavos
+    const priceInCents = eventData.price;
   
-    // Verifique se há vagas disponíveis
-    const spotsQuery = firestore
-      .collection('spots')
-      .where('eventId', '==', eventId);
+    // Verifica vagas disponíveis
+    const spotsQuery = firestore.collection('spots').where('eventId', '==', eventId);
     const spotsSnapshot = await spotsQuery.get();
-    const reservedSpots = spotsSnapshot.docs.filter(
-      (doc) => doc.data().status === 'reserved',
-    ).length;
+    const reservedSpots = spotsSnapshot.docs.filter(doc => doc.data().status === 'reserved').length;
   
     let maxSpots = 0;
-  
     if (eventData.eventType === EventType.GENERAL) {
       maxSpots = eventData.maxGeneralSpots;
     } else if (eventData.eventType === EventType.GENDER_SPECIFIC) {
@@ -395,57 +385,48 @@ export class EventsService {
         eventData.maxStaffFemale;
     }
   
-    if (reservedSpots >= maxSpots) {
-      throw new BadRequestException('No spots available for this event');
-    }
+    if (reservedSpots >= maxSpots) throw new BadRequestException('No spots available');
   
-    // Tabela de juros
-    const interestRates = [
-      0.0454, 0.0266, 0.0399, 0.0532, 0.0665, 0.0789, 0.0937, 0.1064, 0.1197,
-      0.133,
+    const installmentRates = [
+      { installment: 1, rate: 0.00 },
+      { installment: 2, rate: 6.92 },
+      { installment: 3, rate: 8.19 },
+      { installment: 4, rate: 9.46 },
+      { installment: 5, rate: 10.73 },
+      { installment: 6, rate: 12.00 },
+      { installment: 7, rate: 13.27 },
+      { installment: 8, rate: 14.54 },
+      { installment: 9, rate: 15.81 },
+      { installment: 10, rate: 17.08 }
     ];
-    const maxInstallments = 10;
-    const installmentOptions = [];
   
-    // Configurar o formatador para o formato brasileiro
-    const numberFormat = new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
+    return installmentRates.map(({ installment, rate }) => {
+      const totalWithInterest = priceInCents * (1 + rate / 100);
+      const installmentValue = Math.round(totalWithInterest / installment);
+
+      return {
+        installmentNumber: installment,
+        valueInCents: installmentValue,
+        valueWithInterest: `R$ ${(installmentValue / 100).toFixed(2).replace('.', ',')}`
+      };
     });
+  }
   
-    for (let i = 1; i <= maxInstallments; i++) {
-      const interestRate = interestRates[i - 1];
-      const totalAmount = priceInCents * (1 + interestRate * i); // Valor total com juros
-      const installmentValue = totalAmount / i; // Valor de cada parcela
   
-      // Formatar valor para o estilo brasileiro
-      const formattedInstallmentValue = numberFormat.format(installmentValue / 100); // Convertendo de centavos para reais
-  
-      installmentOptions.push({
-        installmentNumber: i,
-        valueInCents: Math.round(installmentValue), // Valor em centavos
-        valueWithInterest: formattedInstallmentValue, // Valor formatado
-      });
-    }
-  
-    return installmentOptions;
-  }  
 
-  async getWaitingList(eventId: string): Promise<string[]> {
-    const waitingListRef = this.firestoreService.firestore
-      .collection('waitingList')
-      .doc(eventId);
-    const waitingListDoc = await waitingListRef.get();
-
-    if (waitingListDoc.exists) {
-      const waitingListData = waitingListDoc.data();
-      // Retorna a lista de e-mails, ou um array vazio se não houver e-mails
-      return waitingListData?.emails || [];
-    } else {
-      // Se o documento não existir, retorna um array vazio
-      return [];
+    async getWaitingList(eventId: string): Promise<string[]> {
+      const waitingListRef = this.firestoreService.firestore
+        .collection('waitingList')
+        .doc(eventId);
+      const waitingListDoc = await waitingListRef.get();
+  
+      if (waitingListDoc.exists) {
+        const waitingListData = waitingListDoc.data();
+        // Retorna a lista de e-mails, ou um array vazio se não houver e-mails
+        return waitingListData?.emails || [];
+      } else {
+        // Se o documento não existir, retorna um array vazio
+        return [];
+      }
     }
   }
-}

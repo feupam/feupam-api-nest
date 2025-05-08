@@ -4,9 +4,9 @@ import { FirestoreService } from '../firebase/firebase.service';
 
 @Injectable()
 export class TicketService {
-  private readonly pagoMax = 4;
-  private readonly FMax = 2;
-  private readonly MMax = 2;
+  private readonly pagoMax = 173;
+  private readonly FMax = 83;
+  private readonly MMax = 90;
 
   constructor(
     private readonly redisService: RedisService,

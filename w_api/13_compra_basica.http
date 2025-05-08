@@ -1,12 +1,7 @@
-@base_url=http://localhost:3000
-@eventId=federa2025
-@token=eyJhbGciOiJSUzI1NiIsImtpZCI6IjNmOWEwNTBkYzRhZTgyOGMyODcxYzMyNTYzYzk5ZDUwMjc3ODRiZTUiLCJ0eXAiOiJKV1QifQ.eyJuYW1lIjoiQXJpZWxhIFN0ZWZhbmluaSIsInBpY3R1cmUiOiJodHRwczovL2xoMy5nb29nbGV1c2VyY29udGVudC5jb20vYS9BQ2c4b2NMTF9GNjIwTWw3ZENzNUVwdVFDLWhUUkZQVzh6VGVoVXdRNDlWQWgzc3p0bHRyZ2lnVD1zOTYtYyIsImlzcyI6Imh0dHBzOi8vc2VjdXJldG9rZW4uZ29vZ2xlLmNvbS9mZWRlcmEtYXBpIiwiYXVkIjoiZmVkZXJhLWFwaSIsImF1dGhfdGltZSI6MTc0NjU1NzQxNCwidXNlcl9pZCI6IkxtSFU0amlCRU5NZHQ2UUtyR29HMW9tdVdDRDIiLCJzdWIiOiJMbUhVNGppQkVOTWR0NlFLckdvRzFvbXVXQ0QyIiwiaWF0IjoxNzQ2NTgyODY4LCJleHAiOjE3NDY1ODY0NjgsImVtYWlsIjoiYXJpZWxhYWFhYTFAZ21haWwuY29tIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsImZpcmViYXNlIjp7ImlkZW50aXRpZXMiOnsiZ29vZ2xlLmNvbSI6WyIxMTA5MDg5Nzc5MTY0MTc2Mjc1MDgiXSwiZW1haWwiOlsiYXJpZWxhYWFhYTFAZ21haWwuY29tIl19LCJzaWduX2luX3Byb3ZpZGVyIjoiZ29vZ2xlLmNvbSJ9fQ.Wg_r-kSH-Nw_6FU2KRFuOkzNBZYiyA99O9hM-fBlpMX88NrlOsSF6xwbMJVyl58Zv2oa8jMJW76QOg3QS6qKtaWcOcfbx6i6N4vd5Q_924XBqbyvfancRMvoqalnDXpesUIDX6T8EOS1VduKvJMp3z5OCKsS6wb0tnVEQHzJMbIVATsndGdhIPk_7dhQKXyL9bW8CNo6NxBjlBemtW3gDrtrquP2g1T0wdmXb_gYs5UTKCs4w8Va0levLPeNuAiLiN79yGrzggdq--6FClPRdkP2drBoLKNgwM9XJ-299NaJE9l92-T4HML5swJZ3jQrcMCH_DVdaa2oj9CEO8CYgg
+@base_url=https://api-s3go7ufjia-uc.a.run.app
+@eventId=federa
+@token=eyJhbGciOiJSUzI1NiIsImtpZCI6IjU5MWYxNWRlZTg0OTUzNjZjOTgyZTA1MTMzYmNhOGYyNDg5ZWFjNzIiLCJ0eXAiOiJKV1QifQ.eyJuYW1lIjoiQXJpZWxhIFN0ZWZhbmluaSIsInBpY3R1cmUiOiJodHRwczovL2xoMy5nb29nbGV1c2VyY29udGVudC5jb20vYS9BQ2c4b2NMTF9GNjIwTWw3ZENzNUVwdVFDLWhUUkZQVzh6VGVoVXdRNDlWQWgzc3p0bHRyZ2lnVD1zOTYtYyIsImlzcyI6Imh0dHBzOi8vc2VjdXJldG9rZW4uZ29vZ2xlLmNvbS9mZWRlcmEtYXBpIiwiYXVkIjoiZmVkZXJhLWFwaSIsImF1dGhfdGltZSI6MTc0NjcxODU4MywidXNlcl9pZCI6IkxtSFU0amlCRU5NZHQ2UUtyR29HMW9tdVdDRDIiLCJzdWIiOiJMbUhVNGppQkVOTWR0NlFLckdvRzFvbXVXQ0QyIiwiaWF0IjoxNzQ2NzE5NDI0LCJleHAiOjE3NDY3MjMwMjQsImVtYWlsIjoiYXJpZWxhYWFhYTFAZ21haWwuY29tIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsImZpcmViYXNlIjp7ImlkZW50aXRpZXMiOnsiZ29vZ2xlLmNvbSI6WyIxMTA5MDg5Nzc5MTY0MTc2Mjc1MDgiXSwiZW1haWwiOlsiYXJpZWxhYWFhYTFAZ21haWwuY29tIl19LCJzaWduX2luX3Byb3ZpZGVyIjoiZ29vZ2xlLmNvbSJ9fQ.REBzoitSv0QBTVU86JlUGIoWPF0NJwcm_05pVsNAmbpM4d5TB13ZsoZIawkYJFlWTREEoSDcEdCMcCWZqjOmugUKs5FsCi9SfhaC6g-_MZ0TZ5g3T6Yza5opvB6WlocKqLICUudT7-ghZqEJdxuikbTJGn6FI9rZNIk-Tydn_6gmfITq5-_YD9qL082n-jvDyPkTis7otMQ9_4aiMP0BOcB284VVV9Nizf8ywHOKyhp766njfE8fEc9WLXoqWqaUKVtK-03p4nPICGf5c_1zIDKW8nO5cu4i80Z4zgL8a7bhSkIjoP5R3fhuAQNIPEvWNSkg6PAEq3ojZdHG6i-iFg
 
-# Retorna true ou false, quando há vagas disponiveis
-# @name checkSpot
-GET {{base_url}}/events/{{eventId}}/check-spot
-Content-Type: application/json
-Authorization: Bearer {{token}}
 
 ###
 # @name makeReservation
@@ -31,7 +26,9 @@ Authorization: Bearer {{token}}
 
 # SO PAGA SE TIVER TICKET
 ###
-# @name pagarmeBoleto
+
+### Chamada POST para a API payPaymentsPagarme
+# @name pagarmeCredit
 POST {{base_url}}/payments
 Content-Type: application/json
 Authorization: Bearer {{token}}
@@ -47,9 +44,30 @@ Authorization: Bearer {{token}}
     "email": "ariela.stefanini@sou.unifal-mg.edu.br"
   },
   "payments": {
-    "payment_method": "boleto",
-    "boleto": {
-      "due_at": "2025-05-05T00:00:00Z"
+    "payment_method": "credit_card",
+    "credit_card": {
+      "installments": 1,
+      "statement_descriptor": "AVENGERS",
+      "card": {
+        "number": "4000000000000010",
+        "holder_name": "Tony Stark",
+        "exp_month": 1,
+        "exp_year": 30,
+        "cvv": "3531",
+        "billing_address": {
+          "line_1": "10880, Malibu Point, Malibu Central",
+          "zip_code": "90265",
+          "city": "Malibu",
+            "state": "CA",
+            "country": "US"                
+        }
+      }
     }
   }
 }
+
+### Get reservations for a specific user
+# @name getReservationByUser
+GET {{base_url}}/users/reservations
+Content-Type: application/json
+Authorization: Bearer {{token}}

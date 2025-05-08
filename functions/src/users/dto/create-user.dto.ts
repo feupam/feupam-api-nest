@@ -1,4 +1,5 @@
 import {
+  IsBoolean,
   IsEmail,
   IsEnum,
   IsNotEmpty,
@@ -111,4 +112,8 @@ export class CreateUserDto {
   @IsString()
   @IsNotEmpty()
   cellphone: any;
+
+  @IsBoolean()
+  @IsNotEmpty()
+  lgpdConsentAccepted: boolean;
 }

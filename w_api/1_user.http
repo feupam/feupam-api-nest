@@ -1,8 +1,8 @@
 #@base_url=http://localhost:3000
-@base_url=http://localhost:3000
+@base_url=https://api-s3go7ufjia-uc.a.run.app
 @email=test1@test.com
 @eventId=federa
-@token=" "
+@token=eyJhbGciOiJSUzI1NiIsImtpZCI6IjNmOWEwNTBkYzRhZTgyOGMyODcxYzMyNTYzYzk5ZDUwMjc3ODRiZTUiLCJ0eXAiOiJKV1QifQ.eyJuYW1lIjoiQXJpZWxhIFN0ZWZhbmluaSIsInBpY3R1cmUiOiJodHRwczovL2xoMy5nb29nbGV1c2VyY29udGVudC5jb20vYS9BQ2c4b2NMTF9GNjIwTWw3ZENzNUVwdVFDLWhUUkZQVzh6VGVoVXdRNDlWQWgzc3p0bHRyZ2lnVD1zOTYtYyIsImlzcyI6Imh0dHBzOi8vc2VjdXJldG9rZW4uZ29vZ2xlLmNvbS9mZWRlcmEtYXBpIiwiYXVkIjoiZmVkZXJhLWFwaSIsImF1dGhfdGltZSI6MTc0NjY2Njc2MiwidXNlcl9pZCI6IkxtSFU0amlCRU5NZHQ2UUtyR29HMW9tdVdDRDIiLCJzdWIiOiJMbUhVNGppQkVOTWR0NlFLckdvRzFvbXVXQ0QyIiwiaWF0IjoxNzQ2NjY2NzYyLCJleHAiOjE3NDY2NzAzNjIsImVtYWlsIjoiYXJpZWxhYWFhYTFAZ21haWwuY29tIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsImZpcmViYXNlIjp7ImlkZW50aXRpZXMiOnsiZ29vZ2xlLmNvbSI6WyIxMTA5MDg5Nzc5MTY0MTc2Mjc1MDgiXSwiZW1haWwiOlsiYXJpZWxhYWFhYTFAZ21haWwuY29tIl19LCJzaWduX2luX3Byb3ZpZGVyIjoiZ29vZ2xlLmNvbSJ9fQ.Z7GcPRFMUWPQ6fgB6al0LQ1U0_YhSD--Z0PftsmdTJqYf3YnzocO__9ILMTCXhz_v4LNk6Z5HK5-xSR29VVZRk-_fRcj8OAe9Tw943RYBeqHQYPYN54EODeUhI-SCQq0LUKzbx7OD99G9cQkMgE8h3uSDhpkrMP-y4JW_iJeSc14aF-E9_WXKskozP_a5cxVNirY1ub5031vdUjkwAYCwsmvpM9gsoC18uZ_tcuBADS3cB7_OP88JA7FNCQEtLTpxcOpqO7HllQwNj7qo52AXWZqBqQWjKQVb6EkZFwCUM1tpAoeJL5ah783V5ZrWOsKwuuxK5Sqa2hNJfTN_vWniA
 
 ###
 # @name createUser
@@ -32,7 +32,8 @@ Authorization: Bearer
   "estado": "MG",
   "alergia": "Não",
   "medicamento":"Não",
-  "info_add": "Nao"
+  "info_add": "Nao",
+  "lgpdConsentAccepted": true
 }
 
 ###
