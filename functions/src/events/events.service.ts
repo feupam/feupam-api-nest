@@ -70,38 +70,52 @@ export class EventsService {
     return { uuid };
   }
 
-  async checkRegistrationStatus(uuid: string) {
-    const eventRef = this.firestoreService.firestore
+  async checkRegistrationStatus() {
+    const snapshot = await this.firestoreService.firestore
       .collection('events')
-      .doc(uuid);
-    const doc = await eventRef.get();
+      .get();
 
-    if (!doc.exists) {
-      throw new NotFoundException('Event not found');
-    }
-
-    const eventData = doc.data();
-
-    if (!eventData) {
-      throw new NotFoundException('Event data is missing');
+    if (snapshot.empty) {
+      throw new NotFoundException('No events found');
     }
 
     const timeZone = 'America/Sao_Paulo';
-
     const currentDateInBrazil = moment.tz(new Date(), timeZone).toDate();
 
-    const startDate =
-      eventData.startDate instanceof Timestamp
-        ? moment.tz(eventData.startDate.toDate(), timeZone).toDate()
-        : moment.tz(new Date(eventData.startDate), timeZone).toDate();
-    const endDate =
-      eventData.endDate instanceof Timestamp
-        ? moment.tz(eventData.endDate.toDate(), timeZone).toDate()
-        : moment.tz(new Date(eventData.endDate), timeZone).toDate();
-    const isOpen = currentDateInBrazil >= startDate && currentDateInBrazil <= endDate;
+    const events = snapshot.docs.map((doc, index) => {
+      const data = doc.data();
 
-    return { currentDate: currentDateInBrazil.toISOString(), isOpen };
+      const startDate =
+        data.startDate instanceof Timestamp
+          ? moment.tz(data.startDate.toDate(), timeZone).toDate()
+          : moment.tz(new Date(data.startDate), timeZone).toDate();
+
+      const endDate =
+        data.endDate instanceof Timestamp
+          ? moment.tz(data.endDate.toDate(), timeZone).toDate()
+          : moment.tz(new Date(data.endDate), timeZone).toDate();
+
+      const isOpen =
+        currentDateInBrazil >= startDate && currentDateInBrazil <= endDate;
+
+      return {
+        id: index + 1, // ou pode usar doc.id se preferir
+        name: data.name,
+        description: data.description,
+        date: data.date,
+        location: data.location,
+        startDate: data.startDate,
+        endDate: data.endDate,
+        isOpen,
+      };
+    });
+
+    return {
+      currentDate: currentDateInBrazil.toISOString(),
+      events,
+    };
   }
+
 
   public async checkSpot(eventId: string) {
     const email = 'test@test.com';
@@ -217,8 +231,7 @@ export class EventsService {
       const userDoc = (await userRecord).docs[0];
       const userData = userDoc.data();
 
-      const has_spot = await this.checkSpot(dto.eventId);
-      if (has_spot) {
+
         // Verifique se o usuário já tem uma reserva
         const userReservationsQuery = firestore
           .collection('reservationHistory')
@@ -304,28 +317,7 @@ export class EventsService {
           email: userData.email,
           eventId: dto.eventId,
         };
-      } else {
-        const waitingListRef = firestore
-          .collection('waitingList')
-          .doc(dto.eventId);
-        const waitingListDoc = await waitingListRef.get();
 
-        if (waitingListDoc.exists) {
-          // Se o documento existe, atualize a lista de e-mails
-          const waitingListData = waitingListDoc.data();
-          const existingEmails = waitingListData?.emails || [];
-
-          if (!existingEmails.includes(email)) {
-            // Adiciona o novo e-mail e atualiza o documento
-            const updatedEmails = [...existingEmails, email];
-            await waitingListRef.set(
-              { emails: updatedEmails },
-              { merge: true },
-            );
-          }
-        }
-        throw new BadRequestException('Você entrou para lista de espera');
-      }
     } catch (e) {
       if (e instanceof Error) {
         throw e;
@@ -357,7 +349,7 @@ export class EventsService {
     }
   }
 
-  async getInstallments(eventId: string) {
+  async getInstallments(eventId: string, email: string) {
     const firestore = this.firestoreService.firestore;
   
     const eventRef = firestore.collection('events').doc(eventId);
@@ -367,7 +359,17 @@ export class EventsService {
     const eventData = eventDoc.data();
     if (!eventData) throw new Error('Event data is missing');
   
-    const priceInCents = eventData.price;
+    let priceInCents = 27375//eventData.price;
+
+    const userRef = firestore.collection('users').where("email", "==", email);
+    const userDoc = await userRef.get();
+
+    if (userDoc.empty) throw new NotFoundException('User not found');
+
+    const userData = userDoc.docs[0].data();
+    if (!userData) throw new Error('User data is missing');
+
+
   
     // Verifica vagas disponíveis
     const spotsQuery = firestore.collection('spots').where('eventId', '==', eventId);

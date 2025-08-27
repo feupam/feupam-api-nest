@@ -6,7 +6,7 @@ import {
   IsISO8601,
   IsNumber,
 } from 'class-validator';
-import { EventType } from './enum'; // Ajuste o caminho conforme necessário
+import { EventType } from './enum';
 
 export class CreateEventDto {
   @IsNumber()
@@ -16,6 +16,10 @@ export class CreateEventDto {
   @IsString()
   @IsNotEmpty()
   name: string;
+
+  @IsString()
+  @IsNotEmpty()
+  description: string;
 
   @IsISO8601()
   @IsNotEmpty()

@@ -1,5 +1,5 @@
 ### Base URL
-@base_url=http://localhost:3000
+@base_url=https://us-central1-federa-api.cloudfunctions.net/api
 @eventId=federa2025
 @email=test@test.com
 @token=" "
@@ -8,12 +8,13 @@
 # @name createEvent
 POST {{base_url}}/events
 Content-Type: application/json
-Authorization: Bearer 
+Authorization: Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6IjkyZTg4M2NjNDY2M2E2MzMyYWRhNmJjMWU0N2YzZmY1ZTRjOGI1ZDciLCJ0eXAiOiJKV1QifQ.eyJuYW1lIjoiQXJpZWxhIFN0ZWZhbmluaSIsInBpY3R1cmUiOiJodHRwczovL2xoMy5nb29nbGV1c2VyY29udGVudC5jb20vYS9BQ2c4b2NMTF9GNjIwTWw3ZENzNUVwdVFDLWhUUkZQVzh6VGVoVXdRNDlWQWgzc3p0bHRyZ2lnVD1zOTYtYyIsImlzcyI6Imh0dHBzOi8vc2VjdXJldG9rZW4uZ29vZ2xlLmNvbS9mZWRlcmEtYXBpIiwiYXVkIjoiZmVkZXJhLWFwaSIsImF1dGhfdGltZSI6MTc1NjI2MTIwMSwidXNlcl9pZCI6IkxtSFU0amlCRU5NZHQ2UUtyR29HMW9tdVdDRDIiLCJzdWIiOiJMbUhVNGppQkVOTWR0NlFLckdvRzFvbXVXQ0QyIiwiaWF0IjoxNzU2MjYxMjAxLCJleHAiOjE3NTYyNjQ4MDEsImVtYWlsIjoiYXJpZWxhYWFhYTFAZ21haWwuY29tIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsImZpcmViYXNlIjp7ImlkZW50aXRpZXMiOnsiZ29vZ2xlLmNvbSI6WyIxMTA5MDg5Nzc5MTY0MTc2Mjc1MDgiXSwiZW1haWwiOlsiYXJpZWxhYWFhYTFAZ21haWwuY29tIl19LCJzaWduX2luX3Byb3ZpZGVyIjoiZ29vZ2xlLmNvbSJ9fQ.eH-Ef-YK05jussdruWZ173_YCiAyFk1Qk-ZHaNmCEQKTbDJAdnWRD2SyWKGMX2vjIOnSuSzfyywrqmRL03zqOTiuegxBi0EsTeBSOqDXqYKKm9gJLyAtFgrluM9hcXxC5RwIKbXplBdwgAtU5E2zLvcp3D7nGkA3gJ7_YPFfLm7wngHkycrRMPo7fC12UqSxmFk-IJYB9BEIj-vl2M9zDGUk_c3toLSsFsi-Vc1_mryVhOlxWTe7G9qBq7yocr2f90Oy2-OLRatDntRT_klUpHl59HUol65Aq10RTdxK920_UqhVpoE6ezK8hJjXV6K2Ni1bkwi7zjqyKccryBSFrQ
 
 {
-      "name": "federa2025",
+      "name": "FederaLideres",
       "date": "2024-09-21",
       "location": "ipb central de passos",
+      "description": "Descrição do evento",
       "eventType": "general",
       "maxClientMale": "0" ,
       "maxClientFemale": "0",

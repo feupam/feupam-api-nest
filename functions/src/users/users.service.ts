@@ -35,7 +35,7 @@ export class UsersService {
     }
 
     const existingEmailSnapshot = await usersCollection
-    .where('email', '==', createUserDto.email)
+    .where('email', '==', email)
     .get();
 
     if (!existingEmailSnapshot.empty) {
@@ -124,6 +124,7 @@ export class UsersService {
 
   async update(decodedIdToken, updateUserDto: UpdateUserDto) {
     const email = decodedIdToken.email ?? '';
+
 
     const userRef = this.firestoreService.firestore
       .collection('users')

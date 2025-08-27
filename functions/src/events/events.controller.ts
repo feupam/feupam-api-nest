@@ -175,13 +175,13 @@ export class EventsController {
     @Headers('Authorization') authHeader: string,
   ) {
     const token = authHeader?.split(' ')[1];
-    await this.authService.verifyToken(token);
-    return this.eventsService.getInstallments(eventId);
+    const decoded = await this.authService.verifyToken(token);
+    return this.eventsService.getInstallments(eventId, decoded.email);
   }
 
-  @Get(':id/event-status')
-  async getRegistrationStatus(@Param('id') id: string) {
-    return this.eventsService.checkRegistrationStatus(id);
+  @Get('event-status')
+  async getRegistrationStatus() {
+    return this.eventsService.checkRegistrationStatus();
   }
 
   @Get(':id/waiting-list')

@@ -22,6 +22,23 @@ export class IsCpfValid {
 }
 
 export class CreateUserDto {
+
+  @IsString()
+  @IsOptional()
+  senha: string;
+  
+  @IsString()
+  @IsOptional()
+  staffPassword: string;
+
+  @IsBoolean()
+  @IsOptional()
+  isStaff: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  wantShirt: boolean;
+
   @IsString()
   @IsNotEmpty()
   name: string;

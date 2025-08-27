@@ -2,7 +2,9 @@
 nest g resource
 
 # run local
-
+(Get-ChildItem -Recurse .\node_modules | Measure-Object -Property Length -Sum).Sum / 1MB
+npm prune --production
+ 
 #build firebase
 cd .\functions\
 tsc
@@ -15,8 +17,8 @@ firebase deploy --only functions
 
 
 # make backup firebase
-npx -p node-firestore-import-export firestore-import -a federa_api.json -b backup.json
-npx firestore-export --accountCredentials federa_api.json --backupFile backup.json
+npx -p node-firestore-import-export firestore-import -a firebase_key.json -b vitecinco.json
+npx firestore-export --accountCredentials firebase_key.json --backupFile vitecinco.json
 
 # deploy model on fly
 flyctl launch
