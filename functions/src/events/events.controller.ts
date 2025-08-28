@@ -14,6 +14,7 @@ import {
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
+import { Public } from '../decorators/public.decorator';
 import { EventsService } from './events.service';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
@@ -47,6 +48,12 @@ export class EventsController {
   @Get()
   async findAll() {
     return this.eventsService.findAll();
+  }
+
+  @Public()
+  @Get('event-status')
+  async getRegistrationStatus() {
+    return this.eventsService.checkRegistrationStatus();
   }
 
   @Get(':id')
@@ -177,11 +184,6 @@ export class EventsController {
     const token = authHeader?.split(' ')[1];
     const decoded = await this.authService.verifyToken(token);
     return this.eventsService.getInstallments(eventId, decoded.email);
-  }
-
-  @Get('event-status')
-  async getRegistrationStatus() {
-    return this.eventsService.checkRegistrationStatus();
   }
 
   @Get(':id/waiting-list')

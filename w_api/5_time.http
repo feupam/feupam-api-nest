@@ -4,5 +4,5 @@
 
 ### Verificar Status de Inscrição para um Evento
 # @name time
-GET {{base_url}}/events/{{eventId}}/event-status
+GET {{base_url}}/events/event-status
 Content-Type: application/json
