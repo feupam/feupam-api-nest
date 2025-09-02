@@ -1,9 +1,21 @@
 # .firebaseignore
-**/src
+# Exclude source code (we'll use compiled code in dist/)
+functions/src
+functions/tsconfig.tsbuildinfo
+functions/.env
+functions/node_modules
+
+# Exclude git and logs
 **/.git
-**/.env
-**/test
-**/wa-weo
 **/firebase-debug.log
 **/firebase-debug.*.log
-**/node_modules
+
+# Exclude test files and workspace files
+**/test
+**/wa-weo
+**/w_api
+**/*.http
+**/*.md
+**/README.md
+
+# Note: Firebase will automatically reinstall dependencies from package.json during deploy

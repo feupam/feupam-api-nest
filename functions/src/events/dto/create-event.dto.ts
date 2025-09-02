@@ -5,10 +5,13 @@ import {
   IsNumberString,
   IsISO8601,
   IsNumber,
+  IsOptional,
 } from 'class-validator';
 import { EventType } from './enum';
+import { Transform } from 'class-transformer';
 
 export class CreateEventDto {
+  @Transform(({ value }) => parseFloat(value))
   @IsNumber()
   @IsNotEmpty()
   price: number;
@@ -60,4 +63,12 @@ export class CreateEventDto {
   @IsISO8601()
   @IsNotEmpty()
   endDate: string;
+
+  @IsOptional()
+  @IsString()
+  image_capa?: string;
+
+  @IsOptional()
+  @IsString()
+  logo_evento?: string;
 }

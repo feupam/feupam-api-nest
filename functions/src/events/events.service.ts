@@ -16,20 +16,46 @@ import * as moment from 'moment-timezone';
 export class EventsService {
   constructor(private readonly firestoreService: FirestoreService) {}
 
-  async create(dto: CreateEventDto) {
-    const firestore = this.firestoreService.firestore;
-
-    const eventId = dto.name;
-
-    const eventRef = firestore.collection('events').doc(eventId);
-    const eventData = { ...dto };
+  private async uploadFile(file: Express.Multer.File, folder: string) {
     try {
-      await eventRef.set(eventData);
-      return { uuid: eventRef.id, ...eventData };
+      console.log('Iniciando upload do arquivo:', file.originalname);
+      const bucket = this.firestoreService.storage.bucket();
+      console.log('Bucket obtido:', bucket.name);
+      
+      const filename = `${folder}/${Date.now()}_${file.originalname}`;
+      const fileRef = bucket.file(filename);
+
+      await fileRef.save(file.buffer, {
+        contentType: file.mimetype,
+        public: true,
+      });
+
+      console.log('Arquivo salvo com sucesso');
+      return `https://storage.googleapis.com/${bucket.name}/${filename}`;
+    } catch (error) {
+      console.error('Erro no upload do arquivo:', error);
+      throw new Error(`Erro no upload: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  async create(dto: CreateEventDto, files?: { image_capa?: Express.Multer.File[], logo_evento?: Express.Multer.File[] }) {
+    const firestore = this.firestoreService.firestore;
+    const eventId = dto.name;
+    const eventRef = firestore.collection('events').doc(eventId);
+
+    // Upload das imagens se existirem
+    if (files?.image_capa?.[0]) {
+      dto.image_capa = await this.uploadFile(files.image_capa[0], 'event_covers');
+    }
+    if (files?.logo_evento?.[0]) {
+      dto.logo_evento = await this.uploadFile(files.logo_evento[0], 'event_logos');
+    }
+
+    try {
+      await eventRef.set({ ...dto });
+      return { uuid: eventRef.id, ...dto };
     } catch (e) {
-      throw new BadRequestException(
-        `An error occurred while creating the event ${e}`,
-      );
+      throw new BadRequestException(`Erro ao criar evento: ${e}`);
     }
   }
 
@@ -51,14 +77,21 @@ export class EventsService {
     return { uuid: doc.id, ...doc.data() };
   }
 
-  async update(uuid: string, updateEventDto: UpdateEventDto) {
-    const eventRef = this.firestoreService.firestore
-      .collection('events')
-      .doc(uuid);
+  async update(uuid: string, updateEventDto: UpdateEventDto, files?: { image_capa?: Express.Multer.File[], logo_evento?: Express.Multer.File[] }) {
+    const eventRef = this.firestoreService.firestore.collection('events').doc(uuid);
+
+    if (files?.image_capa?.[0]) {
+      updateEventDto.image_capa = await this.uploadFile(files.image_capa[0], 'event_covers');
+    }
+    if (files?.logo_evento?.[0]) {
+      updateEventDto.logo_evento = await this.uploadFile(files.logo_evento[0], 'event_logos');
+    }
+
     await eventRef.update({
       ...updateEventDto,
       date: new Date().toISOString(),
     });
+
     return { uuid, ...updateEventDto };
   }
 
@@ -107,6 +140,8 @@ export class EventsService {
         startDate: data.startDate,
         endDate: data.endDate,
         isOpen,
+         image_capa: data.image_capa || null,
+         logo_evento: data.logo_evento || null,
       };
     });
 

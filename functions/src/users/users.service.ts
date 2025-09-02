@@ -221,4 +221,97 @@ export class UsersService {
       message: 'Reserva cancelada',
     };
   }
+
+  async getUsersWithReservations(eventId?: string, page = 1, limit = 50) {
+    const firestore = this.firestoreService.firestore;
+    const offset = (page - 1) * limit;
+
+    try {
+      // Buscar todos os usuários com paginação
+      const usersQuery = firestore
+        .collection('users')
+        .orderBy('createdAt', 'desc')
+        .offset(offset)
+        .limit(limit);
+
+      const usersSnapshot = await usersQuery.get();
+      const users = usersSnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as any[];
+
+      // Para cada usuário, buscar suas reservas na reservationHistory
+      const usersWithReservations = await Promise.all(
+        users.map(async (user) => {
+          // Query para reservas do usuário baseado no email
+          let reservationsQuery = firestore
+            .collection('reservationHistory')
+            .where('email', '==', user.email); // Campo email comum entre as tabelas
+
+          // Se eventId foi fornecido, filtrar por evento
+          if (eventId) {
+            reservationsQuery = reservationsQuery.where('eventId', '==', eventId);
+          }
+
+          const reservationsSnapshot = await reservationsQuery.get();
+          const reservations = reservationsSnapshot.docs.map((doc) => {
+            const data = doc.data();
+            return {
+              id: doc.id,
+              email: data.email,
+              eventId: data.eventId,
+              status: data.status,
+              price: data.price,
+              ticketKind: data.ticketKind,
+              userType: data.userType,
+              gender: data.gender,
+              spotId: data.spotId,
+              updatedAt: data.updatedAt,
+              charges: data.charges || [], // Array de charges com pagamentos
+              // Incluir outros campos relevantes das reservas
+              ...data
+            };
+          });
+
+          return {
+            user: {
+              id: user.id,
+              email: user.email,
+              name: user.name,
+              phone: user.phone,
+              createdAt: user.createdAt,
+              // Adicionar outros campos do usuário que você quer retornar
+            },
+            reservations: reservations,
+            totalReservations: reservations.length,
+            // Calcular valores totais se houver reservas
+            totalAmount: reservations.reduce((sum, res) => {
+              const charges = res.charges || [];
+              const chargeAmount = charges.reduce((chargeSum: number, charge: any) => 
+                chargeSum + (charge.amount || 0), 0);
+              return sum + chargeAmount;
+            }, 0),
+          };
+        }),
+      );
+
+      // Se eventId foi especificado, filtrar apenas usuários que têm reservas para esse evento
+      const filteredUsers = eventId 
+        ? usersWithReservations.filter(item => item.reservations.length > 0)
+        : usersWithReservations;
+
+      return {
+        page,
+        limit,
+        eventId: eventId || 'all',
+        totalUsers: filteredUsers.length,
+        totalReservations: filteredUsers.reduce((sum, user) => sum + user.totalReservations, 0),
+        data: filteredUsers,
+      };
+    } catch (error: any) {
+      throw new BadRequestException(
+        `Error fetching users with reservations: ${error.message}`,
+      );
+    }
+  }
 }

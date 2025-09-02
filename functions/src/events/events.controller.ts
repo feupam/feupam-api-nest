@@ -13,13 +13,21 @@ import {
   Headers,
   UsePipes,
   ValidationPipe,
+  UseInterceptors,
+  UploadedFiles
 } from '@nestjs/common';
+import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { Public } from '../decorators/public.decorator';
 import { EventsService } from './events.service';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
 import { ReserveSpotDto } from './dto/reserve-spot.dto';
 import { AuthService } from '../firebase/auth.service';
+
+interface UploadedEventFiles {
+  image_capa?: Express.Multer.File[];
+  logo_evento?: Express.Multer.File[];
+}
 
 @Controller('events')
 export class EventsController {
@@ -29,6 +37,10 @@ export class EventsController {
   ) {}
 
   @Post()
+  @UseInterceptors(FileFieldsInterceptor([
+    { name: 'image_capa', maxCount: 1 },
+    { name: 'logo_evento', maxCount: 1 },
+  ]))
   @UsePipes(
     new ValidationPipe({
       transform: true,
@@ -39,10 +51,11 @@ export class EventsController {
   async create(
     @Body() createEventDto: CreateEventDto,
     @Headers('Authorization') authHeader: string,
+    @UploadedFiles() files: UploadedEventFiles
   ) {
     const token = authHeader?.split(' ')[1];
     await this.authService.verifyToken(token);
-    return this.eventsService.create(createEventDto);
+    return this.eventsService.create(createEventDto, files);
   }
 
   @Get()
@@ -67,6 +80,10 @@ export class EventsController {
   }
 
   @Put(':id')
+  @UseInterceptors(FileFieldsInterceptor([
+    { name: 'image_capa', maxCount: 1 },
+    { name: 'logo_evento', maxCount: 1 },
+  ]))
   @UsePipes(
     new ValidationPipe({
       transform: true,
@@ -78,10 +95,11 @@ export class EventsController {
     @Param('id') id: string,
     @Body() updateEventDto: UpdateEventDto,
     @Headers('Authorization') authHeader: string,
+    @UploadedFiles() files: UploadedEventFiles
   ) {
     const token = authHeader?.split(' ')[1];
     await this.authService.verifyToken(token);
-    return this.eventsService.update(id, updateEventDto);
+    return this.eventsService.update(id, updateEventDto, files);
   }
 
   @HttpCode(204)

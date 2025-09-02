@@ -87,4 +87,20 @@ export class UsersController {
     const decodedIdToken = await this.authService.verifyToken(token);
     return await this.usersService.cancelUserReservations(decodedIdToken);
   }
+
+  @Get('reservations-report')
+  async getUsersWithReservations(
+    @Headers('authorization') authHeader: string,
+    @Query('eventId') eventId?: string,
+    @Query('page') page = '1',
+    @Query('limit') limit = '50',
+  ) {
+    const token = authHeader?.split(' ')[1];
+    await this.authService.verifyToken(token);
+    return await this.usersService.getUsersWithReservations(
+      eventId,
+      Number(page),
+      Number(limit),
+    );
+  }
 }

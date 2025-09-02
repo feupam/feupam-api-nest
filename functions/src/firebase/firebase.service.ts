@@ -8,6 +8,7 @@ export class FirestoreService {
   public firestore: admin.firestore.Firestore;
   public admin: typeof admin;
   public auth: admin.auth.Auth;
+  public storage: admin.storage.Storage;
 
   constructor() {
     const isRunningInFirebase = process.env.FUNCTIONS_EMULATOR || process.env.K_SERVICE;
@@ -25,6 +26,7 @@ export class FirestoreService {
         admin.initializeApp({
           credential: admin.credential.cert(serviceAccount),
           databaseURL: 'https://federa-api.firebaseio.com',
+          storageBucket: 'federa-api.firebasestorage.app', // Adicione seu bucket aqui
         });
       }
     }
@@ -32,6 +34,7 @@ export class FirestoreService {
     this.firestore = admin.firestore();
     this.admin = admin;
     this.auth = admin.auth();
+    this.storage = admin.storage();
   }
 
   getFirestore(): admin.firestore.Firestore {
@@ -40,6 +43,10 @@ export class FirestoreService {
 
   getAuth(): admin.auth.Auth {
     return this.auth;
+  }
+
+  getStorage(): admin.storage.Storage {
+    return this.storage;
   }
 
   getAdmin(): typeof admin {
