@@ -11,12 +11,13 @@ import { TicketStatus, SpotStatus } from './dto/enum-spot';
 import { ReserveSpotDto } from './dto/reserve-spot.dto';
 import { Timestamp } from 'firebase-admin/firestore';
 import * as moment from 'moment-timezone';
+import * as multer from 'multer';
 
 @Injectable()
 export class EventsService {
   constructor(private readonly firestoreService: FirestoreService) {}
 
-  private async uploadFile(file: Express.Multer.File, folder: string) {
+  private async uploadFile(file: multer.File, folder: string) {
     try {
       console.log('Iniciando upload do arquivo:', file.originalname);
       const bucket = this.firestoreService.storage.bucket();
@@ -38,7 +39,7 @@ export class EventsService {
     }
   }
 
-  async create(dto: CreateEventDto, files?: { image_capa?: Express.Multer.File[], logo_evento?: Express.Multer.File[] }) {
+  async create(dto: CreateEventDto, files?: { image_capa?: multer.File[], logo_evento?: multer.File[] }) {
     const firestore = this.firestoreService.firestore;
     const eventId = dto.name;
     const eventRef = firestore.collection('events').doc(eventId);
@@ -77,7 +78,7 @@ export class EventsService {
     return { uuid: doc.id, ...doc.data() };
   }
 
-  async update(uuid: string, updateEventDto: UpdateEventDto, files?: { image_capa?: Express.Multer.File[], logo_evento?: Express.Multer.File[] }) {
+  async update(uuid: string, updateEventDto: UpdateEventDto, files?: { image_capa?: multer.File[], logo_evento?: multer.File[] }) {
     const eventRef = this.firestoreService.firestore.collection('events').doc(uuid);
 
     if (files?.image_capa?.[0]) {
