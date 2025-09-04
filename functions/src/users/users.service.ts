@@ -258,6 +258,7 @@ export class UsersService {
             const data = doc.data();
             return {
               id: doc.id,
+              // Todos os campos da reserva
               email: data.email,
               eventId: data.eventId,
               status: data.status,
@@ -266,21 +267,55 @@ export class UsersService {
               userType: data.userType,
               gender: data.gender,
               spotId: data.spotId,
+              createdAt: data.createdAt,
               updatedAt: data.updatedAt,
               charges: data.charges || [], // Array de charges com pagamentos
-              // Incluir outros campos relevantes das reservas
+              event: data.event, // Nome do evento (se disponível)
+              chargeId: data.chargeId, // ID das transações
+              // Incluir todos os outros campos que possam existir
               ...data
             };
           });
 
           return {
+            // Todos os dados do usuário
             user: {
               id: user.id,
               email: user.email,
               name: user.name,
               phone: user.phone,
+              cpf: user.cpf,
+              church: user.church,
+              pastor: user.pastor,
+              data_nasc: user.data_nasc,
+              idade: user.idade,
+              responsavel: user.responsavel,
+              documento_responsavel: user.documento_responsavel,
+              ddd_responsavel: user.ddd_responsavel,
+              cellphone_responsavel: user.cellphone_responsavel,
+              alergia: user.alergia,
+              medicamento: user.medicamento,
+              info_add: user.info_add,
+              userType: user.userType,
+              gender: user.gender,
+              address: user.address,
+              complemento: user.complemento,
+              cep: user.cep,
+              cidade: user.cidade,
+              estado: user.estado,
+              ddd: user.ddd,
+              cellphone: user.cellphone,
+              lgpdConsentAccepted: user.lgpdConsentAccepted,
+              lgpdConsent: user.lgpdConsent, // Objeto com accepted, acceptedAt, version
+              isStaff: user.isStaff,
+              wantShirt: user.wantShirt,
+              staffPassword: user.staffPassword,
+              senha: user.senha,
+              discount: user.discount, // Array com descontos por evento
               createdAt: user.createdAt,
-              // Adicionar outros campos do usuário que você quer retornar
+              updatedAt: user.updatedAt,
+              // Incluir todos os outros campos que possam existir no usuário
+              ...user
             },
             reservations: reservations,
             totalReservations: reservations.length,
