@@ -1,0 +1,134 @@
+@base_url = http://localhost:3000
+@token = Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6ImUzZWU3ZTAyOGUzODg1YTM0NWNlMDcwNTVmODQ2ODYyMjU1YTcwNDYiLCJ0eXAiOiJKV1QifQ.eyJuYW1lIjoiQXJpZWxhIFN0ZWZhbmluaSIsInBpY3R1cmUiOiJodHRwczovL2xoMy5nb29nbGV1c2VyY29udGVudC5jb20vYS9BQ2c4b2NMTF9GNjIwTWw3ZENzNUVwdVFDLWhUUkZQVzh6VGVoVXdRNDlWQWgzc3p0bHRyZ2lnVD1zOTYtYyIsImlzcyI6Imh0dHBzOi8vc2VjdXJldG9rZW4uZ29vZ2xlLmNvbS9mZWRlcmEtYXBpIiwiYXVkIjoiZmVkZXJhLWFwaSIsImF1dGhfdGltZSI6MTc1NzQ2MDU3NSwidXNlcl9pZCI6IkxtSFU0amlCRU5NZHQ2UUtyR29HMW9tdVdDRDIiLCJzdWIiOiJMbUhVNGppQkVOTWR0NlFLckdvRzFvbXVXQ0QyIiwiaWF0IjoxNzU3NDY0NTA0LCJleHAiOjE3NTc0NjgxMDQsImVtYWlsIjoiYXJpZWxhYWFhYTFAZ21haWwuY29tIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsImZpcmViYXNlIjp7ImlkZW50aXRpZXMiOnsiZ29vZ2xlLmNvbSI6WyIxMTA5MDg5Nzc5MTY0MTc2Mjc1MDgiXSwiZW1haWwiOlsiYXJpZWxhYWFhYTFAZ21haWwuY29tIl19LCJzaWduX2luX3Byb3ZpZGVyIjoiZ29vZ2xlLmNvbSJ9fQ.bEK9BC6ot7wh7vekL-VXfr1o9vg9qYP24Y851CVp2eSqewx8zoHHN8y0GMIgNneLN3fs-uuXjo18ohCIlNsaVB2iRND53b0HDJgY9R41Zs5AOTTgTaRs2BMTOstsr0qs5dfq3SH-cEVvfRO9W4mWn6I_tHb_Ew-y-e_DIFLc5oz8mgTPEOtJI4VLe-KQd7g6vuzq9zND-QwaqCKFh7TEA-rmgM8CT0zBVvQS88aalREjOhdZzzmh4z2IW5OOWv7sBINsbMonBrVnU0pVfjpi-wIicxyCE8q1FaOs0aYcMoHSEVmdGWkJOLXTb461TF9x6QQFa5lvKx28g5M4b_vV5A
+
+### Teste multipart com imagem - versão corrigida
+POST {{base_url}}/events
+Authorization: {{token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="name"
+
+FederaLideres4
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="date"
+
+2025-09-21
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="location"
+
+ipb central de passos
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="description"
+
+Acampamento para lideres
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="eventType"
+
+general
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="maxClientMale"
+
+0
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="maxClientFemale"
+
+0
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="maxStaffMale"
+
+0
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="maxStaffFemale"
+
+0
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="maxGeneralSpots"
+
+200
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="startDate"
+
+2024-08-19T00:00:00Z
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="endDate"
+
+2024-09-21T23:59:59Z
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="price"
+
+0
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="image_capa"; filename="IMG_5619.jpg"
+Content-Type: image/jpeg
+
+< ./IMG_5619.jpg
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="logo_evento"; filename="IMG_5619.jpg"
+Content-Type: image/jpeg
+
+< ./IMG_5619.jpg
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+###
+
+### Alternativa: Multipart SEM imagens (só para testar se o multipart funciona)
+POST {{base_url}}/events
+Authorization: {{token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="name"
+
+FederaLideres5
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="date"
+
+2025-09-21
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="location"
+
+ipb central de passos
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="description"
+
+Acampamento para lideres
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="eventType"
+
+general
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="maxClientMale"
+
+0
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="maxClientFemale"
+
+0
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="maxStaffMale"
+
+0
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="maxStaffFemale"
+
+0
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="maxGeneralSpots"
+
+200
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="startDate"
+
+2024-08-19T00:00:00Z
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="endDate"
+
+2024-09-21T23:59:59Z
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="price"
+
+0
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+###

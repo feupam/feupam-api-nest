@@ -320,14 +320,14 @@ export class EventsService {
           }
         
           let price = eventData.price;
-          const eventDiscount = userData.discount
+          const eventDiscount = userData.discount;
           let d;
           if (userData.discount) {
             d = eventDiscount.find(
               (discount) => discount.event === dto.eventId
             );
           }
-          if (eventDiscount) {
+          if (eventDiscount && d) {
             price = price * (1 - d.discount);
           }
 
