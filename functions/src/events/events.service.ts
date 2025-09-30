@@ -410,7 +410,7 @@ export class EventsService {
     if (reservedSpots >= maxSpots) throw new BadRequestException('No spots available');
   
     const installmentRates = [
-      { installment: 1, rate: 0.00 },
+      { installment: 1, rate: 4.38 },
       { installment: 2, rate: 6.92 },
       { installment: 3, rate: 8.19 },
       { installment: 4, rate: 9.46 },
