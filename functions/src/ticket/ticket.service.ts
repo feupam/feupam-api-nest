@@ -1,34 +1,18 @@
 import { Injectable } from '@nestjs/common';
-import { RedisService } from '../redis/redis.service';
+import { ReservationService } from '../reservation/reservation.service';
 import { FirestoreService } from '../firebase/firebase.service';
 
 @Injectable()
 export class TicketService {
-  private readonly pagoMax = 173;
-  private readonly FMax = 83;
-  private readonly MMax = 90;
-
   constructor(
-    private readonly redisService: RedisService,
+    private readonly reservationService: ReservationService,
     private readonly firestoreService: FirestoreService,
   ) {}
 
   async purchaseTicket(eventId: string, email: string) {
-    const reservationKey = `reservation:${email}:${eventId}`;
-    const pagoKey = `pago:pagarme:count`;
-    const queueKey = `event:${eventId}:queue`;
-
-    const reservationHistory = await this.firestoreService.firestore
-      .collection('reservationHistory')
-      .where('email', '==', email)
-      .where('eventId', '==', eventId)
-      .where('status', '==', 'available')
-      .get();
-
-    if (reservationHistory.empty) {
-      throw new Error('Reserva não encontrada para este email e evento ou status não é válido.');
-    }
-
+    console.log(`[DEBUG] purchaseTicket started for email: ${email}, eventId: ${eventId}`);
+    
+    // Verificar se o usuário existe e obter o gênero
     const usersRef = await this.firestoreService.firestore
       .collection('users')
       .where('email', '==', email)
@@ -46,141 +30,74 @@ export class TicketService {
       throw new Error('Gênero não especificado corretamente no perfil do usuário.');
     }
 
-    const maxByGender = gender === 'female' ? this.FMax : this.MMax;
-    const countKey = `event:${eventId}:count:${gender}`;
-    const queueGenderKey = `${queueKey}:${gender}`;
+    console.log(`[DEBUG] User found with gender: ${gender}`);
 
-    const pagoCount = await this.redisService.get(pagoKey);
-    if (pagoCount && Number(pagoCount) >= this.pagoMax) {
-      const waitingListRef = this.firestoreService.firestore.collection('waitingList').doc(eventId);
-      const waitingListDoc = await waitingListRef.get();
-      const existingEmails = waitingListDoc.exists ? waitingListDoc.data()?.emails || [] : [];
+    try {
+      // Verificar o status da reserva no novo sistema
+      console.log(`[DEBUG] Calling getReservationStatus...`);
+      const reservationStatus = await this.reservationService.getReservationStatus(email, eventId);
+      console.log(`[DEBUG] getReservationStatus result:`, reservationStatus);
 
-      if (!existingEmails.includes(email)) {
-        await waitingListRef.set(
-          { emails: [...existingEmails, email] },
-          { merge: true },
-        );
-      }
-
-      return {
-        status: 'waiting-list',
-        message: 'Todos os ingressos foram pagos. Você foi adicionado à lista de interessados.',
-      };
-    }
-
-    const exists = await this.redisService.get(reservationKey);
-    let result: any = null;
-
-    if (exists) {
-      result = await this.checkReservationStatus(exists, reservationKey, email, eventId);
-      if (result.status === 'pago') {
+      if (reservationStatus.status === 'none') {
+        // Se não há reserva, tentar criar uma nova
+        console.log(`[DEBUG] No reservation found, calling reserveSpot...`);
+        const result = await this.reservationService.reserveSpot(email, eventId, gender);
+        console.log(`[DEBUG] reserveSpot result:`, result);
+        return result;
+      } else if (reservationStatus.status === 'expired') {
+        // Se expirou, tentar criar uma nova
+        console.log(`[DEBUG] Reservation expired, calling reserveSpot...`);
+        const result = await this.reservationService.reserveSpot(email, eventId, gender);
+        console.log(`[DEBUG] reserveSpot result:`, result);
+        return result;
+      } else if (reservationStatus.status === 'reserved') {
+        // Tem uma reserva válida, pode proceder com o pagamento
         return {
-          status: 'pago',
-          message: 'Você já pagou a sua inscrição.',
+          status: 'reserved',
+          message: 'Reserva válida. Pode proceder com o pagamento.',
+          expiresAt: reservationStatus.expiresAt,
+          remainingMinutes: reservationStatus.remainingMinutes
         };
-      }
-    }
-
-    if (!exists || (result.status !== 'expired' && result.status !== 'reserved')) {
-      const count = await this.redisService.incr(countKey);
-
-      if (count <= maxByGender) {
-        const currentDate = new Date();
-        await this.redisService.set(reservationKey, {
-          fifo: count.toString(),
-          expire: currentDate.toISOString(),
-          status: 'reserved',
-          gender: gender,
-        });
-
+      } else if (reservationStatus.status === 'paid') {
         return {
-          status: 'reserved',
-          message: 'Reserva efetuada com sucesso. Você tem 10 minutos para completar o pagamento.',
+          status: 'already-paid',
+          message: 'Você já pagou a sua inscrição.'
         };
       } else {
-        await this.redisService.decr(countKey);
-        const queue = await this.redisService.getQueue(queueGenderKey);
-
-        if (!queue.includes(email)) {
-          await this.redisService.enqueue(queueGenderKey, email);
-        }
-
+        // Para status 'queued' ou 'waiting-list'
         return {
-          status: 'queued',
-          message: 'Aguarde ser chamado.',
+          status: reservationStatus.status,
+          message: reservationStatus.status === 'queued' 
+            ? `Você está na fila. Posição: ${reservationStatus.position}` 
+            : 'Você está na lista de espera.',
+          position: reservationStatus.position
         };
       }
+    } catch (error) {
+      console.log(`[DEBUG] Error in purchaseTicket:`, error);
+      throw error;
     }
-
-    return {
-      status: result?.status || 'unknown',
-      message: 'Você já possui uma reserva ativa ou expirada para esse evento.',
-    };
   }
 
   async processQueue(eventId: string) {
-    const pagoKey = `pago:pagarme:count`;
-    const pagoCount = Number(await this.redisService.get(pagoKey)) || 0;
-    if (pagoCount >= this.pagoMax) return;
-
-    const genders = ['male', 'female'];
-
-    for (const gender of genders) {
-      const queueGenderKey = `event:${eventId}:queue:${gender}`;
-      const maxByGender = gender === 'female' ? this.FMax : this.MMax;
-      const countKey = `event:${eventId}:count:${gender}`;
-      const queue = await this.redisService.getQueue(queueGenderKey);
-
-      for (const email of queue) {
-        const reservationKey = `reservation:${email}:${eventId}`;
-        const exists = await this.redisService.get(reservationKey);
-
-        if (!exists) {
-          await this.redisService.dequeue(queueGenderKey);
-          continue;
-        }
-
-        const result = await this.checkReservationStatus(exists, reservationKey, email, eventId);
-        if (result.status === 'expired') {
-          await this.redisService.dequeue(queueGenderKey);
-          continue;
-        }
-
-        if (result.status === 'queued' || result.status === 'waiting-list') {
-          const currentCount = await this.redisService.incr(countKey);
-
-          if (currentCount <= maxByGender) {
-            const currentDate = new Date();
-            await this.redisService.set(reservationKey, {
-              fifo: currentCount.toString(),
-              expire: currentDate.toISOString(),
-              status: 'reserved',
-              gender: gender,
-            });
-
-            await this.redisService.dequeue(queueGenderKey);
-            return;
-          } else {
-            await this.redisService.decr(countKey);
-          }
-        }
-      }
-    }
+    // Delegar para o ReservationService
+    await this.reservationService.processQueue(eventId);
   }
 
   async getReservationStatus(eventId: string, email: string) {
-    const reservationKey = `reservation:${email}:${eventId}`;
-    const exists = await this.redisService.get(reservationKey);
-
-    if (exists) {
-      const result = await this.checkReservationStatus(exists, reservationKey, email, eventId);
-      return result;
-    }
-
-    return { status: 'expired' };
+    // Usar o novo sistema para verificar status
+    const status = await this.reservationService.getReservationStatus(email, eventId);
+    
+    // Mapear para o formato esperado pelo frontend
+    return {
+      status: status.status,
+      expiresAt: status.expiresAt?.toISOString(),
+      currentTime: new Date().toISOString(),
+      remainingMinutes: status.remainingMinutes || 0,
+    };
   }
 
+  // Método de compatibilidade - pode ser removido no futuro
   async checkReservationStatus(
     exists: string,
     reservationKey: string,
@@ -192,24 +109,13 @@ export class TicketService {
     currentTime: string;
     remainingMinutes: number;
   }> {
-    const parsed = JSON.parse(exists);
-    const expiresAt = new Date(parsed.expire);
-    const now = new Date();
-    const graceDeadline = expiresAt.getTime() + 10 * 60 * 1000;
-    const timeDifference = graceDeadline - now.getTime();
-    const expired = timeDifference <= 0;
-    const is_expired = expired ? 'expired' : 'reserved';
-
-    if (expired) {
-      await this.redisService.deleteReservationKey(email, eventId);
-      await this.redisService.decr(`event:${eventId}:count:${parsed.gender}`);
-    }
-
+    // Redirecionar para o novo método
+    const status = await this.getReservationStatus(eventId, email);
     return {
-      status: is_expired,
-      expiresAt: expiresAt.toISOString(),
-      currentTime: now.toISOString(),
-      remainingMinutes: Math.ceil(Math.max(0, timeDifference) / 60000),
+      status: status.status as any,
+      expiresAt: status.expiresAt || new Date().toISOString(),
+      currentTime: status.currentTime,
+      remainingMinutes: status.remainingMinutes,
     };
   }
 }

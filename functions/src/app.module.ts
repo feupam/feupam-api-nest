@@ -12,6 +12,7 @@ import { CommentsModule } from './comments/comments.module';
 import { CuponsModule } from './cupom/cupons.module';
 import { AdminModule } from './admin/admin.module';
 import { TicketModule } from './ticket/ticket.module';
+import { ReservationModule } from './reservation/reservation.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { TicketModule } from './ticket/ticket.module';
     CuponsModule,
     AdminModule,
     TicketModule,
+    ReservationModule,
   ],
   controllers: [AppController],
   providers: [

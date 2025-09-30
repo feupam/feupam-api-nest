@@ -1,0 +1,137 @@
+@base_url=https://us-central1-federa-api.cloudfunctions.net/api
+@local_url=http://localhost:3000
+@email=test1@test.com
+@eventId=FederaLideres
+@token=eyJhbGciOiJSUzI1NiIsImtpZCI6IjA1NTc3MjZmYWIxMjMxZmEyZGNjNTcyMWExMDgzZGE2ODBjNGE3M2YiLCJ0eXAiOiJKV1QifQ.eyJuYW1lIjoiQXJpZWxhIFN0ZWZhbmluaSIsInBpY3R1cmUiOiJodHRwczovL2xoMy5nb29nbGV1c2VyY29udGVudC5jb20vYS9BQ2c4b2NMTF9GNjIwTWw3ZENzNUVwdVFDLWhUUkZQVzh6VGVoVXdRNDlWQWgzc3p0bHRyZ2lnVD1zOTYtYyIsImlzcyI6Imh0dHBzOi8vc2VjdXJldG9rZW4uZ29vZ2xlLmNvbS9mZWRlcmEtYXBpIiwiYXVkIjoiZmVkZXJhLWFwaSIsImF1dGhfdGltZSI6MTc1OTA5MzMyNywidXNlcl9pZCI6IkxtSFU0amlCRU5NZHQ2UUtyR29HMW9tdVdDRDIiLCJzdWIiOiJMbUhVNGppQkVOTWR0NlFLckdvRzFvbXVXQ0QyIiwiaWF0IjoxNzU5MDkzMzI3LCJleHAiOjE3NTkwOTY5MjcsImVtYWlsIjoiYXJpZWxhYWFhYTFAZ21haWwuY29tIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsImZpcmViYXNlIjp7ImlkZW50aXRpZXMiOnsiZ29vZ2xlLmNvbSI6WyIxMTA5MDg5Nzc5MTY0MTc2Mjc1MDgiXSwiZW1haWwiOlsiYXJpZWxhYWFhYTFAZ21haWwuY29tIl19LCJzaWduX2luX3Byb3ZpZGVyIjoiZ29vZ2xlLmNvbSJ9fQ.H8fFS7sRMRCsGRAv0Kw1eltnLheeCSsTpMcDhEh_5WtfjLT7KTuB3ZR6_N5t1J0arYMVMv_QU8szntl-2MMbhdZ8yJYCMJZtnY3C0wylC9fWzpKbuS4rqAFW89AEr7ZVtVb0XYvvvUsdpXDaK7Pa5lYgYaAevFdGbLUbL9cMxPlXohZlXRRzBXdod755AkTUbMskuXKD5zl4L4eQ-0-G8nuAvws8onjsT5vKWDeYmNCo2y2FYoceWZUQIvjVs6RDVLN--kXwFg2Ib3de6ptZZ8ALT5PoBhfc8fdVVPC7bRqsr105yqeADtSmZfC1th78pOwHs74T-3yte_5dgWHTPA
+
+###
+# FLUXO CORRETO DE COMPRA
+###
+
+# 1. Verificar se há vagas disponíveis
+# @name checkSpot
+GET {{base_url}}/events/{{eventId}}/check-spot
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+###
+# 2. Fazer a reserva (se houver vagas)
+# @name makeReservation
+POST {{base_url}}/events/{{eventId}}/reserve-spot
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "ticket_kind": "full",
+  "userType": "client"
+}
+
+###
+# 3. Verificar reservas do usuário
+# @name getReservations
+GET {{base_url}}/users/reservations
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+###
+# 4. Obter ticket (agora deve funcionar)
+# @name getTicket
+GET {{base_url}}/tickets/{{eventId}}/purchase
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+###
+# 5. Se tiver ticket válido, proceder com o pagamento PIX
+# @name pagarmePixPayment
+POST {{base_url}}/payments
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "items": [
+    {
+      "amount": 36500,
+      "description": "{{eventId}}"
+    }
+  ],
+  "customer": {
+    "email": "ariela.stefanini@sou.unifal-mg.edu.br"
+  },
+  "payments": {
+    "payment_method": "pix"
+  }
+}
+
+###
+# 6. Alternativa: Pagamento com boleto
+# @name pagarmeBoleto
+POST {{base_url}}/payments
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "items": [
+    {
+      "amount": 36500,
+      "description": "{{eventId}}"
+    }
+  ],
+  "customer": {
+    "email": "ariela.stefanini@sou.unifal-mg.edu.br"
+  },
+  "payments": {
+    "payment_method": "boleto",
+    "boleto": {
+      "due_at": "2025-05-05T00:00:00Z"
+    }
+  }
+}
+
+###
+# 7. Alternativa: Pagamento com cartão de crédito
+# @name pagarmeCredit
+POST {{base_url}}/payments
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "items": [
+    {
+      "amount": 36500,
+      "description": "{{eventId}}"
+    }
+  ],
+  "customer": {
+    "email": "ariela.stefanini@sou.unifal-mg.edu.br"
+  },
+  "payments": {
+    "payment_method": "credit_card",
+    "credit_card": {
+      "card": {
+        "number": "4000000000000010",
+        "holder_name": "Teste da Silva",
+        "exp_month": 12,
+        "exp_year": 2030,
+        "cvv": "123"
+      },
+      "installments": 1
+    }
+  }
+}
+
+###
+# TESTES DE DIAGNÓSTICO
+###
+
+# Verificar status da reserva após o pagamento
+# @name checkReservationAfterPayment
+GET {{base_url}}/tickets/{{eventId}}/retry
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+###
+# Verificar todas as reservas novamente
+# @name getReservationsAfterPayment
+GET {{base_url}}/users/reservations
+Content-Type: application/json
+Authorization: Bearer {{token}}

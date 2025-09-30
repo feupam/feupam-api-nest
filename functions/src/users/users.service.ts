@@ -166,13 +166,16 @@ export class UsersService {
 
   async getUserReservations(decodedIdToken) {
     const email = decodedIdToken.email ?? '';
+    
+    // Buscar reservas ativas na coleção 'reservations'
     const reservationsSnapshot = await this.firestoreService.firestore
-      .collection('reservationHistory')
+      .collection('reservations')
       .where('email', '==', email)
+      .where('status', 'in', ['reserved', 'paid'])
       .get();
 
     if (reservationsSnapshot.empty) {
-      throw new NotFoundException('Reservations not found for this user');
+      return []; // Retorna array vazio ao invés de erro
     }
 
     return reservationsSnapshot.docs.map((doc) => ({

@@ -1,0 +1,59 @@
+
+@base_url=http://localhost:3000
+@email=test1@test.com
+@eventId=FederaLideres
+@token=eyJhbGciOiJSUzI1NiIsImtpZCI6IjA1NTc3MjZmYWIxMjMxZmEyZGNjNTcyMWExMDgzZGE2ODBjNGE3M2YiLCJ0eXAiOiJKV1QifQ.eyJuYW1lIjoiQXJpZWxhIFN0ZWZhbmluaSIsInBpY3R1cmUiOiJodHRwczovL2xoMy5nb29nbGV1c2VyY29udGVudC5jb20vYS9BQ2c4b2NMTF9GNjIwTWw3ZENzNUVwdVFDLWhUUkZQVzh6VGVoVXdRNDlWQWgzc3p0bHRyZ2lnVD1zOTYtYyIsImlzcyI6Imh0dHBzOi8vc2VjdXJldG9rZW4uZ29vZ2xlLmNvbS9mZWRlcmEtYXBpIiwiYXVkIjoiZmVkZXJhLWFwaSIsImF1dGhfdGltZSI6MTc1OTE5NTAxOSwidXNlcl9pZCI6IkxtSFU0amlCRU5NZHQ2UUtyR29HMW9tdVdDRDIiLCJzdWIiOiJMbUhVNGppQkVOTWR0NlFLckdvRzFvbXVXQ0QyIiwiaWF0IjoxNzU5MTk1MDE5LCJleHAiOjE3NTkxOTg2MTksImVtYWlsIjoiYXJpZWxhYWFhYTFAZ21haWwuY29tIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsImZpcmViYXNlIjp7ImlkZW50aXRpZXMiOnsiZ29vZ2xlLmNvbSI6WyIxMTA5MDg5Nzc5MTY0MTc2Mjc1MDgiXSwiZW1haWwiOlsiYXJpZWxhYWFhYTFAZ21haWwuY29tIl19LCJzaWduX2luX3Byb3ZpZGVyIjoiZ29vZ2xlLmNvbSJ9fQ.RV93CPHZnKxxZTEB4oQZxYxv3zon5UE-8Vjyw7I6HMlELDtUnqoXCnwWsQh5vvLfOahHqm2-DafV2YLMkwNwJ1xCPwNGhAZ80kznGCJdSJ_4T0BkKm8AOgW1HUQmgmsH7fT0PKo7LJM_Dki0Es4Q9jaTDfa9rE6edZ68m4-lzItEiAytAv5kMNO202wplXjMYjln1oyB_FTeF0VA6lPAe44XfrUGRV4Oj6SlIahG-vN0WU49tu1HYBkfKOLo_rzP7V6P3T1L08mG8zQb2PZY9O0kiUtRAxzs5kxSKui8TavMq1u7-J2BbtmJoraPL7vbShpx7t7qIuKPcj34FIXQvA
+
+# @name checkSpot
+GET {{base_url}}/events/{{eventId}}/check-spot
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+###
+# @name makeReservation
+POST {{base_url}}/events/{{eventId}}/reserve-spot
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "ticket_kind": "full",
+  "userType": "client"
+}
+
+###
+# @name getReservations
+GET {{base_url}}/users/reservations
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+
+###
+# @name getTicket
+GET {{base_url}}/tickets/{{eventId}}/purchase
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+# SO PAGA SE TIVER TICKET
+###
+# @name pagarmeBoleto
+POST {{base_url}}/payments
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "items": [
+    {
+      "amount": 36500,
+      "description": "{{eventId}}"
+    }
+  ],
+  "customer": {
+    "email": "ariela.stefanini@sou.unifal-mg.edu.br"
+  },
+  "payments": {
+    "payment_method": "boleto",
+    "boleto": {
+      "due_at": "2025-09-29T00:00:00Z"
+    }
+  }
+}
