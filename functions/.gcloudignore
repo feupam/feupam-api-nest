@@ -1,0 +1,113 @@
+# Files to ignore during deployment
+
+# Source code - only keep dist/
+src/
+test/
+*.spec.ts
+*.test.ts
+tsconfig.json
+nest-cli.json
+tsconfig.tsbuildinfo
+
+# All dev dependencies
+node_modules/@types/
+node_modules/typescript/
+node_modules/@typescript-eslint/
+node_modules/eslint/
+node_modules/prettier/
+node_modules/jest/
+node_modules/@nestjs/testing/
+node_modules/@nestjs/schematics/
+node_modules/@nestjs/cli/
+node_modules/.cache/
+node_modules/nodemon/
+node_modules/ts-node/
+node_modules/source-map-support/
+node_modules/@swc/
+node_modules/@angular-devkit/
+node_modules/@babel/
+node_modules/webpack/
+node_modules/esbuild/
+node_modules/turbo/
+node_modules/@rollup/
+node_modules/rollup/
+node_modules/sharp/
+node_modules/axios/
+node_modules/moment-timezone/
+node_modules/dotenv/
+node_modules/cpf-cnpj-validator/
+node_modules/firebase/
+
+# Docs and examples
+README.md
+*.md
+docs/
+examples/
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log
+logs/
+
+# Git
+.git/
+.gitignore
+
+# Cache
+.cache/
+.npm/
+
+# Source maps
+**/*.map
+
+# Firebase
+firebase_key.json
+.env
+.env.*
+
+# Documentation
+README.md
+*.md
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Cache
+.cache/
+.npm/
+.yarn/
+
+# Source maps
+**/*.map
+
+# TypeScript source files (keep only compiled JS)
+src/
+tsconfig.json
+nest-cli.json
+
+# Git
+.git/
+.gitignore
+
+# Build artifacts
+dist/
+build/
+lib/
+
+# Firebase
+firebase_key.json
+.env
+.env.*

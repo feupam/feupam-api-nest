@@ -1,19 +1,28 @@
 {
-  "functions": [
-    {
-      "source": "functions",
-      "runtime": "nodejs18",
-      "entryPoint": "api",
-      "predeploy": [
-        "npm --prefix ./functions run build"
-      ],
-      "ignore": [
-        "tests/**",
-        "node_modules/**",
-        ".git/**",
-        "README.md",
-        "**/*.spec.ts"
-      ]
-    }
-  ]
+  "functions": {
+    "source": "functions",
+    "runtime": "nodejs20",
+    "entryPoint": "api",
+    "predeploy": [
+      "cd ./functions && npx tsc"
+    ],
+    "ignore": [
+      "node_modules/.cache",
+      "node_modules/@types",
+      "node_modules/typescript",
+      "node_modules/@typescript-eslint",
+      "node_modules/eslint",
+      "node_modules/prettier",
+      "node_modules/jest",
+      "node_modules/@nestjs/testing",
+      "test/**",
+      "**/*.spec.ts",
+      "**/*.test.ts",
+      "src/**",
+      "tsconfig.json",
+      "nest-cli.json",
+      ".git/**",
+      "README.md"
+    ]
+  }
 }

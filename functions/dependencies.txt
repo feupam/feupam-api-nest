@@ -1,0 +1,29 @@
+# Functions Framework
+functions-framework
+
+# Core NestJS runtime dependencies only
+@nestjs/core
+@nestjs/common
+@nestjs/platform-express
+reflect-metadata
+rxjs
+
+# Firebase
+firebase-admin
+firebase-functions
+
+# Express and middleware
+express
+multer
+
+# HTTP client
+axios
+
+# Validation
+class-validator
+class-transformer
+
+# Other essentials
+uid
+cors
+helmet
