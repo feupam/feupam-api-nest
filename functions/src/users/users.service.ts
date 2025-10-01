@@ -167,21 +167,30 @@ export class UsersService {
   async getUserReservations(decodedIdToken) {
     const email = decodedIdToken.email ?? '';
     
-    // Buscar reservas ativas na coleção 'reservations'
+    // Buscar TODAS as reservas na coleção 'reservationHistory' (sem filtro de status)
     const reservationsSnapshot = await this.firestoreService.firestore
-      .collection('reservations')
+      .collection('reservationHistory')
       .where('email', '==', email)
-      .where('status', 'in', ['reserved', 'paid'])
       .get();
 
     if (reservationsSnapshot.empty) {
       return []; // Retorna array vazio ao invés de erro
     }
 
-    return reservationsSnapshot.docs.map((doc) => ({
+    // Ordenar por data de atualização (mais recente primeiro)
+    const reservations = reservationsSnapshot.docs.map((doc) => ({
       id: doc.id,
       ...doc.data(),
     }));
+
+    // Ordenar por updatedAt se disponível
+    reservations.sort((a: any, b: any) => {
+      const aTime = a.updatedAt?.toDate?.() || a.updatedAt?._seconds || 0;
+      const bTime = b.updatedAt?.toDate?.() || b.updatedAt?._seconds || 0;
+      return bTime - aTime; // Mais recente primeiro
+    });
+
+    return reservations;
   }
 
   async cancelUserReservations(decodedIdToken) {

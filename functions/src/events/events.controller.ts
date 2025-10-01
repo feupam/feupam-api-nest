@@ -178,6 +178,26 @@ export class EventsController {
     }
   }
 
+  
+  @Get(':id/stats')
+  async getEventStats(
+    @Param('id') eventId: string,
+    @Headers('Authorization') authHeader: string,
+  ) {
+    const token = authHeader?.split(' ')[1];
+    await this.authService.verifyToken(token);
+    
+    try {
+      return await this.eventsService.getEventStats(eventId);
+    } catch (error) {
+      const err = error as Error;
+      if (err.message.includes('not found')) {
+        throw new NotFoundException(err.message);
+      }
+      throw new HttpException(err.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
   @Get(':id/reservations')
   async getEventReservations(
     @Param('id') id: string,

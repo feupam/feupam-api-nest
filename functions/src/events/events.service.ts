@@ -434,7 +434,96 @@ export class EventsService {
     });
   }
   
-  
+ async getEventStats(eventId: string) {
+    const firestore = this.firestoreService.firestore;
+
+    try {
+      // Buscar dados do evento
+      const eventRef = firestore.collection('events').doc(eventId);
+      const eventDoc = await eventRef.get();
+      
+      if (!eventDoc.exists) {
+        throw new NotFoundException('Event not found');
+      }
+
+      const eventData = eventDoc.data();
+
+      // Buscar estatísticas do evento
+      const eventStatsRef = firestore.collection('eventStats').doc(eventId);
+      const eventStatsDoc = await eventStatsRef.get();
+      
+      const currentStats = eventStatsDoc.exists ? eventStatsDoc.data() : {
+        totalPaid: 0,
+        malePaid: 0,
+        femalePaid: 0,
+        totalReserved: 0,
+        maleReserved: 0,
+        femaleReserved: 0
+      };
+
+      // Calcular totais
+      const totalOccupied = (currentStats.totalPaid || 0) + (currentStats.totalReserved || 0);
+      
+      // Determinar limites máximos baseado no tipo do evento
+      let maxSpots = 0;
+      let limits = {};
+      
+      if (eventData.eventType === EventType.GENERAL) {
+        maxSpots = parseInt(eventData.maxGeneralSpots) || 0;
+        limits = {
+          maxGeneralSpots: maxSpots,
+          type: 'general'
+        };
+      } else if (eventData.eventType === EventType.GENDER_SPECIFIC) {
+        const maxClientMale = parseInt(eventData.maxClientMale) || 0;
+        const maxClientFemale = parseInt(eventData.maxClientFemale) || 0;
+        const maxStaffMale = parseInt(eventData.maxStaffMale) || 0;
+        const maxStaffFemale = parseInt(eventData.maxStaffFemale) || 0;
+        
+        maxSpots = maxClientMale + maxClientFemale + maxStaffMale + maxStaffFemale;
+        limits = {
+          maxClientMale,
+          maxClientFemale,
+          maxStaffMale,
+          maxStaffFemale,
+          maxMale: maxClientMale + maxStaffMale,
+          maxFemale: maxClientFemale + maxStaffFemale,
+          maxTotal: maxSpots,
+          type: 'gender_specific'
+        };
+      }
+
+      const availableSpots = Math.max(0, maxSpots - totalOccupied);
+      const occupancyPercentage = maxSpots > 0 ? Math.round((totalOccupied / maxSpots) * 100) : 0;
+
+      return {
+        eventId,
+        eventName: eventData.name,
+        eventType: eventData.eventType,
+        enableQueueProcessing: eventData.enableQueueProcessing ?? false,
+        statistics: {
+          totalPaid: currentStats.totalPaid || 0,
+          malePaid: currentStats.malePaid || 0,
+          femalePaid: currentStats.femalePaid || 0,
+          totalReserved: currentStats.totalReserved || 0,
+          maleReserved: currentStats.maleReserved || 0,
+          femaleReserved: currentStats.femaleReserved || 0,
+          totalOccupied,
+          availableSpots,
+          occupancyPercentage
+        },
+        limits,
+        updatedAt: new Date().toISOString()
+      };
+
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+      throw new BadRequestException(`Erro ao buscar estatísticas do evento: ${errorMessage}`);
+    }
+  }
 
     async getWaitingList(eventId: string): Promise<string[]> {
       const waitingListRef = this.firestoreService.firestore

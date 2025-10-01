@@ -162,47 +162,82 @@ export class PaymentService {
     const queriesService = new Queries(this.firestoreService);
     const webhookData = body.data;
 
-    if (webhookData.status === 'paid') {
-      try {
-        // Obter eventId do histórico de reservas
-        const eventId = await this.getEventIdFromReservation(webhookData.customer.email);
-        
-        // Criar um charge DTO básico para o webhook
-        const charge: ChargeDto = {
-          event: eventId,
-          status: 'Pago',
-          amount: webhookData.amount,
-          payLink: '',
-          qrcodePix: '',
-          meio: webhookData.payment_method,
-          email: webhookData.customer.email,
-          lote: 0,
-          envioWhatsapp: false,
-          chargeId: webhookData.id,
-        };
+    console.log('🎯 Webhook PagarMe recebido:', {
+      status: webhookData.status,
+      email: webhookData.customer?.email,
+      id: webhookData.id,
+      amount: webhookData.amount
+    });
 
-        // Confirmar pagamento e atualizar reserva em uma única transação
+    // Mapear status do PagarMe para status interno
+    const statusMapping = {
+      'paid': 'Pago',
+      'pending': 'Processando', 
+      'processing': 'Processando',
+      'authorized': 'Processando',
+      'canceled': 'Cancelado',
+      'failed': 'Falhou',
+      'refunded': 'Reembolsado',
+      'refused': 'Recusado'
+    };
+
+    const internalStatus = statusMapping[webhookData.status] || 'Processando';
+    
+    try {
+      // Obter eventId do histórico de reservas
+      const eventId = await this.getEventIdFromReservation(webhookData.customer.email);
+      
+      // Criar um charge DTO básico para o webhook
+      const charge: ChargeDto = {
+        event: eventId,
+        status: internalStatus,
+        amount: webhookData.amount,
+        payLink: '',
+        qrcodePix: '',
+        meio: webhookData.payment_method || 'webhook',
+        email: webhookData.customer.email,
+        lote: 0,
+        envioWhatsapp: false,
+        chargeId: webhookData.id,
+      };
+
+      // Se for pago, fazer o processo completo
+      if (webhookData.status === 'paid') {
         await this.confirmPaymentAndUpdateReservation(
           webhookData.customer.email,
           eventId,
           charge,
-          'Pago'
+          internalStatus
         );
 
         // Processar fila após confirmação do pagamento
         await this.ticketService.processQueue(eventId);
-        
-      } catch (error: any) {
-        // Se falhar a confirmação da reserva, pelo menos atualizar o status do charge
-        await queriesService.updateChargeStatus(
+      } else {
+        // Para outros status, atualizar tanto o status da reserva quanto do charge
+        await this.updateReservationAndChargeStatus(
           webhookData.customer.email,
-          webhookData.id,
-          'Pago',
+          eventId,
+          charge,
+          internalStatus
         );
       }
+
+      console.log('✅ Webhook processado com sucesso:', { 
+        email: webhookData.customer.email, 
+        status: internalStatus 
+      });
+      
+    } catch (error: any) {
+      console.error('❌ Erro no webhook:', error);
+      // Se falhar a confirmação da reserva, pelo menos atualizar o status do charge
+      await queriesService.updateChargeStatus(
+        webhookData.customer.email,
+        webhookData.id,
+        internalStatus,
+      );
     }
 
-    return { message: 'ok' };
+    return { message: 'ok', status: internalStatus };
   }
 
   private async getEventIdFromReservation(email: string): Promise<string> {
@@ -217,6 +252,66 @@ export class PaymentService {
     }
 
     return snapshot.docs[0].data().eventId;
+  }
+
+  /**
+   * Atualiza AMBOS os status: da reserva principal E do charge
+   */
+  private async updateReservationAndChargeStatus(
+    email: string, 
+    eventId: string, 
+    charge: ChargeDto, 
+    status: string
+  ): Promise<void> {
+    const db = this.firestoreService.firestore;
+    
+    await db.runTransaction(async (transaction) => {
+      // 1. Buscar o histórico de reserva para atualizar
+      const historyRef = db
+        .collection('reservationHistory')
+        .where('email', '==', email)
+        .where('eventId', '==', eventId);
+      
+      const historySnapshot = await transaction.get(historyRef);
+      
+      if (historySnapshot.empty) {
+        throw new Error('Histórico de reserva não encontrado');
+      }
+
+      // 2. Atualizar o histórico com o charge e novo status
+      const historyDoc = historySnapshot.docs[0];
+      const historyData = historyDoc.data();
+      const updatedCharges = historyData?.charges || [];
+      
+      // Verificar se já existe um charge com esse ID
+      const existingChargeIndex = updatedCharges.findIndex(
+        (c: any) => c.chargeId === charge.chargeId
+      );
+      
+      if (existingChargeIndex >= 0) {
+        // Atualizar charge existente
+        updatedCharges[existingChargeIndex] = charge;
+      } else {
+        // Adicionar novo charge
+        updatedCharges.push(charge);
+      }
+
+      // 3. Atualizar AMBOS os status:
+      //    - Status da reserva principal (nível superior)
+      //    - Status do charge (dentro do array)
+      transaction.update(historyDoc.ref, {
+        charges: updatedCharges,
+        status: status, // ← Status da reserva principal
+        updatedAt: new Date(),
+      });
+
+      console.log('✅ Status da reserva E charge atualizados:', { 
+        email, 
+        eventId, 
+        status,
+        chargeId: charge.chargeId
+      });
+    });
   }
 
   /**
