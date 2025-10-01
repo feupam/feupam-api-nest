@@ -140,6 +140,7 @@ export class EventsService {
         name: data.name,
         description: data.description,
         date: data.date,
+        date_range: data.date_range,
         location: data.location,
         startDate: data.startDate,
         endDate: data.endDate,
