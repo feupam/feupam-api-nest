@@ -267,6 +267,10 @@ export class EventsController {
     const token = authHeader?.split(' ')[1];
     await this.authService.verifyToken(token);
     
+    // Forçar recálculo das estatísticas antes de buscar
+    // para garantir que inclua dados da reservationHistory
+    await this.eventsService.recalculateEventStats(eventId);
+    
     return this.eventsService.getEventStats(eventId);
   }
 

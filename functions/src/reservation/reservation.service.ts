@@ -181,17 +181,25 @@ export class ReservationService {
           this.logger.log('🔄 Jobs religados - atividade detectada');
         }
       } else {
-        // Sem atividade - verificar se deve desligar
-        const inactiveTime = Date.now() - this.lastActivityCheck;
-        const remainingTime = this.INACTIVITY_THRESHOLD - inactiveTime;
-        const remainingMinutes = Math.ceil(remainingTime / 60000);
-        
-        this.logger.log(`💤 Sem reservas ativas. Desligando jobs em ${remainingMinutes} minutos...`);
-        
-        if (inactiveTime >= this.INACTIVITY_THRESHOLD && this.isJobsActive) {
-          this.stopJobs();
-          this.logger.log('💤 Jobs desligados - sem atividade por mais de 10 minutos');
+        // Sem atividade - verificar se jobs estão ativos
+        if (this.isJobsActive) {
+          // Jobs estão ativos, mas não há reservas - verificar se deve desligar
+          const inactiveTime = Date.now() - this.lastActivityCheck;
+          
+          if (inactiveTime >= this.INACTIVITY_THRESHOLD) {
+            this.stopJobs();
+            this.logger.log('💤 Jobs desligados - sem atividade por mais de 10 minutos');
+          } else {
+            // Só mostrar contagem regressiva se jobs estiverem ativos E dentro do prazo
+            const remainingTime = this.INACTIVITY_THRESHOLD - inactiveTime;
+            const remainingMinutes = Math.ceil(remainingTime / 60000);
+            
+            if (remainingMinutes > 0) {
+              this.logger.log(`💤 Sem reservas ativas. Desligando jobs em ${remainingMinutes} minutos...`);
+            }
+          }
         }
+        // Se jobs não estão ativos E não há reservas, não fazer nada (não logar)
       }
     } catch (error: any) {
       this.logger.error('Erro ao verificar atividade:', error);
@@ -442,19 +450,45 @@ export class ReservationService {
           femaleReserved: 0
         };
 
-        const maxByGender = gender === 'female' 
-          ? settings.maxClientFemale + settings.maxStaffFemale 
-          : settings.maxClientMale + settings.maxStaffMale;
-        const currentGenderReserved = gender === 'female' ? currentStats.femaleReserved : currentStats.maleReserved;
-        const currentGenderPaid = gender === 'female' ? currentStats.femalePaid : currentStats.malePaid;
-        const totalGenderOccupied = currentGenderReserved + currentGenderPaid;
+        // Verificar tipo de evento: geral ou por gênero
+        const isGeneralEvent = settings.maxGeneralSpots > 0;
+        const isGenderEvent = settings.maxClientFemale > 0 || settings.maxClientMale > 0 || 
+                             settings.maxStaffFemale > 0 || settings.maxStaffMale > 0;
 
-        // Calcular total máximo de spots (todas as categorias)
-        const maxTotalSpots = settings.maxClientFemale + settings.maxClientMale + 
-                             settings.maxStaffFemale + settings.maxStaffMale + 
-                             settings.maxGeneralSpots;
+        // DEBUG: Logs para verificar tipo de evento e capacidade
+        this.logger.log(`[DEBUG] Settings: ${JSON.stringify(settings)}`);
+        this.logger.log(`[DEBUG] CurrentStats: ${JSON.stringify(currentStats)}`);
+        this.logger.log(`[DEBUG] EventType: isGeneral=${isGeneralEvent}, isGender=${isGenderEvent}`);
 
-        // Verificar se o total geral excedeu
+        let maxTotalSpots: number;
+        let hasAvailableSpot: boolean;
+
+        if (isGeneralEvent && !isGenderEvent) {
+          // Evento GERAL - não importa o gênero, usa maxGeneralSpots
+          maxTotalSpots = settings.maxGeneralSpots;
+          const totalOccupied = (currentStats.totalReserved || 0) + (currentStats.totalPaid || 0);
+          hasAvailableSpot = totalOccupied < maxTotalSpots;
+          
+          this.logger.log(`[DEBUG] EVENTO GERAL: maxSpots=${maxTotalSpots}, occupied=${totalOccupied}, available=${hasAvailableSpot}`);
+        } else if (isGenderEvent && !isGeneralEvent) {
+          // Evento POR GÊNERO - verificar capacidade por gênero
+          const maxByGender = gender === 'female' 
+            ? settings.maxClientFemale + settings.maxStaffFemale 
+            : settings.maxClientMale + settings.maxStaffMale;
+          const currentGenderReserved = gender === 'female' ? (currentStats.femaleReserved || 0) : (currentStats.maleReserved || 0);
+          const currentGenderPaid = gender === 'female' ? (currentStats.femalePaid || 0) : (currentStats.malePaid || 0);
+          const totalGenderOccupied = currentGenderReserved + currentGenderPaid;
+          
+          maxTotalSpots = settings.maxClientFemale + settings.maxClientMale + settings.maxStaffFemale + settings.maxStaffMale;
+          hasAvailableSpot = totalGenderOccupied < maxByGender;
+          
+          this.logger.log(`[DEBUG] EVENTO POR GÊNERO: gender=${gender}, maxByGender=${maxByGender}, occupied=${totalGenderOccupied}, available=${hasAvailableSpot}`);
+        } else {
+          // Configuração inválida
+          throw new Error(`Configuração inválida para evento ${eventId}: deve ter OU maxGeneralSpots > 0 OU campos por gênero > 0, não ambos ou nenhum.`);
+        }
+
+        // Verificar se o total geral excedeu (para waiting list)
         if (currentStats.totalPaid >= maxTotalSpots) {
           // ===== ESCRITAS PARA WAITING LIST =====
           const existingEmails = waitingListDoc.exists ? waitingListDoc.data()?.emails || [] : [];
@@ -472,13 +506,24 @@ export class ReservationService {
           };
         }
 
-        // Verificar se ainda há vagas para o gênero
-        // Não há mais sistema de lotes - usa todas as vagas disponíveis
-        
-        if (totalGenderOccupied < maxByGender) {
+        // Verificar se ainda há vagas disponíveis
+        if (hasAvailableSpot) {
           // ===== ESCRITAS PARA RESERVA =====
           
           const expiresAt = this.calculateExpirationTime();
+          
+          // Calcular posição baseada no tipo de evento
+          let position: number;
+          if (isGeneralEvent) {
+            // Evento geral: posição baseada no total
+            position = (currentStats.totalReserved || 0) + (currentStats.totalPaid || 0) + 1;
+          } else {
+            // Evento por gênero: posição baseada no gênero
+            const currentGenderReserved = gender === 'female' ? (currentStats.femaleReserved || 0) : (currentStats.maleReserved || 0);
+            const currentGenderPaid = gender === 'female' ? (currentStats.femalePaid || 0) : (currentStats.malePaid || 0);
+            position = currentGenderReserved + currentGenderPaid + 1;
+          }
+          
           const reservationData: ReservationData = {
             email,
             eventId,
@@ -486,7 +531,7 @@ export class ReservationService {
             status: 'reserved',
             createdAt: new Date(),
             expiresAt,
-            position: totalGenderOccupied + 1
+            position
           };
 
           const reservationRef = db.collection('reservations').doc();
@@ -494,11 +539,11 @@ export class ReservationService {
 
           // Atualizar estatísticas
           const newStats = { ...currentStats };
-          newStats.totalReserved += 1;
+          newStats.totalReserved = (newStats.totalReserved || 0) + 1;
           if (gender === 'female') {
-            newStats.femaleReserved += 1;
+            newStats.femaleReserved = (newStats.femaleReserved || 0) + 1;
           } else {
-            newStats.maleReserved += 1;
+            newStats.maleReserved = (newStats.maleReserved || 0) + 1;
           }
 
           transaction.set(eventStatsRef, newStats, { merge: true });
@@ -670,18 +715,34 @@ export class ReservationService {
         // ===== PROCESSAMENTO =====
         
         const currentStats = eventStatsDoc.data() || {};
-        const maxByGender = gender === 'female' 
-          ? settings.maxClientFemale + settings.maxStaffFemale 
-          : settings.maxClientMale + settings.maxStaffMale;
-        // Usar todas as vagas disponíveis para o gênero
-        const maxReservationsAllowed = maxByGender;
         
-        const currentGenderReserved = gender === 'female' ? (currentStats.femaleReserved || 0) : (currentStats.maleReserved || 0);
-        const currentGenderPaid = gender === 'female' ? (currentStats.femalePaid || 0) : (currentStats.malePaid || 0);
-        const totalGenderOccupied = currentGenderReserved + currentGenderPaid;
+        // Verificar tipo de evento
+        const isGeneralEvent = settings.maxGeneralSpots > 0;
+        const isGenderEvent = settings.maxClientFemale > 0 || settings.maxClientMale > 0 || 
+                             settings.maxStaffFemale > 0 || settings.maxStaffMale > 0;
+        
+        let maxReservationsAllowed: number;
+        let currentOccupied: number;
+        
+        if (isGeneralEvent && !isGenderEvent) {
+          // Evento geral: não importa o gênero, usar capacidade total
+          maxReservationsAllowed = settings.maxGeneralSpots;
+          currentOccupied = (currentStats.totalReserved || 0) + (currentStats.totalPaid || 0);
+        } else if (isGenderEvent && !isGeneralEvent) {
+          // Evento por gênero: usar capacidade específica do gênero
+          maxReservationsAllowed = gender === 'female' 
+            ? settings.maxClientFemale + settings.maxStaffFemale 
+            : settings.maxClientMale + settings.maxStaffMale;
+          const currentGenderReserved = gender === 'female' ? (currentStats.femaleReserved || 0) : (currentStats.maleReserved || 0);
+          const currentGenderPaid = gender === 'female' ? (currentStats.femalePaid || 0) : (currentStats.malePaid || 0);
+          currentOccupied = currentGenderReserved + currentGenderPaid;
+        } else {
+          this.logger.error(`Configuração inválida para evento ${eventId} no processamento da fila`);
+          return;
+        }
         
         // Calcular quantas vagas podem ser liberadas
-        const availableSlots = maxReservationsAllowed - totalGenderOccupied;
+        const availableSlots = maxReservationsAllowed - currentOccupied;
         
         if (availableSlots <= 0 || queueSnapshot.empty) {
           return;
@@ -711,6 +772,15 @@ export class ReservationService {
           
           // Criar nova reserva
           const expiresAt = this.calculateExpirationTime();
+          
+          // Calcular posição baseada no tipo de evento
+          let position: number;
+          if (isGeneralEvent) {
+            position = currentOccupied + i + 1;
+          } else {
+            position = currentOccupied + i + 1;
+          }
+          
           const reservationData: ReservationData = {
             email: data.email,
             eventId: data.eventId,
@@ -718,7 +788,7 @@ export class ReservationService {
             status: 'reserved',
             createdAt: new Date(),
             expiresAt,
-            position: totalGenderOccupied + i + 1
+            position
           };
           
           const reservationRef = db.collection('reservations').doc();
@@ -1107,7 +1177,14 @@ export class ReservationService {
       
       const db = this.firestoreService.firestore;
       
-      // Buscar todas as reservas do evento
+      // Buscar todas as reservas da reservationHistory para este evento
+      const reservationHistoryRef = db
+        .collection('reservationHistory')
+        .where('eventId', '==', eventId);
+      
+      const reservationHistorySnapshot = await reservationHistoryRef.get();
+      
+      // Buscar também as reservas ativas da collection reservations
       const reservationsRef = db
         .collection('reservations')
         .where('eventId', '==', eventId);
@@ -1122,25 +1199,88 @@ export class ReservationService {
       let femaleReserved = 0;
       let femalePaid = 0;
       
-      reservationsSnapshot.docs.forEach(doc => {
+      // Usar Set para evitar contar a mesma pessoa duas vezes
+      const processedEmails = new Set<string>();
+      
+      // Primeiro, coletar todos os status únicos para debug
+      const statusCounts = new Map<string, number>();
+      
+      // PRIORIZAR reservations (dados mais recentes) primeiro
+      reservationsSnapshot.docs.forEach((doc, index) => {
         const data = doc.data() as ReservationData;
+        const email = data.email;
+        
+        // Marcar este email como processado
+        processedEmails.add(email);
+        
+        // Contar tipos de status
+        const currentCount = statusCounts.get(data.status) || 0;
+        statusCounts.set(data.status, currentCount + 1);
         
         if (data.status === 'reserved') {
           totalReserved++;
           if (data.gender === 'male') {
             maleReserved++;
-          } else {
+          } else if (data.gender === 'female') {
             femaleReserved++;
           }
         } else if (data.status === 'paid') {
           totalPaid++;
           if (data.gender === 'male') {
             malePaid++;
-          } else {
+          } else if (data.gender === 'female') {
             femalePaid++;
           }
         }
       });
+      
+      // Depois processar reservationHistory, MAS apenas para emails NÃO processados
+      reservationHistorySnapshot.docs.forEach((doc, index) => {
+        const data = doc.data();
+        const email = data.email;
+        
+        // PULAR se este email já foi processado em reservations
+        if (processedEmails.has(email)) {
+          return;
+        }
+        
+        // Contar tipos de status
+        const currentCount = statusCounts.get(data.status) || 0;
+        statusCounts.set(data.status, currentCount + 1);
+        
+        // DEBUG: Log dos primeiros 5 documentos para ver a estrutura
+        if (index < 5) {
+          this.logger.log(`[DEBUG] reservationHistory doc ${index}:`, {
+            status: data.status,
+            gender: data.gender,
+            email: data.email,
+            allFields: Object.keys(data)
+          });
+        }
+        
+        // Mapeamento correto dos status da reservationHistory
+        if (data.status === 'Processando') {
+          // Status "Processando" = pessoas com reserva ativa
+          totalReserved++;
+          if (data.gender === 'male') {
+            maleReserved++;
+          } else if (data.gender === 'female') {
+            femaleReserved++;
+          }
+        } else if (data.status === 'Pago' || data.status === 'available') {
+          // Status "Pago" ou "available" = pessoas que completaram pagamento
+          totalPaid++;
+          if (data.gender === 'male') {
+            malePaid++;
+          } else if (data.gender === 'female') {
+            femalePaid++;
+          }
+        }
+      });
+      
+      // Log de todos os status encontrados
+      this.logger.log(`[DEBUG] Status encontrados:`, Object.fromEntries(statusCounts));
+      this.logger.log(`[DEBUG] Emails únicos processados: ${processedEmails.size}`);
       
       // Atualizar as estatísticas no banco
       const eventStatsRef = db.collection('eventStats').doc(eventId);
@@ -1162,7 +1302,11 @@ export class ReservationService {
         malePaid,
         femaleReserved,
         femalePaid,
-        totalInscritos: totalPaid
+        totalInscritos: totalPaid,
+        sources: {
+          reservationHistory: reservationHistorySnapshot.size,
+          reservations: reservationsSnapshot.size
+        }
       });
       
       // Invalidar cache após recalcular
@@ -1209,27 +1353,68 @@ export class ReservationService {
       const eventStatsRef = db.collection('eventStats').doc(eventId);
       const eventStatsDoc = await eventStatsRef.get();
       
-      const currentStats = eventStatsDoc.exists ? eventStatsDoc.data() : {
-        totalReserved: 0,
-        totalPaid: 0,
-        maleReserved: 0,
-        malePaid: 0,
-        femaleReserved: 0,
-        femalePaid: 0
-      };
+      let currentStats;
+      
+      if (!eventStatsDoc.exists || !eventStatsDoc.data()?.lastRecalculated) {
+        // Se não há estatísticas ou estão desatualizadas, recalcular
+        this.logger.log(`Estatísticas não encontradas para evento ${eventId}, recalculando...`);
+        await this.recalculateEventStats(eventId);
+        
+        // Buscar novamente após recalcular
+        const updatedEventStatsDoc = await eventStatsRef.get();
+        currentStats = updatedEventStatsDoc.exists ? updatedEventStatsDoc.data() : {
+          totalReserved: 0,
+          totalPaid: 0,
+          maleReserved: 0,
+          malePaid: 0,
+          femaleReserved: 0,
+          femalePaid: 0
+        };
+      } else {
+        currentStats = eventStatsDoc.data();
+      }
       
       // Buscar configurações do evento (pode vir do cache)
       const settings = await this.getEventSettings(eventId);
       
-      // Calcular vagas disponíveis
-      const maxMale = settings.maxClientMale + settings.maxStaffMale;
-      const maxFemale = settings.maxClientFemale + settings.maxStaffFemale;
-      const maxTotal = maxMale + maxFemale + settings.maxGeneralSpots;
+      // Verificar tipo de evento
+      const isGeneralEvent = settings.maxGeneralSpots > 0;
+      const isGenderEvent = settings.maxClientFemale > 0 || settings.maxClientMale > 0 || 
+                           settings.maxStaffFemale > 0 || settings.maxStaffMale > 0;
       
-      const occupiedMale = (currentStats.maleReserved || 0) + (currentStats.malePaid || 0);
-      const occupiedFemale = (currentStats.femaleReserved || 0) + (currentStats.femalePaid || 0);
-      const occupiedTotal = (currentStats.totalReserved || 0) + (currentStats.totalPaid || 0);
+      // Calcular vagas disponíveis baseado no tipo de evento
+      let maxTotal: number;
+      let vagasDisponiveis: any;
       
+      if (isGeneralEvent && !isGenderEvent) {
+        // Evento GERAL - todas as vagas são compartilhadas
+        maxTotal = settings.maxGeneralSpots;
+        const occupiedTotal = (currentStats.totalReserved || 0) + (currentStats.totalPaid || 0);
+        
+        vagasDisponiveis = {
+          male: Math.max(0, maxTotal - occupiedTotal), // Para evento geral, male e female têm as mesmas vagas disponíveis
+          female: Math.max(0, maxTotal - occupiedTotal),
+          total: Math.max(0, maxTotal - occupiedTotal)
+        };
+      } else if (isGenderEvent && !isGeneralEvent) {
+        // Evento POR GÊNERO - vagas separadas por gênero
+        const maxMale = settings.maxClientMale + settings.maxStaffMale;
+        const maxFemale = settings.maxClientFemale + settings.maxStaffFemale;
+        maxTotal = maxMale + maxFemale;
+        
+        const occupiedMale = (currentStats.maleReserved || 0) + (currentStats.malePaid || 0);
+        const occupiedFemale = (currentStats.femaleReserved || 0) + (currentStats.femalePaid || 0);
+        const occupiedTotal = (currentStats.totalReserved || 0) + (currentStats.totalPaid || 0);
+        
+        vagasDisponiveis = {
+          male: Math.max(0, maxMale - occupiedMale),
+          female: Math.max(0, maxFemale - occupiedFemale),
+          total: Math.max(0, maxTotal - occupiedTotal)
+        };
+      } else {
+        throw new Error(`Configuração inválida para evento ${eventId}: deve ter OU maxGeneralSpots > 0 OU campos por gênero > 0`);
+      }
+
       const result = {
         totalReserved: currentStats.totalReserved || 0,
         totalPaid: currentStats.totalPaid || 0,
@@ -1243,11 +1428,9 @@ export class ReservationService {
         maxGeneralSpots: settings.maxGeneralSpots,
         maxStaffFemale: settings.maxStaffFemale,
         maxStaffMale: settings.maxStaffMale,
-        vagasDisponiveis: {
-          male: Math.max(0, maxMale - occupiedMale),
-          female: Math.max(0, maxFemale - occupiedFemale),
-          total: Math.max(0, maxTotal - occupiedTotal)
-        }
+        vagasDisponiveis,
+        // Adicionar informação sobre o tipo de evento
+        eventType: isGeneralEvent ? 'general' : 'gender'
       };
       
       // Cachear por menos tempo (10 segundos) pois stats mudam frequentemente
@@ -1311,6 +1494,55 @@ export class ReservationService {
    */
   async cleanupLegacyData(): Promise<void> {
     return this.cleanupLegacyExpiredData();
+  }
+
+  /**
+   * Força o recálculo das estatísticas de um evento específico
+   */
+  async forceRecalculateEventStats(eventId: string): Promise<void> {
+    await this.recalculateEventStats(eventId);
+    this.logger.log(`✅ Estatísticas do evento ${eventId} recalculadas manualmente`);
+  }
+
+  /**
+   * Força o recálculo das estatísticas de todos os eventos
+   */
+  async forceRecalculateAllEventStats(): Promise<void> {
+    try {
+      const db = this.firestoreService.firestore;
+      
+      // Buscar todos os eventos únicos da reservationHistory
+      const reservationHistorySnapshot = await db.collection('reservationHistory').get();
+      const eventIds = new Set<string>();
+      
+      reservationHistorySnapshot.docs.forEach(doc => {
+        const eventId = doc.data().eventId;
+        if (eventId) {
+          eventIds.add(eventId);
+        }
+      });
+      
+      // Buscar também eventos da collection reservations
+      const reservationsSnapshot = await db.collection('reservations').get();
+      reservationsSnapshot.docs.forEach(doc => {
+        const eventId = doc.data().eventId;
+        if (eventId) {
+          eventIds.add(eventId);
+        }
+      });
+      
+      this.logger.log(`Recalculando estatísticas para ${eventIds.size} eventos...`);
+      
+      // Recalcular para cada evento
+      for (const eventId of eventIds) {
+        await this.recalculateEventStats(eventId);
+      }
+      
+      this.logger.log(`✅ Estatísticas recalculadas para todos os ${eventIds.size} eventos`);
+    } catch (error: any) {
+      this.logger.error('Erro ao recalcular estatísticas de todos os eventos:', error);
+      throw error;
+    }
   }
 
   /**
