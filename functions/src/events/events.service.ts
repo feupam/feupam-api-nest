@@ -244,22 +244,35 @@ export class EventsService {
         throw new BadRequestException('Usuário não encontrado ou gênero não especificado');
       }
 
-      // Verificar se já tem reserva para este evento
-      const userReservationsQuery = firestore
+      // Verificar se já tem reserva ATIVA para este evento (apenas na coleção reservations)
+      const userActiveReservationsQuery = firestore
+        .collection('reservations')
+        .where('email', '==', email)
+        .where('eventId', '==', dto.eventId);
+      const userActiveReservationsSnapshot = await userActiveReservationsQuery.get();
+
+      if (!userActiveReservationsSnapshot.empty) {
+        throw new BadRequestException('User already has an active reservation for this event');
+      }
+
+      // Verificar se já existe no reservationHistory e se está pago
+      const userHistoryQuery = firestore
         .collection('reservationHistory')
         .where('email', '==', email)
         .where('eventId', '==', dto.eventId);
-      const userReservationsSnapshot = await userReservationsQuery.get();
+      const userHistorySnapshot = await userHistoryQuery.get();
 
-      if (!userReservationsSnapshot.empty) {
-        const hasActiveReservation = userReservationsSnapshot.docs.some(doc => {
-          const reservation = doc.data();
-          return reservation.status !== 'cancelled';
-        });
-
-        if (hasActiveReservation) {
-          throw new BadRequestException('User already has a reservation for this event');
+      if (!userHistorySnapshot.empty) {
+        const historyDoc = userHistorySnapshot.docs[0];
+        const historyData = historyDoc.data();
+        
+        // Se já está pago, não pode fazer nova reserva
+        if (historyData.status === 'Pago') {
+          throw new BadRequestException('User already has a paid ticket for this event');
         }
+        
+        // Se não está pago, será sobrescrito quando a nova reserva for criada
+        console.log(`[DEBUG] Found unpaid history for ${email} on event ${dto.eventId}, will be overwritten`);
       }
 
       // Usar o novo sistema de reservas
@@ -303,8 +316,26 @@ export class EventsService {
           price = price * (1 - d.discount);
         }
 
-        // Criar reservationHistory (mantendo compatibilidade)
-        const reservationRef = firestore.collection('reservationHistory').doc();
+        // Criar ou sobrescrever reservationHistory (mantendo compatibilidade)
+        let reservationRef;
+        
+        // Se existe um registro não-pago, usar o mesmo documento
+        if (!userHistorySnapshot.empty) {
+          const existingDoc = userHistorySnapshot.docs[0];
+          const existingData = existingDoc.data();
+          
+          if (existingData.status !== 'Pago') {
+            reservationRef = existingDoc.ref;
+            console.log(`[DEBUG] Overwriting existing unpaid history for ${email} on event ${dto.eventId}`);
+          } else {
+            // Se já está pago, criar novo (isso não deveria acontecer devido à verificação anterior)
+            reservationRef = firestore.collection('reservationHistory').doc();
+          }
+        } else {
+          // Se não existe histórico, criar novo
+          reservationRef = firestore.collection('reservationHistory').doc();
+        }
+        
         batch.set(reservationRef, {
           spotId: newSpotRef.id,
           ticketKind: dto.ticket_kind,
@@ -435,11 +466,13 @@ export class EventsService {
     });
   }
   
- async getEventStats(eventId: string) {
-    const firestore = this.firestoreService.firestore;
-
+  /**
+   * Busca as estatísticas de um evento com dados detalhados
+   */
+  async getEventStats(eventId: string) {
     try {
       // Buscar dados do evento
+      const firestore = this.firestoreService.firestore;
       const eventRef = firestore.collection('events').doc(eventId);
       const eventDoc = await eventRef.get();
       
@@ -448,54 +481,36 @@ export class EventsService {
       }
 
       const eventData = eventDoc.data();
-
-      // Buscar estatísticas do evento
-      const eventStatsRef = firestore.collection('eventStats').doc(eventId);
-      const eventStatsDoc = await eventStatsRef.get();
       
-      const currentStats = eventStatsDoc.exists ? eventStatsDoc.data() : {
-        totalPaid: 0,
-        malePaid: 0,
-        femalePaid: 0,
-        totalReserved: 0,
-        maleReserved: 0,
-        femaleReserved: 0
-      };
-
-      // Calcular totais
-      const totalOccupied = (currentStats.totalPaid || 0) + (currentStats.totalReserved || 0);
+      // Buscar estatísticas detalhadas do ReservationService
+      const stats = await this.reservationService.getEventStats(eventId);
       
-      // Determinar limites máximos baseado no tipo do evento
-      let maxSpots = 0;
-      let limits = {};
+      // Determinar o tipo de evento e limites
+      let eventTypeInfo = {};
       
       if (eventData.eventType === EventType.GENERAL) {
-        maxSpots = parseInt(eventData.maxGeneralSpots) || 0;
-        limits = {
-          maxGeneralSpots: maxSpots,
+        eventTypeInfo = {
+          eventType: 'general',
+          maxGeneralSpots: stats.maxGeneralSpots,
           type: 'general'
         };
       } else if (eventData.eventType === EventType.GENDER_SPECIFIC) {
-        const maxClientMale = parseInt(eventData.maxClientMale) || 0;
-        const maxClientFemale = parseInt(eventData.maxClientFemale) || 0;
-        const maxStaffMale = parseInt(eventData.maxStaffMale) || 0;
-        const maxStaffFemale = parseInt(eventData.maxStaffFemale) || 0;
-        
-        maxSpots = maxClientMale + maxClientFemale + maxStaffMale + maxStaffFemale;
-        limits = {
-          maxClientMale,
-          maxClientFemale,
-          maxStaffMale,
-          maxStaffFemale,
-          maxMale: maxClientMale + maxStaffMale,
-          maxFemale: maxClientFemale + maxStaffFemale,
-          maxTotal: maxSpots,
+        eventTypeInfo = {
+          eventType: 'gender_specific',
+          maxClientMale: stats.maxClientMale,
+          maxClientFemale: stats.maxClientFemale,
+          maxStaffMale: stats.maxStaffMale,
+          maxStaffFemale: stats.maxStaffFemale,
+          maxMale: stats.maxClientMale + stats.maxStaffMale,
+          maxFemale: stats.maxClientFemale + stats.maxStaffFemale,
+          maxTotal: stats.maxClientMale + stats.maxClientFemale + stats.maxStaffMale + stats.maxStaffFemale + stats.maxGeneralSpots,
           type: 'gender_specific'
         };
       }
 
-      const availableSpots = Math.max(0, maxSpots - totalOccupied);
-      const occupancyPercentage = maxSpots > 0 ? Math.round((totalOccupied / maxSpots) * 100) : 0;
+      const totalOccupied = stats.totalReserved + stats.totalPaid;
+      const maxTotal = stats.maxClientMale + stats.maxClientFemale + stats.maxStaffMale + stats.maxStaffFemale + stats.maxGeneralSpots;
+      const occupancyPercentage = maxTotal > 0 ? Math.round((totalOccupied / maxTotal) * 100) : 0;
 
       return {
         eventId,
@@ -503,17 +518,19 @@ export class EventsService {
         eventType: eventData.eventType,
         enableQueueProcessing: eventData.enableQueueProcessing ?? false,
         statistics: {
-          totalPaid: currentStats.totalPaid || 0,
-          malePaid: currentStats.malePaid || 0,
-          femalePaid: currentStats.femalePaid || 0,
-          totalReserved: currentStats.totalReserved || 0,
-          maleReserved: currentStats.maleReserved || 0,
-          femaleReserved: currentStats.femaleReserved || 0,
+          totalPaid: stats.totalPaid,
+          totalInscritos: stats.totalInscritos, // Total de pessoas que completaram o pagamento
+          malePaid: stats.malePaid,
+          femalePaid: stats.femalePaid,
+          totalReserved: stats.totalReserved,
+          maleReserved: stats.maleReserved,
+          femaleReserved: stats.femaleReserved,
           totalOccupied,
-          availableSpots,
+          availableSpots: stats.vagasDisponiveis.total,
           occupancyPercentage
         },
-        limits,
+        limits: eventTypeInfo,
+        vagasDisponiveis: stats.vagasDisponiveis,
         updatedAt: new Date().toISOString()
       };
 
@@ -541,4 +558,47 @@ export class EventsService {
         return [];
       }
     }
+
+  /**
+   * Recalcula as estatísticas de um evento
+   */
+  async recalculateEventStats(eventId: string): Promise<void> {
+    return this.reservationService.recalculateEventStats(eventId);
+  }
+  
+  /**
+   * Limpa o cache de um evento específico
+   */
+  async clearEventCache(eventId: string): Promise<void> {
+    return this.reservationService.clearEventCache(eventId);
+  }
+  
+  /**
+   * Limpa todo o cache
+   */
+  async clearAllCache(): Promise<void> {
+    return this.reservationService.clearAllCache();
+  }
+  
+  /**
+   * Controle manual dos jobs de limpeza
+   */
+  async forceStartJobs(): Promise<void> {
+    return this.reservationService.forceStartJobs();
+  }
+  
+  async forceStopJobs(): Promise<void> {
+    return this.reservationService.forceStopJobs();
+  }
+  
+  async getJobsStatus(): Promise<any> {
+    return this.reservationService.getJobsStatus();
+  }
+  
+  /**
+   * Limpeza de dados antigos com status 'expired'
+   */
+  async cleanupLegacyData(): Promise<void> {
+    return this.reservationService.cleanupLegacyData();
+  }
   }

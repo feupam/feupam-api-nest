@@ -133,13 +133,20 @@ export class EventsController {
       eventId,
     };
     try {
+      console.log(`[DEBUG] Reserve spot called for email: ${decoded.email}, eventId: ${eventId}`);
       const reservation = await this.eventsService.reserveSpot(
         updatedDto,
         decoded.email,
       );
+      console.log(`[DEBUG] Reserve spot successful:`, reservation);
       return reservation;
     } catch (error) {
       const err = error as Error;
+      console.log(`[DEBUG] Reserve spot error:`, {
+        message: err.message,
+        stack: err.stack,
+        name: err.name
+      });
 
       if (err.message.includes('Spots') || err.message.includes('not found')) {
         throw new HttpException(err.message, HttpStatus.NOT_FOUND);
@@ -150,6 +157,7 @@ export class EventsController {
       } else if (err.message.includes('exceeds the limit')) {
         throw new HttpException(err.message, HttpStatus.BAD_REQUEST);
       } else {
+        console.log(`[DEBUG] Throwing internal server error for:`, err.message);
         throw new HttpException(err.message, HttpStatus.INTERNAL_SERVER_ERROR);
       }
     }
@@ -232,5 +240,130 @@ export class EventsController {
     const token = authHeader?.split(' ')[1];
     await this.authService.verifyToken(token);
     return this.eventsService.getWaitingList(id);
+  }
+
+  @Post(':id/recalculate-stats')
+  async recalculateEventStats(
+    @Param('id') eventId: string,
+    @Headers('Authorization') authHeader: string,
+  ) {
+    const token = authHeader?.split(' ')[1];
+    await this.authService.verifyToken(token);
+    
+    await this.eventsService.recalculateEventStats(eventId);
+    
+    return {
+      success: true,
+      message: `Estatísticas do evento ${eventId} recalculadas com sucesso.`,
+      timestamp: new Date().toISOString()
+    };
+  }
+
+  @Get(':id/stats-detailed')
+  async getDetailedEventStats(
+    @Param('id') eventId: string,
+    @Headers('Authorization') authHeader: string,
+  ) {
+    const token = authHeader?.split(' ')[1];
+    await this.authService.verifyToken(token);
+    
+    return this.eventsService.getEventStats(eventId);
+  }
+
+  @Post(':id/clear-cache')
+  async clearEventCache(
+    @Param('id') eventId: string,
+    @Headers('Authorization') authHeader: string,
+  ) {
+    const token = authHeader?.split(' ')[1];
+    await this.authService.verifyToken(token);
+    
+    await this.eventsService.clearEventCache(eventId);
+    
+    return {
+      success: true,
+      message: `Cache do evento ${eventId} limpo com sucesso.`,
+      timestamp: new Date().toISOString()
+    };
+  }
+
+  @Post('clear-all-cache')
+  async clearAllCache(
+    @Headers('Authorization') authHeader: string,
+  ) {
+    const token = authHeader?.split(' ')[1];
+    await this.authService.verifyToken(token);
+    
+    await this.eventsService.clearAllCache();
+    
+    return {
+      success: true,
+      message: 'Todo o cache foi limpo com sucesso.',
+      timestamp: new Date().toISOString()
+    };
+  }
+
+  @Post('jobs/start')
+  async forceStartJobs(
+    @Headers('Authorization') authHeader: string,
+  ) {
+    const token = authHeader?.split(' ')[1];
+    await this.authService.verifyToken(token);
+    
+    await this.eventsService.forceStartJobs();
+    
+    return {
+      success: true,
+      message: 'Jobs de limpeza foram iniciados forçadamente.',
+      timestamp: new Date().toISOString()
+    };
+  }
+
+  @Post('jobs/stop')
+  async forceStopJobs(
+    @Headers('Authorization') authHeader: string,
+  ) {
+    const token = authHeader?.split(' ')[1];
+    await this.authService.verifyToken(token);
+    
+    await this.eventsService.forceStopJobs();
+    
+    return {
+      success: true,
+      message: 'Jobs de limpeza foram parados forçadamente.',
+      timestamp: new Date().toISOString()
+    };
+  }
+
+  @Get('jobs/status')
+  async getJobsStatus(
+    @Headers('Authorization') authHeader: string,
+  ) {
+    const token = authHeader?.split(' ')[1];
+    await this.authService.verifyToken(token);
+    
+    const status = await this.eventsService.getJobsStatus();
+    
+    return {
+      success: true,
+      data: status,
+      timestamp: new Date().toISOString()
+    };
+  }
+
+  @Post('cleanup-legacy')
+  async cleanupLegacyData(
+    @Headers('Authorization') authHeader: string,
+  ) {
+    const token = authHeader?.split(' ')[1];
+    await this.authService.verifyToken(token);
+    
+    await this.eventsService.cleanupLegacyData();
+    
+    return {
+      success: true,
+      message: 'Limpeza de dados antigos (status "expired") executada com sucesso.',
+      timestamp: new Date().toISOString()
+    };
   }
 }

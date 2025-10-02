@@ -12,10 +12,15 @@ export class QueueProcessorService implements OnModuleInit {
   ) {}
 
   onModuleInit() {
-    this.startQueueProcessor();
+    this.logger.log('QueueProcessorService DESABILITADO - processamento de fila gerenciado pelo ReservationService');
+    // Desabilitado para evitar jobs duplicados - o ReservationService já gerencia tudo
   }
 
   private startQueueProcessor(): void {
+    if (this.intervalId) {
+      return; // Já está rodando
+    }
+    
     this.logger.log('Iniciando processador de fila...');
     
     this.intervalId = setInterval(async () => {
@@ -25,6 +30,18 @@ export class QueueProcessorService implements OnModuleInit {
         this.logger.error(`Erro no processamento da fila: ${error.message}`);
       }
     }, this.PROCESSING_INTERVAL_MS);
+  }
+
+  public startProcessor(): void {
+    this.startQueueProcessor();
+  }
+
+  public stopProcessor(): void {
+    if (this.intervalId) {
+      clearInterval(this.intervalId);
+      this.intervalId = null;
+      this.logger.log('Processador de fila parado');
+    }
   }
 
   private async processAllQueues(): Promise<void> {

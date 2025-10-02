@@ -43,12 +43,12 @@ export class TicketService {
         console.log(`[DEBUG] No reservation found, calling reserveSpot...`);
         const result = await this.reservationService.reserveSpot(email, eventId, gender);
         console.log(`[DEBUG] reserveSpot result:`, result);
-        return result;
-      } else if (reservationStatus.status === 'expired') {
-        // Se expirou, tentar criar uma nova
-        console.log(`[DEBUG] Reservation expired, calling reserveSpot...`);
-        const result = await this.reservationService.reserveSpot(email, eventId, gender);
-        console.log(`[DEBUG] reserveSpot result:`, result);
+        
+        // Verificar se a reserva foi criada checando o banco novamente
+        console.log(`[DEBUG] Verifying reservation was created...`);
+        const verifyStatus = await this.reservationService.getReservationStatus(email, eventId);
+        console.log(`[DEBUG] Verification status:`, verifyStatus);
+        
         return result;
       } else if (reservationStatus.status === 'reserved') {
         // Tem uma reserva válida, pode proceder com o pagamento
@@ -104,7 +104,7 @@ export class TicketService {
     email: string,
     eventId: string,
   ): Promise<{
-    status: 'reserved' | 'expired' | 'queued' | 'waiting-list';
+    status: 'reserved' | 'queued' | 'waiting-list' | 'Pago';
     expiresAt: string;
     currentTime: string;
     remainingMinutes: number;
