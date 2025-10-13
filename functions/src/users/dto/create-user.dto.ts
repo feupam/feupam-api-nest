@@ -133,4 +133,53 @@ export class CreateUserDto {
   @IsBoolean()
   @IsNotEmpty()
   lgpdConsentAccepted: boolean;
+
+  // Novos campos para o acampamento
+  @IsString()
+  @IsOptional()
+  nomeMae?: string;
+
+  @IsString()
+  @IsOptional()
+  nomePai?: string;
+
+  @IsString()
+  @IsOptional()
+  contato2?: string;
+
+  @IsString()
+  @IsOptional()
+  contato3?: string;
+
+  @IsString()
+  @IsOptional()
+  alergiaAlimentar?: string;
+
+  @IsString()
+  @IsOptional()
+  alergiaPicadaInsetos?: string;
+
+  @IsString()
+  @IsOptional()
+  outrasAlergias?: string;
+
+  @IsString()
+  @IsOptional()
+  condicoesSaude?: string;
+
+  @IsString()
+  @IsOptional()
+  medicamentoContinuado?: string;
+
+  @IsBoolean()
+  @IsOptional()
+  podeAtisFisica?: boolean;
+
+  @IsString()
+  @IsOptional()
+  transtornosDesenvolvimento?: string;
+
+  @IsBoolean()
+  @IsOptional()
+  autorizaFotosVideos?: boolean;
 }

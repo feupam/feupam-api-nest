@@ -6,7 +6,7 @@ export interface ReservationData {
   email: string;
   eventId: string;
   gender: 'male' | 'female';
-  status: 'pending' | 'reserved' | 'paid';
+  status: 'pending' | 'reserved' | 'Pago';
   createdAt: any; // Firestore Timestamp
   expiresAt: any; // Firestore Timestamp
   position?: number;
@@ -390,7 +390,7 @@ export class ReservationService {
           .collection('reservations')
           .where('email', '==', email)
           .where('eventId', '==', eventId)
-          .where('status', 'in', ['reserved', 'paid']);
+          .where('status', 'in', ['reserved', 'Pago']);
         
         const existingReservationSnapshot = await transaction.get(existingReservationRef);
         
@@ -423,7 +423,7 @@ export class ReservationService {
         // Verificar se já tem reserva/pagamento
         if (!existingReservationSnapshot.empty) {
           const existing = existingReservationSnapshot.docs[0].data() as ReservationData;
-          if (existing.status === 'paid') {
+          if (existing.status === 'Pago') {
             return {
               status: 'already-paid' as const,
               message: 'Você já pagou a sua inscrição.'
@@ -606,7 +606,7 @@ export class ReservationService {
   }
 
   /**
-   * Confirma o pagamento e converte reserva em paid
+   * Confirma o pagamento e converte reserva em Pago
    */
   async confirmPayment(email: string, eventId: string): Promise<void> {
     const db = this.firestoreService.firestore;
@@ -637,9 +637,9 @@ export class ReservationService {
         throw new Error('Reserva expirada');
       }
 
-      // Atualizar status para paid
+      // Atualizar status para Pago
       transaction.update(reservationDoc.ref, {
-        status: 'paid',
+        status: 'Pago',
         paidAt: FieldValue.serverTimestamp()
       });
 
@@ -818,7 +818,7 @@ export class ReservationService {
    * Obtém o status da reserva de um usuário (com otimização)
    */
   async getReservationStatus(email: string, eventId: string): Promise<{
-    status: 'reserved' | 'queued' | 'waiting-list' | 'paid' | 'none';
+    status: 'reserved' | 'queued' | 'waiting-list' | 'Pago' | 'none';
     expiresAt?: Date;
     position?: number;
     remainingMinutes?: number;
@@ -831,7 +831,7 @@ export class ReservationService {
         .collection('reservations')
         .where('email', '==', email)
         .where('eventId', '==', eventId)
-        .where('status', 'in', ['reserved', 'paid']);
+        .where('status', 'in', ['reserved', 'Pago']);
       
       const reservationSnapshot = await reservationRef.get();
       
@@ -843,8 +843,8 @@ export class ReservationService {
           this.ensureJobsActive();
         }
         
-        if (reservation.status === 'paid') {
-          return { status: 'paid' };
+        if (reservation.status === 'Pago') {
+          return { status: 'Pago' };
         }
         
         const now = new Date();
@@ -1224,7 +1224,7 @@ export class ReservationService {
           } else if (data.gender === 'female') {
             femaleReserved++;
           }
-        } else if (data.status === 'paid') {
+        } else if (data.status === 'Pago') {
           totalPaid++;
           if (data.gender === 'male') {
             malePaid++;
@@ -1554,7 +1554,7 @@ export class ReservationService {
     const reservationRef = db
       .collection('reservations')
       .where('email', '==', email)
-      .where('status', 'in', ['reserved', 'paid']);
+      .where('status', 'in', ['reserved', 'Pago']);
     
     const snapshot = await reservationRef.get();
     

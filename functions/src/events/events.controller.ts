@@ -23,6 +23,7 @@ import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
 import { ReserveSpotDto } from './dto/reserve-spot.dto';
 import { AuthService } from '../firebase/auth.service';
+import 'multer';
 
 interface UploadedEventFiles {
   image_capa?: Express.Multer.File[];

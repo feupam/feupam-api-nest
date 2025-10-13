@@ -239,121 +239,97 @@ export class UsersService {
     const offset = (page - 1) * limit;
 
     try {
-      // Buscar todos os usuários com paginação
-      const usersQuery = firestore
-        .collection('users')
-        .orderBy('createdAt', 'desc')
-        .offset(offset)
-        .limit(limit);
+      // Buscar TODAS as reservas da reservationHistory primeiro (sem orderBy para evitar índice)
+      let reservationsQuery: any = firestore.collection('reservationHistory');
 
-      const usersSnapshot = await usersQuery.get();
-      const users = usersSnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as any[];
+      // Se eventId foi fornecido, filtrar por evento
+      if (eventId) {
+        reservationsQuery = reservationsQuery.where('eventId', '==', eventId);
+      }
 
-      // Para cada usuário, buscar suas reservas na reservationHistory
+      // Buscar todas as reservas sem orderBy
+      const reservationsSnapshot = await reservationsQuery.get();
+      
+      // Ordenar em memória e aplicar paginação
+      const paginatedReservations = reservationsSnapshot.docs
+        .map((doc: any) => ({ doc, data: doc.data() }))
+        .sort((a: any, b: any) => {
+          // Ordenar por createdAt descendente (mais recente primeiro)
+          const aTime = a.data.createdAt?.toDate ? a.data.createdAt.toDate().getTime() : 
+                       (a.data.createdAt?.getTime ? a.data.createdAt.getTime() : 0);
+          const bTime = b.data.createdAt?.toDate ? b.data.createdAt.toDate().getTime() : 
+                       (b.data.createdAt?.getTime ? b.data.createdAt.getTime() : 0);
+          return bTime - aTime;
+        })
+        .slice(offset, offset + limit);
+
+      // Para cada reserva, buscar os dados completos do usuário
       const usersWithReservations = await Promise.all(
-        users.map(async (user) => {
-          // Query para reservas do usuário baseado no email
-          let reservationsQuery = firestore
-            .collection('reservationHistory')
-            .where('email', '==', user.email); // Campo email comum entre as tabelas
+        paginatedReservations.map(async (reservationItem: any) => {
+          const reservationDoc = reservationItem.doc;
+          const reservationData = reservationDoc.data();
+          
+          // Buscar dados completos do usuário pelo email
+          const userQuery = firestore
+            .collection('users')
+            .where('email', '==', reservationData.email)
+            .limit(1);
 
-          // Se eventId foi fornecido, filtrar por evento
-          if (eventId) {
-            reservationsQuery = reservationsQuery.where('eventId', '==', eventId);
+          const userSnapshot = await userQuery.get();
+          
+          // Dados do usuário (se encontrado, senão usar dados básicos)
+          let userData = {
+            email: reservationData.email,
+            name: 'Usuário não encontrado',
+            // Dados básicos se usuário não for encontrado
+          };
+
+          if (!userSnapshot.empty) {
+            const userDoc = userSnapshot.docs[0];
+            userData = {
+              id: userDoc.id,
+              ...userDoc.data(),
+            } as any;
           }
 
-          const reservationsSnapshot = await reservationsQuery.get();
-          const reservations = reservationsSnapshot.docs.map((doc) => {
-            const data = doc.data();
-            return {
-              id: doc.id,
-              // Todos os campos da reserva
-              email: data.email,
-              eventId: data.eventId,
-              status: data.status,
-              price: data.price,
-              ticketKind: data.ticketKind,
-              userType: data.userType,
-              gender: data.gender,
-              spotId: data.spotId,
-              createdAt: data.createdAt,
-              updatedAt: data.updatedAt,
-              charges: data.charges || [], // Array de charges com pagamentos
-              event: data.event, // Nome do evento (se disponível)
-              chargeId: data.chargeId, // ID das transações
-              // Incluir todos os outros campos que possam existir
-              ...data
-            };
-          });
+          // Dados completos da reserva
+          const reservation = {
+            id: reservationDoc.id,
+            email: reservationData.email,
+            eventId: reservationData.eventId,
+            status: reservationData.status,
+            price: reservationData.price,
+            ticketKind: reservationData.ticketKind,
+            userType: reservationData.userType,
+            gender: reservationData.gender,
+            spotId: reservationData.spotId,
+            createdAt: reservationData.createdAt,
+            updatedAt: reservationData.updatedAt,
+            charges: reservationData.charges || [],
+            event: reservationData.event,
+            chargeId: reservationData.chargeId,
+            // Incluir todos os outros campos da reserva
+            ...reservationData
+          };
 
           return {
             // Todos os dados do usuário
-            user: {
-              id: user.id,
-              email: user.email,
-              name: user.name,
-              phone: user.phone,
-              cpf: user.cpf,
-              church: user.church,
-              pastor: user.pastor,
-              data_nasc: user.data_nasc,
-              idade: user.idade,
-              responsavel: user.responsavel,
-              documento_responsavel: user.documento_responsavel,
-              ddd_responsavel: user.ddd_responsavel,
-              cellphone_responsavel: user.cellphone_responsavel,
-              alergia: user.alergia,
-              medicamento: user.medicamento,
-              info_add: user.info_add,
-              userType: user.userType,
-              gender: user.gender,
-              address: user.address,
-              complemento: user.complemento,
-              cep: user.cep,
-              cidade: user.cidade,
-              estado: user.estado,
-              ddd: user.ddd,
-              cellphone: user.cellphone,
-              lgpdConsentAccepted: user.lgpdConsentAccepted,
-              lgpdConsent: user.lgpdConsent, // Objeto com accepted, acceptedAt, version
-              isStaff: user.isStaff,
-              wantShirt: user.wantShirt,
-              staffPassword: user.staffPassword,
-              senha: user.senha,
-              discount: user.discount, // Array com descontos por evento
-              createdAt: user.createdAt,
-              updatedAt: user.updatedAt,
-              // Incluir todos os outros campos que possam existir no usuário
-              ...user
-            },
-            reservations: reservations,
-            totalReservations: reservations.length,
-            // Calcular valores totais se houver reservas
-            totalAmount: reservations.reduce((sum, res) => {
-              const charges = res.charges || [];
-              const chargeAmount = charges.reduce((chargeSum: number, charge: any) => 
-                chargeSum + (charge.amount || 0), 0);
-              return sum + chargeAmount;
-            }, 0),
+            user: userData,
+            reservation: reservation,
+            // Calcular valor total se houver charges
+            totalAmount: Array.isArray(reservation.charges) 
+              ? reservation.charges.reduce((sum: number, charge: any) => sum + (charge.amount || 0), 0)
+              : 0,
           };
         }),
       );
-
-      // Se eventId foi especificado, filtrar apenas usuários que têm reservas para esse evento
-      const filteredUsers = eventId 
-        ? usersWithReservations.filter(item => item.reservations.length > 0)
-        : usersWithReservations;
 
       return {
         page,
         limit,
         eventId: eventId || 'all',
-        totalUsers: filteredUsers.length,
-        totalReservations: filteredUsers.reduce((sum, user) => sum + user.totalReservations, 0),
-        data: filteredUsers,
+        totalReservations: usersWithReservations.length,
+        data: usersWithReservations,
       };
     } catch (error: any) {
       throw new BadRequestException(

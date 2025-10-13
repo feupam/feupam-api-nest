@@ -58,7 +58,7 @@ export class TicketService {
           expiresAt: reservationStatus.expiresAt,
           remainingMinutes: reservationStatus.remainingMinutes
         };
-      } else if (reservationStatus.status === 'paid') {
+      } else if (reservationStatus.status === 'Pago') {
         return {
           status: 'already-paid',
           message: 'Você já pagou a sua inscrição.'

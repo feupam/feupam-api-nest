@@ -28,6 +28,10 @@ export class CreateEventDto {
   @IsNotEmpty()
   date: string;
 
+  @IsISO8601()
+  @IsNotEmpty()
+  range_date: string;
+
   @IsString()
   @IsNotEmpty()
   location: string;
@@ -63,6 +67,16 @@ export class CreateEventDto {
   @IsISO8601()
   @IsNotEmpty()
   endDate: string;
+
+  @Transform(({ value }) => parseInt(value))
+  @IsNumber()
+  @IsNotEmpty()
+  idadeMinima: number;
+
+  @Transform(({ value }) => parseInt(value))
+  @IsNumber()
+  @IsOptional()
+  idadeMaxima?: number;
 
   @IsOptional()
   @IsString()

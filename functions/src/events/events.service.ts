@@ -12,6 +12,7 @@ import { TicketStatus, SpotStatus } from './dto/enum-spot';
 import { ReserveSpotDto } from './dto/reserve-spot.dto';
 import { Timestamp } from 'firebase-admin/firestore';
 import * as moment from 'moment-timezone';
+import 'multer';
 
 @Injectable()
 export class EventsService {
@@ -141,13 +142,16 @@ export class EventsService {
         description: data.description,
         date: data.date,
         date_range: data.date_range,
+        range_date: data.range_date,
         location: data.location,
         startDate: data.startDate,
         endDate: data.endDate,
         price: data.price,
         isOpen,
-         image_capa: data.image_capa || null,
-         logo_evento: data.logo_evento || null,
+        image_capa: data.image_capa || null,
+        logo_evento: data.logo_evento || null,
+        idadeMinima: data.idadeMinima,
+        idadeMaxima: data.idadeMaxima,
       };
     });
 
@@ -242,6 +246,26 @@ export class EventsService {
 
       if (!userData || !['male', 'female'].includes(userData.gender)) {
         throw new BadRequestException('Usuário não encontrado ou gênero não especificado');
+      }
+
+      // Buscar dados do evento para validar idade
+      const eventDoc = await firestore.collection('events').doc(dto.eventId).get();
+      if (!eventDoc.exists) {
+        throw new BadRequestException('Evento não encontrado');
+      }
+      const eventData = eventDoc.data();
+
+      // Validar idade do usuário
+      if (userData.idade !== undefined && eventData?.idadeMinima !== undefined) {
+        const userAge = userData.idade;
+        
+        if (userAge < eventData.idadeMinima) {
+          throw new BadRequestException(`Idade mínima para este evento é ${eventData.idadeMinima} anos. Sua idade: ${userAge} anos.`);
+        }
+        
+        if (eventData.idadeMaxima !== undefined && userAge > eventData.idadeMaxima) {
+          throw new BadRequestException(`Idade máxima para este evento é ${eventData.idadeMaxima} anos. Sua idade: ${userAge} anos.`);
+        }
       }
 
       // Verificar se já tem reserva ATIVA para este evento (apenas na coleção reservations)

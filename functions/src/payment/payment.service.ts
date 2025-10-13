@@ -49,7 +49,7 @@ export class PaymentService {
       
       // Verificar se existe reserva ativa para esse evento específico
       const reservationStatus = await this.reservationService.getReservationStatus(email, eventId);
-      if (reservationStatus.status !== 'reserved' && reservationStatus.status !== 'paid') {
+      if (reservationStatus.status !== 'reserved' && reservationStatus.status !== 'Pago') {
         throw new Error('Sua reserva expirou. Por favor, tente novamente.');
       }
       
@@ -367,9 +367,9 @@ export class PaymentService {
 
       // ===== TODAS AS ESCRITAS APÓS TODAS AS LEITURAS =====
 
-      // 4. Atualizar status da reserva para 'paid'
+      // 4. Atualizar status da reserva para 'Pago'
       transaction.update(reservationDoc.ref, {
-        status: 'paid',
+        status: 'Pago',
         paidAt: FieldValue.serverTimestamp()
       });
 
