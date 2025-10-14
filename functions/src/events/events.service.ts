@@ -447,10 +447,13 @@ export class EventsService {
 
 
   
-    // Verifica vagas disponíveis
+    // Verifica vagas disponíveis (para debug)
     const spotsQuery = firestore.collection('spots').where('eventId', '==', eventId);
     const spotsSnapshot = await spotsQuery.get();
-    const reservedSpots = spotsSnapshot.docs.filter(doc => doc.data().status === 'reserved').length;
+    const occupiedSpots = spotsSnapshot.docs.filter(doc => {
+      const status = doc.data().status;
+      return status === 'reserved' || status === 'Pago';
+    }).length;
   
     let maxSpots = 0;
     if (eventData.eventType === EventType.GENERAL) {
@@ -462,8 +465,24 @@ export class EventsService {
         eventData.maxStaffMale +
         eventData.maxStaffFemale;
     }
+
+    // Log para debug
+    console.log('DEBUG getInstallments:', {
+      eventId,
+      eventType: eventData.eventType,
+      maxSpots,
+      totalSpots: spotsSnapshot.size,
+      occupiedSpots,
+      availableSpots: maxSpots - occupiedSpots,
+      spotStatuses: spotsSnapshot.docs.map(doc => ({
+        id: doc.id,
+        status: doc.data().status
+      }))
+    });
   
-    if (reservedSpots >= maxSpots) throw new BadRequestException('No spots available');
+    // Removida validação de vagas - o endpoint de installments não deve bloquear
+    // A validação de vagas deve ser feita apenas no momento da reserva
+    // if (occupiedSpots >= maxSpots) throw new BadRequestException('No spots available');
   
     const installmentRates = [
       { installment: 1, rate: 4.38 },

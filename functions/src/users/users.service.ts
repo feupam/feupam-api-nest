@@ -305,7 +305,6 @@ export class UsersService {
             spotId: reservationData.spotId,
             createdAt: reservationData.createdAt,
             updatedAt: reservationData.updatedAt,
-            event: reservationData.event,
             chargeId: reservationData.chargeId,
             // Incluir todos os outros campos da reserva
             ...reservationData
