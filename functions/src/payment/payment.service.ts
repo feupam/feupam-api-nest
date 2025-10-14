@@ -300,7 +300,7 @@ export class PaymentService {
       //    - Status da reserva principal (nível superior)
       //    - Status do charge (dentro do array)
       transaction.update(historyDoc.ref, {
-        charges: updatedCharges,
+        chargeId: updatedCharges,
         status: status, // ← Status da reserva principal
         updatedAt: new Date(),
       });
@@ -380,7 +380,7 @@ export class PaymentService {
       updatedCharges.push(charge);
 
       transaction.update(historyDoc.ref, {
-        charges: updatedCharges,
+        chargeId: updatedCharges,
         status: status,
         updatedAt: new Date(),
       });

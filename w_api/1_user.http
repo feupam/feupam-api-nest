@@ -1,7 +1,7 @@
 @base_url=http://localhost:3000
 @email=test1@test.com
 @eventId=federa
-@token=eyJhbGciOiJSUzI1NiIsImtpZCI6IjY3ZDhjZWU0ZTYwYmYwMzYxNmM1ODg4NTJiMjA5MTZkNjRjMzRmYmEiLCJ0eXAiOiJKV1QifQ.eyJuYW1lIjoiQXJpZWxhIFN0ZWZhbmluaSIsInBpY3R1cmUiOiJodHRwczovL2xoMy5nb29nbGV1c2VyY29udGVudC5jb20vYS9BQ2c4b2NMTF9GNjIwTWw3ZENzNUVwdVFDLWhUUkZQVzh6VGVoVXdRNDlWQWgzc3p0bHRyZ2lnVD1zOTYtYyIsImlzcyI6Imh0dHBzOi8vc2VjdXJldG9rZW4uZ29vZ2xlLmNvbS9mZWRlcmEtYXBpIiwiYXVkIjoiZmVkZXJhLWFwaSIsImF1dGhfdGltZSI6MTc0NjY1ODcxNiwidXNlcl9pZCI6IkxtSFU0amlCRU5NZHQ2UUtyR29HMW9tdVdDRDIiLCJzdWIiOiJMbUhVNGppQkVOTWR0NlFLckdvRzFvbXVXQ0QyIiwiaWF0IjoxNzQ3MDk0NjQwLCJleHAiOjE3NDcwOTgyNDAsImVtYWlsIjoiYXJpZWxhYWFhYTFAZ21haWwuY29tIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsImZpcmViYXNlIjp7ImlkZW50aXRpZXMiOnsiZ29vZ2xlLmNvbSI6WyIxMTA5MDg5Nzc5MTY0MTc2Mjc1MDgiXSwiZW1haWwiOlsiYXJpZWxhYWFhYTFAZ21haWwuY29tIl19LCJzaWduX2luX3Byb3ZpZGVyIjoiZ29vZ2xlLmNvbSJ9fQ.VUCexYe_5PuHwF1HyAdL_FpVdCHdWHbyiV3kGW6ZnlJPVAaAifmchKrDrSMjtEPRQ-jhtYXUi9J_hcyNVtLS7xVaInN5TI9-Wcn4MuZrLAQT_GTW6k66a-AZZwaHXj5_yl6VSID_moR3RGGk4WdGQHZr5JLpe8O02NmiYD8PKEYiRXbQiF7Yoi2M2Hn6Zq6Qb18tT6KqeTR3c7dx_Ri51Os4OsPixYfvBECqujC_KeDv_-cOwp0AkED5wKVPmpTB1Kx6-7rl29CeSqH-aO93pU8I2ZvF8ldHc0ymONS_y_YRdk82WRLQyhWcH9J6p0oeJChC9XHTRS_7TwA4qIUeSg
+@token=eyJhbGciOiJSUzI1NiIsImtpZCI6ImE1YTAwNWU5N2NiMWU0MjczMDBlNTJjZGQ1MGYwYjM2Y2Q4MDYyOWIiLCJ0eXAiOiJKV1QifQ.eyJuYW1lIjoiQXJpZWxhIFN0ZWZhbmluaSIsInBpY3R1cmUiOiJodHRwczovL2xoMy5nb29nbGV1c2VyY29udGVudC5jb20vYS9BQ2c4b2NMTF9GNjIwTWw3ZENzNUVwdVFDLWhUUkZQVzh6VGVoVXdRNDlWQWgzc3p0bHRyZ2lnVD1zOTYtYyIsImlzcyI6Imh0dHBzOi8vc2VjdXJldG9rZW4uZ29vZ2xlLmNvbS9mZWRlcmEtYXBpIiwiYXVkIjoiZmVkZXJhLWFwaSIsImF1dGhfdGltZSI6MTc2MDM5MDQyOSwidXNlcl9pZCI6IkxtSFU0amlCRU5NZHQ2UUtyR29HMW9tdVdDRDIiLCJzdWIiOiJMbUhVNGppQkVOTWR0NlFLckdvRzFvbXVXQ0QyIiwiaWF0IjoxNzYwMzkwNDI5LCJleHAiOjE3NjAzOTQwMjksImVtYWlsIjoiYXJpZWxhYWFhYTFAZ21haWwuY29tIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsImZpcmViYXNlIjp7ImlkZW50aXRpZXMiOnsiZ29vZ2xlLmNvbSI6WyIxMTA5MDg5Nzc5MTY0MTc2Mjc1MDgiXSwiZW1haWwiOlsiYXJpZWxhYWFhYTFAZ21haWwuY29tIl19LCJzaWduX2luX3Byb3ZpZGVyIjoiZ29vZ2xlLmNvbSJ9fQ.JciO9UWRtwc7EO4dtj1arKVtJb461i_jT5L1UaSAar0X8vYheM2FvZMCuxeb1tTKPkFJ2GkJsQfH8fod4c4BoTxnjni6BiUCux-Jbh2yIGlayR6KinqVx0rZaXPn-92POhukYt38vkJ9ukkixw_GYIVNx-ydv1cW41-kRYq_QZqLS17QvYKEBywBCaHHHjKab_S3NzcV6MRtN9wZnYWXLkvzsLKrHIHuKeI1bvPO6gyMH-Dbfh7Zye837s9qa2ijh7iHGGwAPBqNGk5FJi1Nl6jop6LjlTa9ddKvi-_CNVoSkEjx34L_Prz39MrZVd3pR4btx688iPz7vZOLwewOGg
 
 ###
 # @name createUser
@@ -10,32 +10,32 @@ Content-Type: application/json
 Authorization: Bearer {{token}}
 
 {
+  "name": "Ana Costa",
+  "church": "Igreja Metodista",
+  "pastor": "Pastor Roberto",
+  "data_nasc": "2012-07-20",
+  "idade": 13,
+  "responsavel": "Paula Costa",
+  "documento_responsavel": "987.654.321-00",
+  "ddd_responsavel": "21",
+  "cellphone_responsavel": "987654321",
+  "alergia": "Sem alergias",
+  "medicamento": "Não usa medicamentos",
+  "info_add": "Primeira vez em acampamento",
+  "cpf": "98765432100",
   "userType": "client",
-  "name": "Ariela Stefanini ",
-  "church": "IPI Alpinópolis",
-  "pastor": "Vitor",
-  "ddd": "35",
-  "cellphone": "99818536351",
-  "gender": "male",
-  "cep": "37.940-000",
-  "cpf": "08850515995",
-  "data_nasc":"17/03/1993",
-  "idade": 18,
-  "responsavel": "Paulo",
-  "documento_responsavel": "123",
-  "ddd_responsavel": "35",
-  "cellphone_responsavel": "999095569",
-  "address": "Rua Antonio Divino de Morais",
-  "complemento": "",
-  "cidade": "Alpinopolis",
-  "estado": "MG",
-  "alergia": "Não",
-  "medicamento":"Não",
-  "info_add": "Nao",
+  "gender": "female",
+  "address": "Av. Principal, 456",
+  "cep": "20000-000",
+  "cidade": "Rio de Janeiro",
+  "estado": "RJ",
+  "ddd": "21",
+  "cellphone": "999888777",
   "lgpdConsentAccepted": true,
-  "wantShirt": true,
-  "isStaff": true,
-  "staffPassword": "efesios1"
+  "nomeMae": "Paula Costa",
+  "contato2": "21988887777",
+  "autorizaFotosVideos": true,
+  "podeAtisFisica": true
 }
 
 ###
@@ -54,12 +54,35 @@ Authorization: Bearer
 # @name updateUser
 PATCH  {{base_url}}/users
 Content-Type: application/json
-Authorization: Bearer  
+Authorization: Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6ImE1YTAwNWU5N2NiMWU0MjczMDBlNTJjZGQ1MGYwYjM2Y2Q4MDYyOWIiLCJ0eXAiOiJKV1QifQ.eyJuYW1lIjoiQXJpZWxhIFN0ZWZhbmluaSIsInBpY3R1cmUiOiJodHRwczovL2xoMy5nb29nbGV1c2VyY29udGVudC5jb20vYS9BQ2c4b2NMTF9GNjIwTWw3ZENzNUVwdVFDLWhUUkZQVzh6VGVoVXdRNDlWQWgzc3p0bHRyZ2lnVD1zOTYtYyIsImlzcyI6Imh0dHBzOi8vc2VjdXJldG9rZW4uZ29vZ2xlLmNvbS9mZWRlcmEtYXBpIiwiYXVkIjoiZmVkZXJhLWFwaSIsImF1dGhfdGltZSI6MTc2MDM5MDQyOSwidXNlcl9pZCI6IkxtSFU0amlCRU5NZHQ2UUtyR29HMW9tdVdDRDIiLCJzdWIiOiJMbUhVNGppQkVOTWR0NlFLckdvRzFvbXVXQ0QyIiwiaWF0IjoxNzYwMzkwNDI5LCJleHAiOjE3NjAzOTQwMjksImVtYWlsIjoiYXJpZWxhYWFhYTFAZ21haWwuY29tIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsImZpcmViYXNlIjp7ImlkZW50aXRpZXMiOnsiZ29vZ2xlLmNvbSI6WyIxMTA5MDg5Nzc5MTY0MTc2Mjc1MDgiXSwiZW1haWwiOlsiYXJpZWxhYWFhYTFAZ21haWwuY29tIl19LCJzaWduX2luX3Byb3ZpZGVyIjoiZ29vZ2xlLmNvbSJ9fQ.JciO9UWRtwc7EO4dtj1arKVtJb461i_jT5L1UaSAar0X8vYheM2FvZMCuxeb1tTKPkFJ2GkJsQfH8fod4c4BoTxnjni6BiUCux-Jbh2yIGlayR6KinqVx0rZaXPn-92POhukYt38vkJ9ukkixw_GYIVNx-ydv1cW41-kRYq_QZqLS17QvYKEBywBCaHHHjKab_S3NzcV6MRtN9wZnYWXLkvzsLKrHIHuKeI1bvPO6gyMH-Dbfh7Zye837s9qa2ijh7iHGGwAPBqNGk5FJi1Nl6jop6LjlTa9ddKvi-_CNVoSkEjx34L_Prz39MrZVd3pR4btx688iPz7vZOLwewOGg
 
 {
-    "name": "Updated Name",
-    "email": "costumer@costumer.br",
-    "gender": "female"
+  "name": "Ana Costa",
+  "church": "Igreja Metodista",
+  "pastor": "Pastor Roberto",
+  "data_nasc": "2012-07-20",
+  "idade": 13,
+  "responsavel": "Paula Costa",
+  "documento_responsavel": "987.654.321-00",
+  "ddd_responsavel": "21",
+  "cellphone_responsavel": "987654321",
+  "alergia": "Sem alergias",
+  "medicamento": "Não usa medicamentos",
+  "info_add": "Primeira vez em acampamento",
+  "cpf": "98765432100",
+  "userType": "client",
+  "gender": "female",
+  "address": "Av. Principal, 456",
+  "cep": "20000-000",
+  "cidade": "Rio de Janeiro",
+  "estado": "RJ",
+  "ddd": "21",
+  "cellphone": "999888777",
+  "lgpdConsentAccepted": true,
+  "nomeMae": "Paula Costa",
+  "contato2": "21988887777",
+  "autorizaFotosVideos": true,
+  "podeAtisFisica": true
 }
 
 ###

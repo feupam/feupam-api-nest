@@ -55,7 +55,7 @@ export class Queries {
     updatedCharges.push(charge);
   
     await doc.ref.update({
-      charges: updatedCharges,
+      chargeId: updatedCharges,
       status: status,
       updatedAt: new Date(),
     });
@@ -83,7 +83,7 @@ export class Queries {
           docData.charges[chargeIndex].status = status;
           await doc.ref.update({
             status: status,
-            charges: docData.charges,
+            chargeId: docData.charges,
           });
         }
       }
