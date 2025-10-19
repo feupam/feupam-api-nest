@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common';
 import { PaymentService } from './payment.service';
 import { AuthService } from '../firebase/auth.service';
+import { Public } from '../decorators/public.decorator';
 
 @Controller('payments')
 export class PaymentController {
@@ -33,6 +34,7 @@ export class PaymentController {
     return this.paymentService.payment(body, decoded.email);
   }
 
+  @Public()
   @Post('webhook-pagarme')
   async handlePagarmeWebhook(@Body() body: any) {
     return await this.paymentService.handlePagarmeWebhook(body);

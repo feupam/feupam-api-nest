@@ -386,11 +386,11 @@ export class ReservationService {
         // ===== TODAS AS LEITURAS PRIMEIRO =====
         
         // 1. Verificar se já existe uma reserva ou pagamento para este usuário
+        // IMPORTANTE: Buscar TODAS as reservas (não apenas 'reserved' e 'Pago')
         const existingReservationRef = db
           .collection('reservations')
           .where('email', '==', email)
-          .where('eventId', '==', eventId)
-          .where('status', 'in', ['reserved', 'Pago']);
+          .where('eventId', '==', eventId);
         
         const existingReservationSnapshot = await transaction.get(existingReservationRef);
         
@@ -421,23 +421,35 @@ export class ReservationService {
         // ===== PROCESSAMENTO (SEM LEITURAS/ESCRITAS DB) =====
         
         // Verificar se já tem reserva/pagamento
+        let needsToDeleteOldReservations = false;
+        const oldReservationRefs: any[] = [];
+        
         if (!existingReservationSnapshot.empty) {
-          const existing = existingReservationSnapshot.docs[0].data() as ReservationData;
-          if (existing.status === 'Pago') {
-            return {
-              status: 'already-paid' as const,
-              message: 'Você já pagou a sua inscrição.'
-            };
+          // Se encontrou múltiplas reservas (BUG), deletar todas
+          if (existingReservationSnapshot.size > 1) {
+            this.logger.warn(`⚠️ DUPLICAÇÃO DETECTADA: ${existingReservationSnapshot.size} reservas encontradas para ${email} no evento ${eventId}`);
           }
           
-          // Verificar se a reserva ainda é válida
-          const expiresAt = existing.expiresAt.toDate ? existing.expiresAt.toDate() : existing.expiresAt;
-          if (expiresAt > new Date()) {
-            return {
-              status: 'reserved' as const,
-              message: 'Você já possui uma reserva ativa.',
-              expiresAt: expiresAt
-            };
+          // Verificar cada reserva
+          for (const doc of existingReservationSnapshot.docs) {
+            const existing = doc.data() as ReservationData;
+            
+            // Se qualquer uma está paga, NÃO pode sobrescrever
+            if (existing.status === 'Pago') {
+              return {
+                status: 'already-paid' as const,
+                message: 'Você já pagou a sua inscrição.'
+              };
+            }
+            
+            // Para todas as outras (ativas ou expiradas), marcar para deletar e recriar
+            oldReservationRefs.push(doc.ref);
+          }
+          
+          // Se tem reservas (ativas ou expiradas), marcar para deletar todas
+          if (oldReservationRefs.length > 0) {
+            needsToDeleteOldReservations = true;
+            this.logger.log(`🔄 Sobrescrevendo ${oldReservationRefs.length} reserva(s) existente(s) para ${email}`);
           }
         }
         
@@ -509,6 +521,14 @@ export class ReservationService {
         // Verificar se ainda há vagas disponíveis
         if (hasAvailableSpot) {
           // ===== ESCRITAS PARA RESERVA =====
+          
+          // Se existem reservas antigas, deletar TODAS e criar nova (sobrescrever)
+          if (needsToDeleteOldReservations && oldReservationRefs.length > 0) {
+            for (const ref of oldReservationRefs) {
+              transaction.delete(ref);
+            }
+            this.logger.log(`✅ Sobrescrevendo ${oldReservationRefs.length} reserva(s) para ${email} - deletando antigas e criando nova`);
+          }
           
           const expiresAt = this.calculateExpirationTime();
           
@@ -1004,30 +1024,24 @@ export class ReservationService {
    */
 
   /**
-   * Job para limpar reservas expiradas e liberar vagas
+   * Job para limpar reservas expiradas e pagas
    */
   private async cleanupExpiredReservations(): Promise<void> {
     try {
-      this.logger.log('🧹 [CLEANUP] Iniciando limpeza de reservas expiradas...');
+      this.logger.log('🧹 [CLEANUP] Iniciando limpeza de reservas...');
       
       const db = this.firestoreService.firestore;
       const now = new Date();
       
-      // Buscar apenas reservas com status 'reserved' (não existe mais 'expired')
-      const reservedReservationsRef = db
-        .collection('reservations')
-        .where('status', '==', 'reserved');
+      // Buscar reservas com status 'reserved' E 'Pago'
+      const [reservedSnapshot, paidSnapshot] = await Promise.all([
+        db.collection('reservations').where('status', '==', 'reserved').get(),
+        db.collection('reservations').where('status', '==', 'Pago').get()
+      ]);
       
-      const reservedSnapshot = await reservedReservationsRef.get();
+      this.logger.log(`🧹 [CLEANUP] Encontradas ${reservedSnapshot.size} reservas 'reserved' e ${paidSnapshot.size} reservas 'Pago'`);
       
-      this.logger.log(`🧹 [CLEANUP] Encontradas ${reservedSnapshot.size} reservas com status 'reserved'`);
-      
-      if (reservedSnapshot.empty) {
-        this.logger.log('🧹 [CLEANUP] Nenhuma reserva encontrada para verificar.');
-        return;
-      }
-      
-      // Filtrar as expiradas em memória para evitar índice composto
+      // Filtrar as reservas 'reserved' que estão expiradas
       const expiredDocsPromises = reservedSnapshot.docs.map(async (doc) => {
         const data = doc.data() as ReservationData;
         const expiresAt = data.expiresAt.toDate ? data.expiresAt.toDate() : data.expiresAt;
@@ -1047,12 +1061,18 @@ export class ReservationService {
       const expiredDocsResults = await Promise.all(expiredDocsPromises);
       const expiredDocs = expiredDocsResults.filter(doc => doc !== null);
       
-      if (expiredDocs.length === 0) {
-        this.logger.log('🧹 [CLEANUP] Nenhuma reserva expirada encontrada após verificar tempo.');
+      // Adicionar todas as reservas 'Pago' para deletar (não devem estar em 'reservations')
+      const paidDocs = paidSnapshot.docs;
+      
+      // Combinar expiradas + pagas
+      const docsToDelete = [...expiredDocs, ...paidDocs];
+      
+      if (docsToDelete.length === 0) {
+        this.logger.log('🧹 [CLEANUP] Nenhuma reserva para limpar.');
         return;
       }
       
-      this.logger.log(`🧹 [CLEANUP] Encontradas ${expiredDocs.length} reservas expiradas para deletar.`);
+      this.logger.log(`🧹 [CLEANUP] Limpando ${expiredDocs.length} expiradas + ${paidDocs.length} pagas = ${docsToDelete.length} reservas no total.`);
       
       // Processar em lotes para evitar problemas de performance
       const batches = [];
@@ -1061,27 +1081,29 @@ export class ReservationService {
       
       const eventStats = new Map<string, any>();
       
-      for (const doc of expiredDocs) {
+      for (const doc of docsToDelete) {
         const reservationData = doc.data() as ReservationData;
         
-        // APAGAR a reserva ao invés de marcar como expirada
+        // APAGAR a reserva
         batch.delete(doc.ref);
         
-        // Acumular estatísticas por evento
-        if (!eventStats.has(reservationData.eventId)) {
-          eventStats.set(reservationData.eventId, {
-            totalReserved: 0,
-            maleReserved: 0,
-            femaleReserved: 0
-          });
-        }
-        
-        const stats = eventStats.get(reservationData.eventId);
-        stats.totalReserved += 1;
-        if (reservationData.gender === 'female') {
-          stats.femaleReserved += 1;
-        } else {
-          stats.maleReserved += 1;
+        // Acumular estatísticas por evento (apenas para 'reserved', pois 'Pago' não deve estar contando)
+        if (reservationData.status === 'reserved') {
+          if (!eventStats.has(reservationData.eventId)) {
+            eventStats.set(reservationData.eventId, {
+              totalReserved: 0,
+              maleReserved: 0,
+              femaleReserved: 0
+            });
+          }
+          
+          const stats = eventStats.get(reservationData.eventId);
+          stats.totalReserved += 1;
+          if (reservationData.gender === 'female') {
+            stats.femaleReserved += 1;
+          } else {
+            stats.maleReserved += 1;
+          }
         }
         
         operationCount++;
@@ -1120,7 +1142,7 @@ export class ReservationService {
       // Executar todos os batches
       await Promise.all(batches.map(b => b.commit()));
       
-      this.logger.log(`Limpeza concluída. ${expiredDocs.length} reservas expiradas foram APAGADAS do banco.`);
+      this.logger.log(`✅ Limpeza concluída. ${expiredDocs.length} expiradas + ${paidDocs.length} pagas = ${docsToDelete.length} reservas APAGADAS do banco.`);
       
       // Processar filas dos eventos afetados para promover pessoas
       for (const eventId of eventStats.keys()) {

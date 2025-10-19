@@ -68,8 +68,9 @@ export class PaymentService {
 
       const itemAmount = bodyPagarme.items[0].amount;
 
+      // Validar que o valor é no mínimo o preço do evento (pode ser maior se tiver juros)
       if (itemAmount < VALOR_DO_EVENTO) {
-        throw new Error('Valor menor que o ingresso');
+        throw new Error(`Valor do pagamento não pode ser menor que o ingresso. Mínimo: R$ ${(VALOR_DO_EVENTO/100).toFixed(2)}, Recebido: R$ ${(itemAmount/100).toFixed(2)}`);
       }
 
       const response = await pagarmeService.createPayment(bodyPagarme);
@@ -159,14 +160,15 @@ export class PaymentService {
   }
 
   async handlePagarmeWebhook(body: any) {
-    const queriesService = new Queries(this.firestoreService);
     const webhookData = body.data;
 
     console.log('🎯 Webhook PagarMe recebido:', {
+      type: body.type,
       status: webhookData.status,
       email: webhookData.customer?.email,
-      id: webhookData.id,
-      amount: webhookData.amount
+      chargeId: webhookData.id,
+      amount: webhookData.amount,
+      paymentMethod: webhookData.payment_method
     });
 
     // Mapear status do PagarMe para status interno
@@ -182,40 +184,82 @@ export class PaymentService {
     };
 
     const internalStatus = statusMapping[webhookData.status] || 'Processando';
+    const email = webhookData.customer.email;
     
     try {
-      // Obter eventId do histórico de reservas
-      const eventId = await this.getEventIdFromReservation(webhookData.customer.email);
-      
-      // Criar um charge DTO básico para o webhook
+      // Buscar a reserva para obter o eventId
+      const reservationSnapshot = await this.firestoreService.firestore
+        .collection('reservationHistory')
+        .where('email', '==', email)
+        .orderBy('updatedAt', 'desc')
+        .limit(1)
+        .get();
+
+      if (reservationSnapshot.empty) {
+        throw new Error('Reserva não encontrada para o email: ' + email);
+      }
+
+      const reservationDoc = reservationSnapshot.docs[0];
+      const reservationData = reservationDoc.data();
+      const eventId = reservationData.eventId;
+
+      console.log('📋 Reserva encontrada:', { 
+        email, 
+        eventId, 
+        currentStatus: reservationData.status 
+      });
+
+      // Construir o objeto de charge com dados do webhook
+      const lastTransaction = webhookData.last_transaction;
+      let payLink = '';
+      let qrcodePix = '';
+
+      if (webhookData.payment_method === 'pix') {
+        payLink = lastTransaction.qr_code || '';
+        qrcodePix = lastTransaction.qr_code_url || '';
+      } else if (webhookData.payment_method === 'boleto') {
+        payLink = lastTransaction.pdf || '';
+      } else if (webhookData.payment_method === 'credit_card') {
+        payLink = lastTransaction.acquirer_message || '';
+      }
+
       const charge: ChargeDto = {
         event: eventId,
         status: internalStatus,
         amount: webhookData.amount,
-        payLink: '',
-        qrcodePix: '',
-        meio: webhookData.payment_method || 'webhook',
-        email: webhookData.customer.email,
+        payLink: payLink,
+        qrcodePix: qrcodePix,
+        meio: webhookData.payment_method,
+        email: email,
         lote: 0,
         envioWhatsapp: false,
         chargeId: webhookData.id,
       };
 
+      console.log('💳 Charge criado:', charge);
+
       // Se for pago, fazer o processo completo
       if (webhookData.status === 'paid') {
+        console.log('✅ Pagamento confirmado, iniciando processo...');
+        
         await this.confirmPaymentAndUpdateReservation(
-          webhookData.customer.email,
+          email,
           eventId,
           charge,
           internalStatus
         );
 
         // Processar fila após confirmação do pagamento
+        console.log('🎫 Processando fila do evento...');
         await this.ticketService.processQueue(eventId);
+        
+        console.log('✅ Pagamento e fila processados com sucesso');
       } else {
         // Para outros status, atualizar tanto o status da reserva quanto do charge
+        console.log(`⏳ Status ${internalStatus}, atualizando reserva...`);
+        
         await this.updateReservationAndChargeStatus(
-          webhookData.customer.email,
+          email,
           eventId,
           charge,
           internalStatus
@@ -223,35 +267,31 @@ export class PaymentService {
       }
 
       console.log('✅ Webhook processado com sucesso:', { 
-        email: webhookData.customer.email, 
+        email, 
+        eventId,
         status: internalStatus 
       });
+
+      return { 
+        success: true,
+        message: 'Webhook processado com sucesso', 
+        status: internalStatus 
+      };
       
     } catch (error: any) {
-      console.error('❌ Erro no webhook:', error);
-      // Se falhar a confirmação da reserva, pelo menos atualizar o status do charge
-      await queriesService.updateChargeStatus(
-        webhookData.customer.email,
-        webhookData.id,
-        internalStatus,
-      );
+      console.error('❌ Erro ao processar webhook:', {
+        error: error.message,
+        stack: error.stack,
+        email: email
+      });
+
+      // Retornar erro mas com status 200 para não reenviar o webhook
+      return { 
+        success: false,
+        message: error.message,
+        error: error.stack 
+      };
     }
-
-    return { message: 'ok', status: internalStatus };
-  }
-
-  private async getEventIdFromReservation(email: string): Promise<string> {
-    const snapshot = await this.firestoreService.firestore
-      .collection('reservationHistory')
-      .where('email', '==', email)
-      .limit(1)
-      .get();
-
-    if (snapshot.empty) {
-      throw new Error('Reserva não encontrada para obter eventId');
-    }
-
-    return snapshot.docs[0].data().eventId;
   }
 
   /**
@@ -291,25 +331,25 @@ export class PaymentService {
       if (existingChargeIndex >= 0) {
         // Atualizar charge existente
         updatedCharges[existingChargeIndex] = charge;
+        console.log('🔄 Atualizando charge existente:', charge.chargeId);
       } else {
         // Adicionar novo charge
         updatedCharges.push(charge);
+        console.log('➕ Adicionando novo charge:', charge.chargeId);
       }
 
       // 3. Atualizar AMBOS os status:
-      //    - Status da reserva principal (nível superior)
-      //    - Status do charge (dentro do array)
       transaction.update(historyDoc.ref, {
-        chargeId: updatedCharges,
-        status: status, // ← Status da reserva principal
+        charges: updatedCharges,
+        status: status,
         updatedAt: new Date(),
       });
 
-      console.log('✅ Status da reserva E charge atualizados:', { 
+      console.log('✅ Status da reserva E charges atualizados:', { 
         email, 
         eventId, 
         status,
-        chargeId: charge.chargeId
+        totalCharges: updatedCharges.length
       });
     });
   }
@@ -326,7 +366,9 @@ export class PaymentService {
     const db = this.firestoreService.firestore;
     
     await db.runTransaction(async (transaction) => {
-      // 1. Buscar e atualizar a reserva ativa
+      console.log('🔍 Buscando reserva ativa...');
+      
+      // 1. Buscar e atualizar a reserva ativa (se existir)
       const reservationRef = db
         .collection('reservations')
         .where('email', '==', email)
@@ -335,20 +377,35 @@ export class PaymentService {
       
       const reservationSnapshot = await transaction.get(reservationRef);
       
-      if (reservationSnapshot.empty) {
-        throw new Error('Reserva não encontrada ou já processada');
-      }
+      if (!reservationSnapshot.empty) {
+        const reservationDoc = reservationSnapshot.docs[0];
+        const reservationData = reservationDoc.data();
 
-      const reservationDoc = reservationSnapshot.docs[0];
-      const reservationData = reservationDoc.data();
+        console.log('📝 Reserva ativa encontrada:', reservationDoc.id);
 
-      // Verificar se ainda está dentro do prazo
-      const expiresAt = reservationData.expiresAt.toDate ? reservationData.expiresAt.toDate() : reservationData.expiresAt;
-      if (expiresAt < new Date()) {
-        throw new Error('Reserva expirada');
+        // Verificar se ainda está dentro do prazo
+        const expiresAt = reservationData.expiresAt.toDate ? 
+          reservationData.expiresAt.toDate() : 
+          reservationData.expiresAt;
+        
+        if (expiresAt < new Date()) {
+          console.warn('⚠️ Reserva expirada, mas processando pagamento mesmo assim');
+        }
+
+        // Atualizar status da reserva para 'Pago'
+        transaction.update(reservationDoc.ref, {
+          status: 'Pago',
+          paidAt: FieldValue.serverTimestamp()
+        });
+
+        console.log('✅ Reserva ativa atualizada para Pago');
+      } else {
+        console.log('⚠️ Nenhuma reserva ativa encontrada (pode já estar paga)');
       }
 
       // 2. Buscar o histórico de reserva para atualizar
+      console.log('🔍 Buscando histórico de reserva...');
+      
       const historyRef = db
         .collection('reservationHistory')
         .where('email', '==', email)
@@ -360,37 +417,49 @@ export class PaymentService {
         throw new Error('Histórico de reserva não encontrado');
       }
 
-      // 3. Buscar estatísticas do evento
-      const eventStatsRef = db.collection('eventStats').doc(eventId);
-      const eventStatsDoc = await transaction.get(eventStatsRef);
-      const currentStats = eventStatsDoc.data() || {};
-
-      // ===== TODAS AS ESCRITAS APÓS TODAS AS LEITURAS =====
-
-      // 4. Atualizar status da reserva para 'Pago'
-      transaction.update(reservationDoc.ref, {
-        status: 'Pago',
-        paidAt: FieldValue.serverTimestamp()
-      });
-
-      // 5. Atualizar o histórico com o charge
       const historyDoc = historySnapshot.docs[0];
       const historyData = historyDoc.data();
+      
+      console.log('📋 Histórico encontrado:', {
+        id: historyDoc.id,
+        currentStatus: historyData.status,
+        currentCharges: historyData.charges?.length || 0
+      });
+
+      // 3. Atualizar charges no histórico
       const updatedCharges = historyData?.charges || [];
-      updatedCharges.push(charge);
+      
+      const existingChargeIndex = updatedCharges.findIndex(
+        (c: any) => c.chargeId === charge.chargeId
+      );
+      
+      if (existingChargeIndex >= 0) {
+        updatedCharges[existingChargeIndex] = charge;
+        console.log('🔄 Atualizando charge existente no histórico');
+      } else {
+        updatedCharges.push(charge);
+        console.log('➕ Adicionando novo charge ao histórico');
+      }
 
       transaction.update(historyDoc.ref, {
-        chargeId: updatedCharges,
+        charges: updatedCharges,
         status: status,
         updatedAt: new Date(),
       });
 
-      // 6. Atualizar estatísticas do evento
+      // 4. Atualizar estatísticas do evento
+      console.log('📊 Atualizando estatísticas do evento...');
+      
+      const eventStatsRef = db.collection('eventStats').doc(eventId);
+      const eventStatsDoc = await transaction.get(eventStatsRef);
+      const currentStats = eventStatsDoc.data() || {};
+
       const newStats = { ...currentStats };
       newStats.totalPaid = (newStats.totalPaid || 0) + 1;
       newStats.totalReserved = Math.max(0, (newStats.totalReserved || 0) - 1);
 
-      if (reservationData.gender === 'female') {
+      const gender = historyData.gender;
+      if (gender === 'Feminino' || gender === 'female') {
         newStats.femalePaid = (newStats.femalePaid || 0) + 1;
         newStats.femaleReserved = Math.max(0, (newStats.femaleReserved || 0) - 1);
       } else {
@@ -399,6 +468,8 @@ export class PaymentService {
       }
 
       transaction.set(eventStatsRef, newStats, { merge: true });
+
+      console.log('✅ Estatísticas atualizadas:', newStats);
     });
   }
 }

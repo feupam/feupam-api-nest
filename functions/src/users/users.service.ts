@@ -17,7 +17,7 @@ export class UsersService {
     return crypto.createHash('md5').update(conteudo, 'utf8').digest('hex');
   }
 
-  async create(createUserDto: CreateUserDto, email: string) {
+  async create(createUserDto: CreateUserDto, email: string, eventAdd?: string) {
     const firestore = this.firestoreService.getFirestore();
     const usersCollection = firestore.collection('users');
 
@@ -25,6 +25,29 @@ export class UsersService {
       throw new BadRequestException('Usuário não autorizou o tratamento de dados conforme a LGPD');
     }
   
+    // Se eventAdd foi fornecido, verificar se já existe reserva para este CPF neste evento
+    if (eventAdd) {
+      const existingReservationSnapshot = await firestore
+        .collection('reservationHistory')
+        .where('cpf', '==', createUserDto.cpf)
+        .where('eventId', '==', eventAdd)
+        .get();
+      
+      if (!existingReservationSnapshot.empty) {
+        const reservationData = existingReservationSnapshot.docs[0].data();
+        const reservationEmail = reservationData.email || '';
+        
+        // Mascarar email: mostrar apenas as primeiras 5 letras
+        const maskedEmail = reservationEmail.length > 5 
+          ? `${reservationEmail.substring(0, 5)}${'*'.repeat(reservationEmail.length - 5)}`
+          : reservationEmail;
+        
+        throw new BadRequestException(
+          `Você já possui cadastro para esse evento com o email ${maskedEmail}`
+        );
+      }
+    }
+
     // Verifique se já existe um usuário com o mesmo CPF
     const existingUserSnapshot = await usersCollection
       .where('cpf', '==', createUserDto.cpf)
@@ -45,26 +68,14 @@ export class UsersService {
     const userRef = usersCollection.doc();
 
     const termoLGPD = `
-      Em atenção à Lei Geral de Proteção de Dados Pessoais (LGPD), Lei n. 13.709, de 14 de agosto de
-      2018, ao preencher este formulário, você concorda com o tratamento de seus dados pessoais
-      de acordo com a Lei Geral de Proteção de Dados (LGPD). Os dados fornecidos serão utilizados
-      exclusivamente para a finalidade específica aqui descrita, sendo mantidos em sigilo e segurança
-      pela empresa responsável pelo tratamento.
-      A empresa responsável pelo tratamento se compromete a adotar medidas técnicas e
-      organizacionais adequadas para proteger os dados pessoais contra acessos não autorizados,
-      perda ou qualquer outra forma de tratamento inadequado.
-      Ao fornecer seus dados pessoais neste formulário, você declara que leu e concorda com esta
-      cláusula de tratamento de dados e com a Política de Privacidade da empresa responsável pelo
-      tratamento.
-      Do direito ao uso de imagem:
-      Ao participar de eventos ou atividades promovidas por nossa organização, você autoriza
-      expressamente o uso de sua imagem e voz em fotos, vídeos, gravações e demais materiais
-      audiovisuais produzidos durante o acampamento. Esses materiais poderão ser utilizados para
-      fins publicitários e de divulgação em nossos canais de comunicação, incluindo nossos sites, redes
-      sociais, folders e demais materiais de divulgação. Essa autorização é concedida de forma
-      gratuita, por tempo indeterminado e sem limite de território. Caso você não concorde com o
-      uso de sua imagem e voz, solicitamos que informe a organização com antecedência, por escrito,
-      para que possamos tomar as providências cabíveis.
+      Autorização de Uso de Dados e Imagem
+
+      Autorizo que meus dados pessoais informados neste formulário sejam coletados 
+      e usados pela equipe do acampamento para fins de inscrição, comunicação e 
+      segurança, conforme a Lei n° 13.709/2018 (LGPD). Também autorizo, de forma 
+      gratuita, o uso da minha imagem e/ou voz em fotos e vídeos feitos durante o 
+      evento para divulgação institucional em redes sociais, sites ou materiais do 
+      acampamento.
     `;
 
     const hashDoTermo = this.gerarHashDoTermo(termoLGPD);
@@ -264,63 +275,83 @@ export class UsersService {
         .slice(offset, offset + limit);
 
       // Para cada reserva, buscar os dados completos do usuário
-      const usersWithReservations = await Promise.all(
-        paginatedReservations.map(async (reservationItem: any) => {
-          const reservationDoc = reservationItem.doc;
-          const reservationData = reservationDoc.data();
-          
-          // Buscar dados completos do usuário pelo email
-          const userQuery = firestore
-            .collection('users')
-            .where('email', '==', reservationData.email)
-            .limit(1);
+      // OTIMIZADO: Como o reservationHistory agora contém todos os dados do usuário,
+      // não precisamos mais fazer JOIN com a coleção 'users'
+      const usersWithReservations = paginatedReservations.map((reservationItem: any) => {
+        const reservationDoc = reservationItem.doc;
+        const reservationData = reservationDoc.data();
+        
+        // Extrair dados do usuário que já estão no reservationHistory
+        const userData = {
+          id: reservationData.userId || 'N/A',
+          email: reservationData.email,
+          name: reservationData.name || 'Nome não disponível',
+          cpf: reservationData.cpf,
+          data_nasc: reservationData.data_nasc,
+          idade: reservationData.idade,
+          gender: reservationData.gender,
+          userType: reservationData.userType,
+          church: reservationData.church,
+          pastor: reservationData.pastor,
+          ddd: reservationData.ddd,
+          cellphone: reservationData.cellphone,
+          cep: reservationData.cep,
+          cidade: reservationData.cidade,
+          estado: reservationData.estado,
+          address: reservationData.address,
+          complemento: reservationData.complemento,
+          responsavel: reservationData.responsavel,
+          documento_responsavel: reservationData.documento_responsavel,
+          ddd_responsavel: reservationData.ddd_responsavel,
+          cellphone_responsavel: reservationData.cellphone_responsavel,
+          alergia: reservationData.alergia,
+          medicamento: reservationData.medicamento,
+          info_add: reservationData.info_add,
+          discount: reservationData.discount,
+          nomeMae: reservationData.nomeMae,
+          nomePai: reservationData.nomePai,
+          contato2: reservationData.contato2,
+          contato3: reservationData.contato3,
+          alergiaAlimentar: reservationData.alergiaAlimentar,
+          alergiaPicadaInsetos: reservationData.alergiaPicadaInsetos,
+          outrasAlergias: reservationData.outrasAlergias,
+          condicoesSaude: reservationData.condicoesSaude,
+          medicamentoContinuado: reservationData.medicamentoContinuado,
+          podeAtisFisica: reservationData.podeAtisFisica,
+          transtornosDesenvolvimento: reservationData.transtornosDesenvolvimento,
+          autorizaFotosVideos: reservationData.autorizaFotosVideos,
+        };
 
-          const userSnapshot = await userQuery.get();
-          
-          // Dados do usuário (se encontrado, senão usar dados básicos)
-          let userData = {
-            email: reservationData.email,
-            name: 'Usuário não encontrado',
-            // Dados básicos se usuário não for encontrado
-          };
+        // Dados completos da reserva
+        const reservation = {
+          id: reservationDoc.id,
+          email: reservationData.email,
+          eventId: reservationData.eventId,
+          status: reservationData.status,
+          price: reservationData.price,
+          ticketKind: reservationData.ticketKind,
+          userType: reservationData.userType,
+          gender: reservationData.gender,
+          spotId: reservationData.spotId,
+          createdAt: reservationData.createdAt,
+          updatedAt: reservationData.updatedAt,
+          // PADRONIZADO: Sempre usar 'charges' (array)
+          // Fallback para chargeId legado se existir
+          charges: reservationData.charges || [],
+          // Incluir todos os outros campos da reserva
+          ...reservationData
+        };
 
-          if (!userSnapshot.empty) {
-            const userDoc = userSnapshot.docs[0];
-            userData = {
-              id: userDoc.id,
-              ...userDoc.data(),
-            } as any;
-          }
-
-          // Dados completos da reserva
-          const reservation = {
-            id: reservationDoc.id,
-            email: reservationData.email,
-            eventId: reservationData.eventId,
-            status: reservationData.status,
-            price: reservationData.price,
-            ticketKind: reservationData.ticketKind,
-            userType: reservationData.userType,
-            gender: reservationData.gender,
-            spotId: reservationData.spotId,
-            createdAt: reservationData.createdAt,
-            updatedAt: reservationData.updatedAt,
-            chargeId: reservationData.chargeId,
-            // Incluir todos os outros campos da reserva
-            ...reservationData
-          };
-
-          return {
-            // Todos os dados do usuário
-            user: userData,
-            reservation: reservation,
-            // Calcular valor total se houver charges
-            totalAmount: Array.isArray(reservation.charges) 
-              ? reservation.charges.reduce((sum: number, charge: any) => sum + (charge.amount || 0), 0)
-              : 0,
-          };
-        }),
-      );
+        return {
+          // Todos os dados do usuário
+          user: userData,
+          reservation: reservation,
+          // Calcular valor total se houver charges
+          totalAmount: Array.isArray(reservation.charges) 
+            ? reservation.charges.reduce((sum: number, charge: any) => sum + (charge.amount || 0), 0)
+            : 0,
+        };
+      });
 
       return {
         page,
@@ -332,6 +363,47 @@ export class UsersService {
     } catch (error: any) {
       throw new BadRequestException(
         `Error fetching users with reservations: ${error.message}`,
+      );
+    }
+  }
+
+  async checkCpfReservation(cpf: string, eventId: string) {
+    const firestore = this.firestoreService.getFirestore();
+    
+    try {
+      // Verificar se já existe reserva para este CPF neste evento
+      const existingReservationSnapshot = await firestore
+        .collection('reservationHistory')
+        .where('cpf', '==', cpf)
+        .where('eventId', '==', eventId)
+        .get();
+      
+      if (existingReservationSnapshot.empty) {
+        return {
+          hasReservation: false,
+          message: 'CPF disponível para reserva'
+        };
+      }
+
+      const reservationData = existingReservationSnapshot.docs[0].data();
+      const reservationEmail = reservationData.email || '';
+      
+      // Mascarar email: mostrar apenas as primeiras 5 letras
+      const maskedEmail = reservationEmail.length > 5 
+        ? `${reservationEmail.substring(0, 5)}${'*'.repeat(reservationEmail.length - 5)}`
+        : reservationEmail;
+      
+      return {
+        hasReservation: true,
+        status: reservationData.status,
+        email: maskedEmail,
+        message: reservationData.status === 'Pago' 
+          ? `Este CPF já possui um ingresso pago para este evento com o email ${maskedEmail}`
+          : `Este CPF já possui uma reserva para este evento com o email ${maskedEmail}`
+      };
+    } catch (error: any) {
+      throw new BadRequestException(
+        `Erro ao verificar CPF: ${error.message}`,
       );
     }
   }

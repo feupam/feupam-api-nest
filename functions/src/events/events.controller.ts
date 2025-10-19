@@ -152,7 +152,7 @@ export class EventsController {
       if (err.message.includes('Spots') || err.message.includes('not found')) {
         throw new HttpException(err.message, HttpStatus.NOT_FOUND);
       } else if (
-        err.message.includes('User already has a reservation for this event')
+        err.message.includes('já possui um ingresso pago para este evento')
       ) {
         throw new HttpException(err.message, HttpStatus.CONFLICT);
       } else if (err.message.includes('exceeds the limit')) {

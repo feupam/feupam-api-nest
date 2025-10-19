@@ -14,6 +14,7 @@ import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { AuthService } from '../firebase/auth.service';
+import { Public } from '../decorators/public.decorator';
 
 @Controller('users')
 export class UsersController {
@@ -33,10 +34,11 @@ export class UsersController {
   async create(
     @Body() createUserDto: CreateUserDto,
     @Headers('authorization') authHeader: string,
+    @Query('eventAdd') eventAdd?: string,
   ) {
     const token = authHeader?.split(' ')[1];
     const decoded_token = await this.authService.verifyToken(token);
-    return this.usersService.create(createUserDto, decoded_token.email);
+    return this.usersService.create(createUserDto, decoded_token.email, eventAdd);
   }
 
   @Get('list-users')
@@ -86,6 +88,18 @@ export class UsersController {
     const token = authHeader?.split(' ')[1];
     const decodedIdToken = await this.authService.verifyToken(token);
     return await this.usersService.cancelUserReservations(decodedIdToken);
+  }
+
+  @Public()
+  @Get('check-cpf')
+  async checkCpfReservation(
+    @Query('cpf') cpf: string,
+    @Query('eventId') eventId: string,
+  ) {
+    if (!cpf || !eventId) {
+      throw new Error('CPF e eventId são obrigatórios');
+    }
+    return await this.usersService.checkCpfReservation(cpf, eventId);
   }
 
   @Get('reservations-report')

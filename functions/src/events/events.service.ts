@@ -7,8 +7,7 @@ import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
 import { FirestoreService } from '../firebase/firebase.service';
 import { ReservationService } from '../reservation/reservation.service';
-import { EventType, Gender } from './dto/enum';
-import { TicketStatus, SpotStatus } from './dto/enum-spot';
+import { EventType } from './dto/enum';
 import { ReserveSpotDto } from './dto/reserve-spot.dto';
 import { Timestamp } from 'firebase-admin/firestore';
 import * as moment from 'moment-timezone';
@@ -234,14 +233,20 @@ export class EventsService {
     email: string,
   ) {
     try {
+      console.log(`[DEBUG] Reserve spot called for email: ${email}, eventId: ${dto.eventId}`);
       const firestore = this.firestoreService.firestore;
 
       // Buscar dados do usuário
-      const userRecord = firestore
+      const userQuery = firestore
         .collection('users')
-        .where('email', '==', email)
-        .get();
-      const userDoc = (await userRecord).docs[0];
+        .where('email', '==', email);
+      const userSnapshot = await userQuery.get();
+      
+      if (userSnapshot.empty) {
+        throw new BadRequestException('Usuário não encontrado');
+      }
+
+      const userDoc = userSnapshot.docs[0];
       const userData = userDoc.data();
 
       if (!userData || !['male', 'female'].includes(userData.gender)) {
@@ -260,121 +265,169 @@ export class EventsService {
         const userAge = userData.idade;
         
         if (userAge < eventData.idadeMinima) {
-          throw new BadRequestException(`Idade mínima para este evento é ${eventData.idadeMinima} anos. Sua idade: ${userAge} anos.`);
+          throw new BadRequestException(
+            `Idade mínima para este evento é ${eventData.idadeMinima} anos. Sua idade: ${userAge} anos.`
+          );
         }
         
         if (eventData.idadeMaxima !== undefined && userAge > eventData.idadeMaxima) {
-          throw new BadRequestException(`Idade máxima para este evento é ${eventData.idadeMaxima} anos. Sua idade: ${userAge} anos.`);
+          throw new BadRequestException(
+            `Idade máxima para este evento é ${eventData.idadeMaxima} anos. Sua idade: ${userAge} anos.`
+          );
         }
       }
 
-      // Verificar se já tem reserva ATIVA para este evento (apenas na coleção reservations)
-      const userActiveReservationsQuery = firestore
-        .collection('reservations')
-        .where('email', '==', email)
-        .where('eventId', '==', dto.eventId);
-      const userActiveReservationsSnapshot = await userActiveReservationsQuery.get();
-
-      if (!userActiveReservationsSnapshot.empty) {
-        throw new BadRequestException('User already has an active reservation for this event');
-      }
-
-      // Verificar se já existe no reservationHistory e se está pago
-      const userHistoryQuery = firestore
+      // ✅ VALIDAÇÃO ÚNICA POR CPF - verificar se já tem reserva paga
+      const historyQuery = firestore
         .collection('reservationHistory')
-        .where('email', '==', email)
+        .where('cpf', '==', userData.cpf)
         .where('eventId', '==', dto.eventId);
-      const userHistorySnapshot = await userHistoryQuery.get();
+      const historySnapshot = await historyQuery.get();
 
-      if (!userHistorySnapshot.empty) {
-        const historyDoc = userHistorySnapshot.docs[0];
-        const historyData = historyDoc.data();
-        
-        // Se já está pago, não pode fazer nova reserva
-        if (historyData.status === 'Pago') {
-          throw new BadRequestException('User already has a paid ticket for this event');
+      let existingDocRef = null;
+      
+      if (!historySnapshot.empty) {
+        // Se encontrou múltiplos documentos (BUG de duplicação), DELETAR os extras
+        if (historySnapshot.size > 1) {
+          console.log(`⚠️ [DUPLICAÇÃO] ${historySnapshot.size} documentos encontrados em reservationHistory para CPF ${userData.cpf}`);
+          
+          // Manter o PRIMEIRO documento, deletar os OUTROS
+          const docsToDelete = historySnapshot.docs.slice(1); // Pular o primeiro
+          const batch = firestore.batch();
+          
+          docsToDelete.forEach(doc => {
+            console.log(`🗑️ [CLEANUP] Deletando documento duplicado: ${doc.id}`);
+            batch.delete(doc.ref);
+          });
+          
+          await batch.commit();
+          console.log(`✅ [CLEANUP] ${docsToDelete.length} documento(s) duplicado(s) deletado(s)`);
         }
         
-        // Se não está pago, será sobrescrito quando a nova reserva for criada
-        console.log(`[DEBUG] Found unpaid history for ${email} on event ${dto.eventId}, will be overwritten`);
+        // Usar o PRIMEIRO documento (que foi mantido)
+        const mainDoc = historySnapshot.docs[0];
+        const historyData = mainDoc.data();
+        
+        // Verificar se está pago
+        const isStatusPago = historyData.status === 'Pago';
+        const hasChargesPago = historyData.charges 
+          && Array.isArray(historyData.charges) 
+          && historyData.charges.some((charge: any) => 
+            charge.status === 'Pago' || charge.status === 'paid'
+          );
+        
+        if (isStatusPago || hasChargesPago) {
+          const reservationEmail = historyData.email || '';
+          const maskedEmail = reservationEmail.length > 5 
+            ? `${reservationEmail.substring(0, 5)}${'*'.repeat(reservationEmail.length - 5)}`
+            : reservationEmail;
+          
+          console.log(`[BLOCK] CPF ${userData.cpf} já possui ingresso pago. Status: ${historyData.status}, HasChargesPago: ${hasChargesPago}`);
+          throw new BadRequestException(
+            `Você já possui um ingresso pago para este evento com o email ${maskedEmail} com esse CPF`
+          );
+        }
+        
+        // Não está pago - guardar referência para atualizar depois
+        existingDocRef = mainDoc.ref;
+        console.log(`🔄 [SOBRESCREVER] Usando documento existente ${mainDoc.id} para atualizar`);
       }
 
-      // Usar o novo sistema de reservas
+      // ✅ USAR APENAS O NOVO SISTEMA DE RESERVAS
+      console.log(`[DEBUG] Calling reservationService.reserveSpot for ${email}`);
       const reservationResult = await this.reservationService.reserveSpot(
         email, 
         dto.eventId, 
         userData.gender
       );
 
-      // Se conseguiu reservar, criar os registros no formato antigo para compatibilidade
+      // ✅ CRIAR/ATUALIZAR APENAS reservationHistory (formato novo, SEM spots e SEM reservations)
       if (reservationResult.status === 'reserved') {
-        const batch = firestore.batch();
-
-        // Criar spot (mantendo compatibilidade)
-        const newSpotRef = firestore.collection('spots').doc();
-        const newSpot = {
-          eventId: dto.eventId,
-          status: SpotStatus.reserved,
-          gender: userData.gender || Gender.MALE,
-          userType: userData.userType,
-        };
-        batch.set(newSpotRef, newSpot);
-
-        // Buscar dados do evento para o preço
-        const eventRef = firestore.collection('events').doc(dto.eventId);
-        const eventDoc = await eventRef.get();
-        if (!eventDoc.exists) {
-          throw new NotFoundException('Event not found');
-        }
-        const eventData = eventDoc.data();
-
-        let price = eventData?.price;
+        // Calcular preço com desconto se aplicável
+        let price = eventData?.price || 0;
         const eventDiscount = userData.discount;
-        let d;
-        if (userData.discount) {
-          d = eventDiscount.find(
-            (discount) => discount.event === dto.eventId
+        
+        if (eventDiscount) {
+          const discount = eventDiscount.find(
+            (d: any) => d.event === dto.eventId
           );
-        }
-        if (eventDiscount && d) {
-          price = price * (1 - d.discount);
+          if (discount) {
+            price = price * (1 - discount.discount);
+          }
         }
 
-        // Criar ou sobrescrever reservationHistory (mantendo compatibilidade)
-        let reservationRef;
-        
-        // Se existe um registro não-pago, usar o mesmo documento
-        if (!userHistorySnapshot.empty) {
-          const existingDoc = userHistorySnapshot.docs[0];
-          const existingData = existingDoc.data();
-          
-          if (existingData.status !== 'Pago') {
-            reservationRef = existingDoc.ref;
-            console.log(`[DEBUG] Overwriting existing unpaid history for ${email} on event ${dto.eventId}`);
-          } else {
-            // Se já está pago, criar novo (isso não deveria acontecer devido à verificação anterior)
-            reservationRef = firestore.collection('reservationHistory').doc();
-          }
-        } else {
-          // Se não existe histórico, criar novo
-          reservationRef = firestore.collection('reservationHistory').doc();
-        }
-        
-        batch.set(reservationRef, {
-          spotId: newSpotRef.id,
+        // Preparar dados completos da reserva
+        const reservationData: any = {
+          // Dados da reserva
           ticketKind: dto.ticket_kind,
-          email: userData.email,
-          status: TicketStatus.available,
-          userType: userData.userType,
-          gender: userData.gender,
+          status: 'Processando', // Status inicial sempre 'Processando' para novas reservas
           eventId: dto.eventId,
           price: price,
+          charges: [], // Array vazio, será preenchido pelos webhooks
+          updatedAt: new Date(),
+
+          // Dados completos do usuário
+          userId: userDoc.id,
+          email: userData.email,
+          cpf: userData.cpf,
+          name: userData.name,
+          userType: userData.userType,
+          gender: userData.gender,
+          data_nasc: userData.data_nasc,
+          idade: userData.idade,
+          
+          // Dados da igreja
+          church: userData.church,
+          pastor: userData.pastor,
+          
+          // Contato
+          ddd: userData.ddd,
+          cellphone: userData.cellphone,
+          
+          // Endereço
+          cep: userData.cep,
+          cidade: userData.cidade,
+          estado: userData.estado,
+          address: userData.address,
+        };
+
+        // Adicionar campos opcionais
+        const optionalFields = [
+          'complemento', 'responsavel', 'documento_responsavel', 
+          'ddd_responsavel', 'cellphone_responsavel', 'alergia', 
+          'medicamento', 'info_add', 'discount', 'nomeMae', 'nomePai',
+          'contato2', 'contato3', 'alergiaAlimentar', 'alergiaPicadaInsetos',
+          'outrasAlergias', 'condicoesSaude', 'medicamentoContinuado',
+          'podeAtisFisica', 'transtornosDesenvolvimento', 'autorizaFotosVideos'
+        ];
+
+        optionalFields.forEach(field => {
+          if (userData[field] !== undefined) {
+            reservationData[field] = userData[field];
+          }
         });
 
-        await batch.commit();
+        // Se existe documento, ATUALIZAR. Se não existe, CRIAR novo
+        if (existingDocRef) {
+          // ATUALIZAR documento existente (preserva createdAt e ID)
+          await existingDocRef.set(reservationData, { merge: true });
+          console.log(`✅ [ATUALIZADO] Documento existente em reservationHistory para CPF ${userData.cpf} (ID: ${existingDocRef.id})`);
+        } else {
+          // CRIAR novo documento
+          reservationData.createdAt = new Date();
+          const newDocRef = await firestore.collection('reservationHistory').add(reservationData);
+          console.log(`✅ [CRIADO] Novo documento em reservationHistory para CPF ${userData.cpf} (ID: ${newDocRef.id})`);
+        }
+
+        console.log(`[DEBUG] Reserve spot successful:`, {
+          ticketKind: dto.ticket_kind,
+          email: userData.email,
+          eventId: dto.eventId,
+          status: reservationResult.status,
+          message: reservationResult.message,
+        });
 
         return {
-          spotId: newSpotRef.id,
           ticketKind: dto.ticket_kind,
           email: userData.email,
           eventId: dto.eventId,
@@ -383,8 +436,8 @@ export class EventsService {
         };
       } else {
         // Para status queued ou waiting-list, retornar apenas a informação
+        console.log(`[INFO] User ${email} added to ${reservationResult.status}`);
         return {
-          spotId: null,
           ticketKind: dto.ticket_kind,
           email: userData.email,
           eventId: dto.eventId,
@@ -395,11 +448,18 @@ export class EventsService {
       }
 
     } catch (e) {
-      if (e instanceof Error) {
+      console.log(`[DEBUG] Reserve spot error:`, {
+        message: e instanceof Error ? e.message : 'Unknown error',
+        stack: e instanceof Error ? e.stack : undefined,
+        name: e instanceof Error ? e.name : undefined
+      });
+      
+      if (e instanceof BadRequestException) {
         throw e;
-      } else {
-        throw new Error(`Unknown error: ${e}`);
       }
+      throw new BadRequestException(
+        `Erro ao reservar vaga: ${e instanceof Error ? e.message : 'Erro desconhecido'}`
+      );
     }
   }
 
