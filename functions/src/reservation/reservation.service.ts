@@ -784,8 +784,14 @@ export class ReservationService {
         
         let newStats = { ...currentStats };
         
+        // Processar com delay de 500ms entre cada promoção para evitar problemas com Firebase
         for (let i = 0; i < queueItems.length; i++) {
           const { doc, data } = queueItems[i];
+          
+          // Delay de 500ms entre operações (exceto a primeira)
+          if (i > 0) {
+            await new Promise(resolve => setTimeout(resolve, 500));
+          }
           
           // Remover da fila
           transaction.delete(doc.ref);
@@ -821,6 +827,8 @@ export class ReservationService {
           } else {
             newStats.maleReserved = (newStats.maleReserved || 0) + 1;
           }
+          
+          this.logger.log(`✅ [${i + 1}/${queueItems.length}] Promovido da fila: ${data.email} (${gender})`);
         }
         
         // Salvar estatísticas atualizadas

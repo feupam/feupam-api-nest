@@ -40,6 +40,48 @@ export class PaymentService {
       }
       
       const eventData = eventDoc.data();
+      
+      // Buscar dados do usuário para verificar gênero
+      const userQuery = this.firestoreService.firestore
+        .collection('users')
+        .where('email', '==', email);
+      const userSnapshot = await userQuery.get();
+      
+      if (userSnapshot.empty) {
+        throw new Error('Usuário não encontrado');
+      }
+      
+      const userData = userSnapshot.docs[0].data();
+      const userGender = userData.gender as 'male' | 'female';
+      
+      // ===== VALIDAÇÃO CRÍTICA DE VAGAS =====
+      // Forçar verificação de vagas ANTES de processar o pagamento
+      console.log(`[PaymentService] 🔍 Verificando disponibilidade de vagas para ${email} (${userGender}) no evento ${eventId}`);
+      
+      const spotAvailable = await this.checkSpotBeforePayment(eventId, userGender);
+      
+      if (!spotAvailable.available) {
+        console.log(`[PaymentService] ❌ Vagas esgotadas para ${email}. Adicionando à lista de espera.`);
+        
+        // Adicionar à waiting list
+        const waitingListRef = this.firestoreService.firestore
+          .collection('waitingList')
+          .doc(eventId);
+        const waitingListDoc = await waitingListRef.get();
+        const existingEmails = waitingListDoc.exists ? waitingListDoc.data()?.emails || [] : [];
+        
+        if (!existingEmails.includes(email)) {
+          await waitingListRef.set({
+            emails: [...existingEmails, email],
+            updatedAt: new Date(),
+          }, { merge: true });
+        }
+        
+        throw new Error('As vagas terminaram. Você foi adicionado à lista de espera e será notificado caso uma vaga seja liberada.');
+      }
+      
+      console.log(`[PaymentService] ✅ Vagas disponíveis confirmadas para ${email}`);
+      
       // O preço no banco já está em centavos, não precisa converter
       const VALOR_DO_EVENTO = eventData.price || 36500;
       
@@ -471,5 +513,113 @@ export class PaymentService {
 
       console.log('✅ Estatísticas atualizadas:', newStats);
     });
+  }
+
+  /**
+   * Verifica se há vagas disponíveis ANTES de processar o pagamento
+   * Considera o tipo de evento (GENERAL ou GENDER_SPECIFIC)
+   * Inclui delay de 300ms para sincronização com Firebase
+   */
+  private async checkSpotBeforePayment(
+    eventId: string, 
+    userGender: 'male' | 'female'
+  ): Promise<{ available: boolean; message?: string }> {
+    const db = this.firestoreService.firestore;
+    
+    // Delay de 300ms para garantir sincronização com Firebase
+    await new Promise(resolve => setTimeout(resolve, 300));
+    
+    try {
+      // 1. Buscar configurações do evento
+      const eventDoc = await db.collection('events').doc(eventId).get();
+      if (!eventDoc.exists) {
+        return { available: false, message: 'Evento não encontrado' };
+      }
+      
+      const eventData = eventDoc.data();
+      const eventType = eventData?.type || 'general';
+      
+      // 2. Buscar estatísticas atualizadas
+      const statsDoc = await db.collection('eventStats').doc(eventId).get();
+      const stats = statsDoc.exists ? statsDoc.data() : {
+        totalPaid: 0,
+        malePaid: 0,
+        femalePaid: 0,
+        totalReserved: 0,
+        maleReserved: 0,
+        femaleReserved: 0,
+      };
+      
+      // 3. Determinar capacidade baseada no tipo de evento
+      if (eventType === 'general') {
+        // ===== EVENTO GENERAL =====
+        const maxSpots = eventData?.maxGeneralSpots || 173;
+        const totalOccupied = (stats?.totalPaid || 0) + (stats?.totalReserved || 0);
+        
+        console.log(`[CheckSpot] GENERAL - Max: ${maxSpots}, Ocupadas: ${totalOccupied}`);
+        
+        if (totalOccupied >= maxSpots) {
+          return { 
+            available: false, 
+            message: `Evento esgotado (${totalOccupied}/${maxSpots} vagas ocupadas)` 
+          };
+        }
+        
+        return { available: true };
+        
+      } else if (eventType === 'gender_specific') {
+        // ===== EVENTO GENDER_SPECIFIC =====
+        const maxClientFemale = eventData?.maxClientFemale || 0;
+        const maxClientMale = eventData?.maxClientMale || 0;
+        
+        const maxFemaleSpots = maxClientFemale;
+        const maxMaleSpots = maxClientMale;
+        const maxTotalSpots = maxFemaleSpots + maxMaleSpots;
+        
+        // Verificar se o total geral foi excedido (para waiting list)
+        const totalPaid = stats?.totalPaid || 0;
+        if (totalPaid >= maxTotalSpots) {
+          return { 
+            available: false, 
+            message: `Todas as vagas foram pagas (${totalPaid}/${maxTotalSpots})` 
+          };
+        }
+        
+        // Verificar vagas por gênero
+        if (userGender === 'female') {
+          const femaleOccupied = (stats?.femalePaid || 0) + (stats?.femaleReserved || 0);
+          console.log(`[CheckSpot] FEMALE - Max: ${maxFemaleSpots}, Ocupadas: ${femaleOccupied}`);
+          
+          if (femaleOccupied >= maxFemaleSpots) {
+            return { 
+              available: false, 
+              message: `Vagas femininas esgotadas (${femaleOccupied}/${maxFemaleSpots})` 
+            };
+          }
+        } else {
+          const maleOccupied = (stats?.malePaid || 0) + (stats?.maleReserved || 0);
+          console.log(`[CheckSpot] MALE - Max: ${maxMaleSpots}, Ocupadas: ${maleOccupied}`);
+          
+          if (maleOccupied >= maxMaleSpots) {
+            return { 
+              available: false, 
+              message: `Vagas masculinas esgotadas (${maleOccupied}/${maxMaleSpots})` 
+            };
+          }
+        }
+        
+        return { available: true };
+        
+      } else {
+        // Tipo de evento desconhecido
+        console.warn(`[CheckSpot] Tipo de evento desconhecido: ${eventType}`);
+        return { available: false, message: 'Tipo de evento inválido' };
+      }
+      
+    } catch (error: any) {
+      console.error('[CheckSpot] Erro ao verificar vagas:', error);
+      // Em caso de erro, bloquear por segurança
+      return { available: false, message: 'Erro ao verificar disponibilidade' };
+    }
   }
 }
