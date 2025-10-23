@@ -1,0 +1,26 @@
+### ====================================
+### ADMIN - RESERVATION HISTORY
+### ====================================
+
+@baseUrl = http://localhost:5001/feupam-api/us-central1/api
+@token = SEU_TOKEN_AQUI
+
+### 1. Buscar TODAS as reservas (paginação padrão: página 1, 50 itens)
+GET {{baseUrl}}/admin/reservation-history
+Authorization: Bearer {{token}}
+
+### 2. Buscar reservas de um evento específico
+GET {{baseUrl}}/admin/reservation-history?eventId=ID_DO_EVENTO_AQUI
+Authorization: Bearer {{token}}
+
+### 3. Buscar com paginação customizada (página 2, 100 itens por página)
+GET {{baseUrl}}/admin/reservation-history?page=2&limit=100
+Authorization: Bearer {{token}}
+
+### 4. Filtro por evento + paginação
+GET {{baseUrl}}/admin/reservation-history?eventId=ID_DO_EVENTO_AQUI&page=1&limit=20
+Authorization: Bearer {{token}}
+
+### 5. Buscar primeira página com 10 itens
+GET {{baseUrl}}/admin/reservation-history?page=1&limit=10
+Authorization: Bearer {{token}}

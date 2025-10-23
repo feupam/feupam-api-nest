@@ -1,10 +1,12 @@
 import {
   Controller,
   Post,
+  Get,
   Body,
   Patch,
   Param,
   Headers,
+  Query,
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
@@ -88,5 +90,21 @@ export class AdminController {
     const token = authHeader?.split(' ')[1];
     await this.authService.verifyToken(token);
     return this.adminService.updateEmail(body.email, body.newEmail);
+  }
+
+  @Get('reservation-history')
+  async getAllReservationHistory(
+    @Headers('Authorization') authHeader: string,
+    @Query('eventId') eventId?: string,
+    @Query('page') page = '1',
+    @Query('limit') limit = '50',
+  ) {
+    const token = authHeader?.split(' ')[1];
+    await this.authService.verifyToken(token);
+    return this.adminService.getAllReservationHistory(
+      eventId,
+      Number(page),
+      Number(limit),
+    );
   }
 }

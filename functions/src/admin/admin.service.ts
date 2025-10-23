@@ -177,4 +177,54 @@ export class AdminService {
 
     return { message: 'Email updated successfully' };
   }
+
+  async getAllReservationHistory(eventId?: string, page = 1, limit = 50) {
+    const firestore = this.firestoreService.firestore;
+    const offset = (page - 1) * limit;
+
+    try {
+      // Buscar TODAS as reservas da reservationHistory
+      let reservationsQuery: any = firestore.collection('reservationHistory');
+
+      // Se eventId foi fornecido, filtrar por evento
+      if (eventId) {
+        reservationsQuery = reservationsQuery.where('eventId', '==', eventId);
+      }
+
+      // Buscar todas as reservas sem orderBy para evitar necessidade de índice
+      const reservationsSnapshot = await reservationsQuery.get();
+      
+      // Total de documentos antes da paginação
+      const totalCount = reservationsSnapshot.docs.length;
+
+      // Ordenar em memória por createdAt e aplicar paginação
+      const paginatedReservations = reservationsSnapshot.docs
+        .map((doc: any) => ({ 
+          id: doc.id, 
+          ...doc.data(),
+          // Converter Timestamp do Firestore para ISO string
+          createdAt: doc.data().createdAt?.toDate ? doc.data().createdAt.toDate().toISOString() : doc.data().createdAt,
+          updatedAt: doc.data().updatedAt?.toDate ? doc.data().updatedAt.toDate().toISOString() : doc.data().updatedAt,
+        }))
+        .sort((a: any, b: any) => {
+          // Ordenar por createdAt descendente (mais recente primeiro)
+          const aTime = new Date(a.createdAt).getTime() || 0;
+          const bTime = new Date(b.createdAt).getTime() || 0;
+          return bTime - aTime;
+        })
+        .slice(offset, offset + limit);
+
+      return {
+        page,
+        limit,
+        totalCount,
+        count: paginatedReservations.length,
+        eventId: eventId || 'all',
+        reservations: paginatedReservations,
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+      throw new BadRequestException(`Erro ao buscar reservationHistory: ${errorMessage}`);
+    }
+  }
 }
