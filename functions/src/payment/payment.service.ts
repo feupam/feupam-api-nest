@@ -229,21 +229,29 @@ export class PaymentService {
     const email = webhookData.customer.email;
     
     try {
-      // Buscar a reserva para obter o eventId
+      // CORREÇÃO: Extrair eventId do order/items do webhook
+      const eventId = webhookData.order?.items?.[0]?.description || webhookData.items?.[0]?.description;
+      
+      if (!eventId) {
+        throw new Error('EventId não encontrado no webhook. Order: ' + JSON.stringify(webhookData.order));
+      }
+      
+      console.log('🔍 Buscando reserva para:', { email, eventId });
+      
+      // Buscar a reserva específica para este email E eventId
       const reservationSnapshot = await this.firestoreService.firestore
         .collection('reservationHistory')
         .where('email', '==', email)
-        .orderBy('updatedAt', 'desc')
+        .where('eventId', '==', eventId)
         .limit(1)
         .get();
 
       if (reservationSnapshot.empty) {
-        throw new Error('Reserva não encontrada para o email: ' + email);
+        throw new Error(`Reserva não encontrada para email: ${email} e evento: ${eventId}`);
       }
 
       const reservationDoc = reservationSnapshot.docs[0];
       const reservationData = reservationDoc.data();
-      const eventId = reservationData.eventId;
 
       console.log('📋 Reserva encontrada:', { 
         email, 
