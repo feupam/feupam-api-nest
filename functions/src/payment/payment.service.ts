@@ -345,6 +345,111 @@ export class PaymentService {
   }
 
   /**
+   * Reprocessa/consulta o status de um pagamento diretamente na Pagar.me
+   * Se chargeId não for informado, busca pelo último charge no reservationHistory do email+eventId
+   */
+  async reprocessPaymentStatus(params: { email: string; eventId: string; chargeId?: string }) {
+    const { email, eventId } = params;
+    let { chargeId } = params;
+
+    const db = this.firestoreService.firestore;
+    const pagarmeService = new Pagarme();
+
+    // 1) Descobrir chargeId se não veio
+    if (!chargeId) {
+      console.log('[Reprocess] 🔎 Buscando reservationHistory para obter chargeId...', { email, eventId });
+      const histSnap = await db
+        .collection('reservationHistory')
+        .where('email', '==', email)
+        .where('eventId', '==', eventId)
+        .limit(1)
+        .get();
+
+      if (histSnap.empty) {
+        throw new BadRequestException('Histórico de reserva não encontrado para o email/evento');
+      }
+      const hDoc = histSnap.docs[0];
+      const hData = hDoc.data();
+      const charges = hData?.charges || [];
+      if (!charges.length) {
+        throw new BadRequestException('Nenhum charge encontrado no histórico de reserva');
+      }
+      // Pegar o último com chargeId válido
+      const lastWithId = [...charges].reverse().find((c: any) => !!c.chargeId);
+      if (!lastWithId) {
+        throw new BadRequestException('Nenhum chargeId válido encontrado');
+      }
+      chargeId = lastWithId.chargeId;
+    }
+
+    console.log('[Reprocess] 🔁 Consultando Pagar.me para charge:', chargeId);
+    const chargeResp = await pagarmeService.getCharge(chargeId);
+
+    // 2) Mapear status Pagar.me -> interno
+    const statusMapping: Record<string, string> = {
+      paid: 'Pago',
+      pending: 'Processando',
+      processing: 'Processando',
+      authorized: 'Processando',
+      canceled: 'Cancelado',
+      failed: 'Falhou',
+      refunded: 'Reembolsado',
+      refused: 'Recusado',
+    };
+    const pagarmeStatus: string = chargeResp?.status || 'unknown';
+    const internalStatus = statusMapping[pagarmeStatus] || 'Processando';
+
+    // Extrair campos úteis
+    const paymentMethod = chargeResp?.payment_method || 'unknown';
+    const amount = chargeResp?.amount ?? 0;
+    const lastTx = chargeResp?.last_transaction || {};
+    let payLink = '';
+    let qrcodePix = '';
+    if (paymentMethod === 'pix') {
+      payLink = lastTx.qr_code || '';
+      qrcodePix = lastTx.qr_code_url || '';
+    } else if (paymentMethod === 'boleto') {
+      payLink = lastTx.pdf || '';
+    } else if (paymentMethod === 'credit_card') {
+      payLink = lastTx.acquirer_message || '';
+    }
+
+    const chargeDto: ChargeDto = {
+      event: eventId,
+      status: internalStatus,
+      amount,
+      payLink,
+      qrcodePix,
+      meio: paymentMethod,
+      email,
+      lote: 0,
+      envioWhatsapp: false,
+      chargeId: chargeId,
+    };
+
+    // 3) Atualizar nosso histórico para refletir o status atual (idempotente)
+    try {
+      if (pagarmeStatus === 'paid') {
+        await this.confirmPaymentAndUpdateReservation(email, eventId, chargeDto, internalStatus);
+      } else {
+        await this.updateReservationAndChargeStatus(email, eventId, chargeDto, internalStatus);
+      }
+    } catch (e) {
+      console.warn('[Reprocess] Aviso: falha ao atualizar histórico local (seguindo com retorno)', e);
+    }
+
+    return {
+      success: true,
+      chargeId,
+      pagarmeStatus,
+      internalStatus,
+      paymentMethod,
+      amount,
+      updatedAt: new Date().toISOString(),
+    };
+  }
+
+  /**
    * Atualiza AMBOS os status: da reserva principal E do charge
    */
   private async updateReservationAndChargeStatus(
@@ -416,95 +521,69 @@ export class PaymentService {
     const db = this.firestoreService.firestore;
     
     await db.runTransaction(async (transaction) => {
-      console.log('🔍 Buscando reserva ativa...');
-      
-      // 1. Buscar e atualizar a reserva ativa (se existir)
-      const reservationRef = db
+      console.log('� Iniciando transação de confirmação de pagamento...');
+
+      // PREPARO: Definir referências/consultas
+      const reservationQuery = db
         .collection('reservations')
         .where('email', '==', email)
         .where('eventId', '==', eventId)
         .where('status', '==', 'reserved');
-      
-      const reservationSnapshot = await transaction.get(reservationRef);
-      
-      if (!reservationSnapshot.empty) {
-        const reservationDoc = reservationSnapshot.docs[0];
-        const reservationData = reservationDoc.data();
 
-        console.log('📝 Reserva ativa encontrada:', reservationDoc.id);
-
-        // Verificar se ainda está dentro do prazo
-        const expiresAt = reservationData.expiresAt.toDate ? 
-          reservationData.expiresAt.toDate() : 
-          reservationData.expiresAt;
-        
-        if (expiresAt < new Date()) {
-          console.warn('⚠️ Reserva expirada, mas processando pagamento mesmo assim');
-        }
-
-        // Atualizar status da reserva para 'Pago'
-        transaction.update(reservationDoc.ref, {
-          status: 'Pago',
-          paidAt: FieldValue.serverTimestamp()
-        });
-
-        console.log('✅ Reserva ativa atualizada para Pago');
-      } else {
-        console.log('⚠️ Nenhuma reserva ativa encontrada (pode já estar paga)');
-      }
-
-      // 2. Buscar o histórico de reserva para atualizar
-      console.log('🔍 Buscando histórico de reserva...');
-      
-      const historyRef = db
+      const historyQuery = db
         .collection('reservationHistory')
         .where('email', '==', email)
         .where('eventId', '==', eventId);
-      
-      const historySnapshot = await transaction.get(historyRef);
-      
+
+      const eventStatsRef = db.collection('eventStats').doc(eventId);
+
+      // ETAPA 1: Ler tudo ANTES de qualquer escrita (exigência do Firestore)
+      console.log('📥 [TX] Lendo documentos necessários (reservas, histórico, estatísticas)...');
+      const [reservationSnapshot, historySnapshot, eventStatsDoc] = await Promise.all([
+        transaction.get(reservationQuery),
+        transaction.get(historyQuery),
+        transaction.get(eventStatsRef),
+      ]);
+
+      // Consolidar dados lidos
+      const reservationDoc = reservationSnapshot.empty ? null : reservationSnapshot.docs[0];
+      const reservationData = reservationDoc ? reservationDoc.data() : null;
+
+      if (!historySnapshot.empty) {
+        console.log('📋 [TX] Histórico de reserva encontrado:', {
+          count: historySnapshot.size,
+        });
+      }
+
       if (historySnapshot.empty) {
         throw new Error('Histórico de reserva não encontrado');
       }
 
       const historyDoc = historySnapshot.docs[0];
       const historyData = historyDoc.data();
-      
-      console.log('📋 Histórico encontrado:', {
-        id: historyDoc.id,
-        currentStatus: historyData.status,
-        currentCharges: historyData.charges?.length || 0
+
+      console.log('🧾 [TX] Estado atual:', {
+        hasActiveReservation: !!reservationDoc,
+        historyId: historyDoc.id,
+        historyStatus: historyData.status,
+        historyCharges: historyData.charges?.length || 0,
       });
 
-      // 3. Atualizar charges no histórico
-      const updatedCharges = historyData?.charges || [];
-      
+      // Preparar novos valores (sem escrever ainda)
+      let updatedCharges = (historyData?.charges || []).slice();
       const existingChargeIndex = updatedCharges.findIndex(
         (c: any) => c.chargeId === charge.chargeId
       );
-      
       if (existingChargeIndex >= 0) {
         updatedCharges[existingChargeIndex] = charge;
-        console.log('🔄 Atualizando charge existente no histórico');
+        console.log('🔄 [TX] Charge existente será atualizado:', charge.chargeId);
       } else {
         updatedCharges.push(charge);
-        console.log('➕ Adicionando novo charge ao histórico');
+        console.log('➕ [TX] Novo charge será adicionado:', charge.chargeId);
       }
 
-      transaction.update(historyDoc.ref, {
-        charges: updatedCharges,
-        status: status,
-        updatedAt: new Date(),
-      });
-
-      // 4. Atualizar estatísticas do evento
-      console.log('📊 Atualizando estatísticas do evento...');
-      
-      const eventStatsRef = db.collection('eventStats').doc(eventId);
-      const eventStatsDoc = await transaction.get(eventStatsRef);
       const currentStats = eventStatsDoc.data() || {};
-
-      const newStats = { ...currentStats };
+      const newStats: any = { ...currentStats };
       newStats.totalPaid = (newStats.totalPaid || 0) + 1;
       newStats.totalReserved = Math.max(0, (newStats.totalReserved || 0) - 1);
 
@@ -517,9 +596,40 @@ export class PaymentService {
         newStats.maleReserved = Math.max(0, (newStats.maleReserved || 0) - 1);
       }
 
-      transaction.set(eventStatsRef, newStats, { merge: true });
+      console.log('✍️  [TX] Preparando escritas...', {
+        willUpdateReservation: !!reservationDoc,
+        willUpdateHistoryId: historyDoc.id,
+        willSetEventStats: true,
+      });
 
-      console.log('✅ Estatísticas atualizadas:', newStats);
+      // ETAPA 2: Executar ESCRITAS (somente após todas as leituras concluídas)
+      if (reservationDoc && reservationData) {
+        // Checar expiração (apenas log)
+        const expiresAt = reservationData.expiresAt?.toDate
+          ? reservationData.expiresAt.toDate()
+          : reservationData.expiresAt;
+        if (expiresAt && expiresAt < new Date()) {
+          console.warn('⚠️ Reserva expirada, mas processando pagamento mesmo assim');
+        }
+
+        transaction.update(reservationDoc.ref, {
+          status: 'Pago',
+          paidAt: FieldValue.serverTimestamp(),
+        });
+        console.log('✅ [TX] Reserva marcada como Pago:', reservationDoc.id);
+      } else {
+        console.log('ℹ️  [TX] Nenhuma reserva ativa para atualizar');
+      }
+
+      transaction.update(historyDoc.ref, {
+        charges: updatedCharges,
+        status: status,
+        updatedAt: new Date(),
+      });
+      console.log('✅ [TX] Histórico atualizado:', { id: historyDoc.id, status, totalCharges: updatedCharges.length });
+
+      transaction.set(eventStatsRef, newStats, { merge: true });
+      console.log('✅ [TX] Estatísticas atualizadas');
     });
   }
 

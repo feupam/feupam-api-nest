@@ -39,4 +39,14 @@ export class PaymentController {
   async handlePagarmeWebhook(@Body() body: any) {
     return await this.paymentService.handlePagarmeWebhook(body);
   }
+
+  // Reprocessa/consulta status diretamente na Pagar.me por chargeId (ou por email+eventId)
+  @Post('reprocessar-status')
+  async reprocessarStatus(@Body() body: any) {
+    const { email, eventId, chargeId } = body || {};
+    if (!email || !eventId) {
+      throw new Error('Parâmetros obrigatórios: email e eventId');
+    }
+    return this.paymentService.reprocessPaymentStatus({ email, eventId, chargeId });
+  }
 }
