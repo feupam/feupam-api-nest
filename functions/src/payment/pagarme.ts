@@ -4,7 +4,7 @@ import fetch from 'node-fetch';
 export class Pagarme {
   public async createPayment(bodyPagarme: any): Promise<any> {
 
-    const key = "sk_test_b2ebe5160d2a40c093b0dfe93f7f090e:";
+    const key = "sk_b27cdee7a3b942688da94ec0deff4940:";
     const response = await fetch('https://api.pagar.me/core/v5/orders', {
       method: 'post',
       headers: {

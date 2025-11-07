@@ -55,7 +55,11 @@ export class EventsController {
     @UploadedFiles() files: UploadedEventFiles
   ) {
     const token = authHeader?.split(' ')[1];
-    await this.authService.verifyToken(token);
+    const decoded = await this.authService.verifyToken(token);
+    // Preencher owner automaticamente se não vier no payload
+    if (!createEventDto.owner) {
+      createEventDto.owner = decoded?.email ?? 'unknown';
+    }
     return this.eventsService.create(createEventDto, files);
   }
 

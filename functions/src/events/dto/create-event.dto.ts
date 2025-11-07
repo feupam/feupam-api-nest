@@ -85,4 +85,9 @@ export class CreateEventDto {
   @IsOptional()
   @IsString()
   logo_evento?: string;
+
+  // Novo campo: proprietário do evento (email/identificador)
+  @IsOptional()
+  @IsString()
+  owner?: string;
 }

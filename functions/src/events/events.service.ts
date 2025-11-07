@@ -91,12 +91,18 @@ export class EventsService {
       updateEventDto.logo_evento = await this.uploadFile(files.logo_evento[0], 'event_logos');
     }
 
+    // Se owner vier no update, preserva; se não vier, mantém o existente
+    const existing = await eventRef.get();
+    const existingData = existing.exists ? existing.data() : {};
+    const ownerToPersist = updateEventDto.owner ?? existingData?.owner;
+
     await eventRef.update({
       ...updateEventDto,
+      owner: ownerToPersist,
       date: new Date().toISOString(),
     });
 
-    return { uuid, ...updateEventDto };
+    return { uuid, ...existingData, ...updateEventDto, owner: ownerToPersist };
   }
 
   async remove(uuid: string) {
@@ -151,6 +157,7 @@ export class EventsService {
         logo_evento: data.logo_evento || null,
         idadeMinima: data.idadeMinima,
         idadeMaxima: data.idadeMaxima,
+        owner: data.owner || null,
       };
     });
 
