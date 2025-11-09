@@ -656,7 +656,9 @@ export class PaymentService {
       }
       
       const eventData = eventDoc.data();
-      const eventType = eventData?.type || 'general';
+      const eventType = eventData?.type || eventData?.eventType || 'general';
+      
+      console.log(`[CheckSpot] DEBUG - eventId: ${eventId}, type: ${eventData?.type}, eventType: ${eventData?.eventType}, usando: ${eventType}`);
       
       // 2. Buscar estatísticas atualizadas
       const statsDoc = await db.collection('eventStats').doc(eventId).get();

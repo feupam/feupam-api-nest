@@ -5,6 +5,7 @@ export class Pagarme {
   public async createPayment(bodyPagarme: any): Promise<any> {
 
     const key = "sk_b27cdee7a3b942688da94ec0deff4940:";
+    //const key = "sk_test_13d248e2f13344dcaf9476d440426152:";
     const response = await fetch('https://api.pagar.me/core/v5/orders', {
       method: 'post',
       headers: {
