@@ -284,62 +284,6 @@ export class EventsService {
         }
       }
 
-      // ✅ VALIDAÇÃO ÚNICA POR CPF - verificar se já tem reserva paga
-      const historyQuery = firestore
-        .collection('reservationHistory')
-        .where('cpf', '==', userData.cpf)
-        .where('eventId', '==', dto.eventId);
-      const historySnapshot = await historyQuery.get();
-
-      let existingDocRef = null;
-      
-      if (!historySnapshot.empty) {
-        // Se encontrou múltiplos documentos (BUG de duplicação), DELETAR os extras
-        if (historySnapshot.size > 1) {
-          console.log(`⚠️ [DUPLICAÇÃO] ${historySnapshot.size} documentos encontrados em reservationHistory para CPF ${userData.cpf}`);
-          
-          // Manter o PRIMEIRO documento, deletar os OUTROS
-          const docsToDelete = historySnapshot.docs.slice(1); // Pular o primeiro
-          const batch = firestore.batch();
-          
-          docsToDelete.forEach(doc => {
-            console.log(`🗑️ [CLEANUP] Deletando documento duplicado: ${doc.id}`);
-            batch.delete(doc.ref);
-          });
-          
-          await batch.commit();
-          console.log(`✅ [CLEANUP] ${docsToDelete.length} documento(s) duplicado(s) deletado(s)`);
-        }
-        
-        // Usar o PRIMEIRO documento (que foi mantido)
-        const mainDoc = historySnapshot.docs[0];
-        const historyData = mainDoc.data();
-        
-        // Verificar se está pago
-        const isStatusPago = historyData.status === 'Pago';
-        const hasChargesPago = historyData.charges 
-          && Array.isArray(historyData.charges) 
-          && historyData.charges.some((charge: any) => 
-            charge.status === 'Pago' || charge.status === 'paid'
-          );
-        
-        if (isStatusPago || hasChargesPago) {
-          const reservationEmail = historyData.email || '';
-          const maskedEmail = reservationEmail.length > 5 
-            ? `${reservationEmail.substring(0, 5)}${'*'.repeat(reservationEmail.length - 5)}`
-            : reservationEmail;
-          
-          console.log(`[BLOCK] CPF ${userData.cpf} já possui ingresso pago. Status: ${historyData.status}, HasChargesPago: ${hasChargesPago}`);
-          throw new BadRequestException(
-            `Você já possui um ingresso pago para este evento com o email ${maskedEmail} com esse CPF`
-          );
-        }
-        
-        // Não está pago - guardar referência para atualizar depois
-        existingDocRef = mainDoc.ref;
-        console.log(`🔄 [SOBRESCREVER] Usando documento existente ${mainDoc.id} para atualizar`);
-      }
-
       // ✅ USAR APENAS O NOVO SISTEMA DE RESERVAS
       console.log(`[DEBUG] Calling reservationService.reserveSpot for ${email}`);
       const reservationResult = await this.reservationService.reserveSpot(
@@ -414,17 +358,10 @@ export class EventsService {
           }
         });
 
-        // Se existe documento, ATUALIZAR. Se não existe, CRIAR novo
-        if (existingDocRef) {
-          // ATUALIZAR documento existente (preserva createdAt e ID)
-          await existingDocRef.set(reservationData, { merge: true });
-          console.log(`✅ [ATUALIZADO] Documento existente em reservationHistory para CPF ${userData.cpf} (ID: ${existingDocRef.id})`);
-        } else {
-          // CRIAR novo documento
-          reservationData.createdAt = new Date();
-          const newDocRef = await firestore.collection('reservationHistory').add(reservationData);
-          console.log(`✅ [CRIADO] Novo documento em reservationHistory para CPF ${userData.cpf} (ID: ${newDocRef.id})`);
-        }
+        // CRIAR novo documento sempre (sem verificação de duplicação por CPF)
+        reservationData.createdAt = new Date();
+        const newDocRef = await firestore.collection('reservationHistory').add(reservationData);
+        console.log(`✅ [CRIADO] Novo documento em reservationHistory para CPF ${userData.cpf} (ID: ${newDocRef.id})`);
 
         console.log(`[DEBUG] Reserve spot successful:`, {
           ticketKind: dto.ticket_kind,

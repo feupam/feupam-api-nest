@@ -108,12 +108,13 @@ export class PaymentService {
         throw new Error('usuario ja comprou');
       }
 
-      const itemAmount = bodyPagarme.items[0].amount;
 
+      // VALORRR
+      // const itemAmount = bodyPagarme.items[0].amount;
       // Validar que o valor é no mínimo o preço do evento (pode ser maior se tiver juros)
-      if (itemAmount < VALOR_DO_EVENTO) {
-        throw new Error(`Valor do pagamento não pode ser menor que o ingresso. Mínimo: R$ ${(VALOR_DO_EVENTO/100).toFixed(2)}, Recebido: R$ ${(itemAmount/100).toFixed(2)}`);
-      }
+      // if (itemAmount < VALOR_DO_EVENTO) {
+      //   throw new Error(`Valor do pagamento não pode ser menor que o ingresso. Mínimo: R$ ${(VALOR_DO_EVENTO/100).toFixed(2)}, Recebido: R$ ${(itemAmount/100).toFixed(2)}`);
+      // }
 
       const response = await pagarmeService.createPayment(bodyPagarme);
 
